@@ -314,15 +314,6 @@ hit_type =
   "overhead",
 }
 
-training_settings = {
-  pose = 1,
-  blocking_mode = 1,
-  fast_recovery_mode = 1,
-  infinite_time = true,
-  infinite_life = true,
-  no_stun = true,
-}
-
 -- character specific stuff
 function make_character_specific()
   return {
@@ -443,7 +434,18 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop)
     return o
 end
 
+training_settings = {
+  swap_characters = false,
+  pose = 1,
+  blocking_mode = 1,
+  fast_recovery_mode = 1,
+  infinite_time = true,
+  infinite_life = true,
+  no_stun = true,
+}
+
 menu = {
+  checkbox_menu_item("Swap Characters", "swap_characters"),
   list_menu_item("Pose", "pose", pose),
   list_menu_item("Blocking", "blocking_mode", blocking_mode),
   list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
@@ -659,6 +661,10 @@ function on_gui()
   else
     gui.clearuncommitted()
   end
+
+  local i = joypad.get()
+  display_input(45, 190, i, "P1 ")
+  display_input(280, 190, i, "P2 ")
 end
 
 emu.registerbefore(before_frame)
@@ -676,4 +682,37 @@ function memory_read(_address, _size, _reverse)
     end
   end
   return result
+end
+
+function display_input(_x, _y, _input, _prefix)
+  local up = _input[_prefix.."Up"]
+  local down = _input[_prefix.."Down"]
+  local left = _input[_prefix.."Left"]
+  local right = _input[_prefix.."Right"]
+  local LP = _input[_prefix.."Weak Punch"]
+  local MP = _input[_prefix.."Medium Punch"]
+  local HP = _input[_prefix.."Strong Punch"]
+  local LK = _input[_prefix.."Weak Kick"]
+  local MK = _input[_prefix.."Medium Kick"]
+  local HK = _input[_prefix.."Strong Kick"]
+  local start = _input[_prefix.."Start"]
+  local coin = _input[_prefix.."Coin"]
+  function col(_value)
+    if _value then return 0xFF0000FF else return 0xFFFFFFFF end
+  end
+
+  gui.text(_x + 5 , _y + 0 , "^", col(up))
+  gui.text(_x + 5 , _y + 10, "v", col(down))
+  gui.text(_x + 0 , _y + 5, "<", col(left))
+  gui.text(_x + 10, _y + 5, ">", col(right))
+
+  gui.text(_x + 20, _y + 0, "LP", col(LP))
+  gui.text(_x + 30, _y + 0, "MP", col(MP))
+  gui.text(_x + 40, _y + 0, "HP", col(HP))
+  gui.text(_x + 20, _y + 10, "LK", col(LK))
+  gui.text(_x + 30, _y + 10, "MK", col(MK))
+  gui.text(_x + 40, _y + 10, "HK", col(HK))
+
+  gui.text(_x + 55, _y + 0, "S", col(start))
+  gui.text(_x + 55, _y + 10, "C", col(coin))
 end
