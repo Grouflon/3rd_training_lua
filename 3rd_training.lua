@@ -457,7 +457,45 @@ menu = {
   checkbox_menu_item("No Stun", "no_stun"),
 }
 
+-- save/load
+training_data_file = "3rd_training_data.txt"
+function save_training_data()
+  f = io.open(training_data_file, "w")
+  for key, value in pairs(training_settings) do
+    f:write(key.."="..tostring(value).."\n")
+  end
+  f:close()
+end
 
+function load_training_data()
+  f = io.open(training_data_file, "r")
+  for line in f:lines() do
+    local a1 = line:split("=")
+    local key = nil
+    local value = nil
+    if #a1 > 0 then
+      key = a1[1]
+      value = a1[2]
+    end
+
+    if key ~= nil and value ~= nil then
+      local type = type(training_settings[key])
+      local v = nil
+      if type == "boolean" then
+        if value == "true" then v = true else v = false end
+      elseif type == "number" then
+        v = tonumber(value)
+      end
+
+      if v ~= nil then
+        training_settings[key] = v
+      end
+    end
+  end
+  f:close()
+end
+
+-- swap inputs
 function swap_inputs(_in_input_table, _out_input_table)
   function swap(_input)
     local carry = _in_input_table["P1 ".._input]
@@ -480,6 +518,10 @@ function swap_inputs(_in_input_table, _out_input_table)
 end
 
 -- program
+
+function on_start()
+  load_training_data()
+end
 
 function before_frame()
 
@@ -680,10 +722,12 @@ function on_gui()
 
     if frame_input.P1.pressed.left then
       menu[menu_selected_index]:left()
+      save_training_data()
     end
 
     if frame_input.P1.pressed.right then
       menu[menu_selected_index]:right()
+      save_training_data()
     end
 
     gui.box(0,0,383,223, 0x000000AA, 0x000000AA)
@@ -701,6 +745,7 @@ function on_gui()
 
 end
 
+emu.registerstart(on_start)
 emu.registerbefore(before_frame)
 gui.register(on_gui)
 
@@ -749,4 +794,11 @@ function display_input(_x, _y, _input, _prefix)
 
   gui.text(_x + 55, _y + 0, "S", col(start))
   gui.text(_x + 55, _y + 10, "C", col(coin))
+end
+
+function string:split(sep)
+   local sep, fields = sep or ":", {}
+   local pattern = string.format("([^%s]+)", sep)
+   self:gsub(pattern, function(c) fields[#fields+1] = c end)
+   return fields
 end
