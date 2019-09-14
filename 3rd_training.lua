@@ -1,3 +1,6 @@
+-- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
+-- https://github.com/TASVideos/mame-rr/wiki/Lua-scripting-functions
+
 -- app data
 is_menu_open = false
 menu_selected_index = 1
@@ -454,10 +457,34 @@ menu = {
   checkbox_menu_item("No Stun", "no_stun"),
 }
 
+
+function swap_inputs(_in_input_table, _out_input_table)
+  function swap(_input)
+    local carry = _in_input_table["P1 ".._input]
+    _out_input_table["P1 ".._input] = nil
+
+    --_out_input_table["P1 ".._input] = _in_input_table["P2 ".._input]
+    _out_input_table["P2 ".._input] = carry
+  end
+
+  swap("Up")
+  swap("Down")
+  swap("Left")
+  swap("Right")
+  swap("Weak Punch")
+  swap("Medium Punch")
+  swap("Strong Punch")
+  swap("Weak Kick")
+  swap("Medium Kick")
+  swap("Strong Kick")
+end
+
 -- program
+
 function before_frame()
 
   update_input()
+
   local input = {}
 
   -- frame number
@@ -469,6 +496,17 @@ function before_frame()
 	local p2_locked = memory.readbyte(0x020154C8);
 	local match_state = memory.readbyte(0x020154A7);
 	is_in_match = ((p1_locked == 0xFF or p2_locked == 0xFF) and match_state == 0x02);
+
+  -- character swap
+  if is_in_match then
+    local P1_disable_input_address = 0x02068C74
+    if training_settings.swap_characters then
+      swap_inputs(joypad.get(), input)
+      memory.writebyte(P1_disable_input_address, 0x01)
+    else
+      memory.writebyte(P1_disable_input_address, 0x00)
+    end
+  end
 
   -- freeze game
   if is_menu_open then
@@ -515,11 +553,6 @@ function before_frame()
     memory.writebyte(0x02069613+1, 0); -- p2 stun bar
     memory.writebyte(0x02069613+2, 0); -- p2 stun bar
     memory.writebyte(0x02069613+3, 0); -- p2 stun bar
-  end
-
-  -- test
-  if frame_input.P1.pressed.HK then
-    --queue_input_sequence(2, seq_dp)
   end
 
   -- pose
@@ -665,6 +698,7 @@ function on_gui()
   local i = joypad.get()
   display_input(45, 190, i, "P1 ")
   display_input(280, 190, i, "P2 ")
+
 end
 
 emu.registerbefore(before_frame)
