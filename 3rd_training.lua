@@ -15,12 +15,13 @@ knockeddown = false
 flying_after_knockdown = false
 onground_after_knockdown = false
 fastrecovery_countdown = -1
+P1_previous_is_attacking = false
 
 function make_player()
   return {
     character = -1,
     facing_right = false,
-    has_active = false,
+    is_attacking = false,
     pos_x = 0,
     pos_y = 0,
     action = 0,
@@ -320,6 +321,15 @@ hit_type =
 -- character specific stuff
 function make_character_specific()
   return {
+    moves={}
+  }
+end
+
+function make_specific_move(_hit_type, _frame_delay, _blocking_distance)
+  return {
+    hit_type = _hit_type,
+    frame_delay = _frame_delay,
+    blocking_distance = _blocking_distance,
   }
 end
 
@@ -327,6 +337,24 @@ character_specific = {}
 for i = 1, #characters do
   character_specific[characters[i]] = make_character_specific()
 end
+
+-- HK
+character_specific.ibuki.moves["40010"] = make_specific_move(1, 8, 135)
+
+-- FMK
+character_specific.ibuki.moves["4000E"] = make_specific_move(3) -- overhead
+
+-- neck breaker
+character_specific.ibuki.moves["50024"] = make_specific_move(2) -- low
+character_specific.ibuki.moves["50025"] = make_specific_move(2) -- low
+character_specific.ibuki.moves["50026"] = make_specific_move(2) -- low
+character_specific.ibuki.moves["50027"] = make_specific_move(2) -- low
+
+-- rekka
+character_specific.ibuki.moves["50028"] = make_specific_move(2) -- low
+character_specific.ibuki.moves["5002A"] = make_specific_move(2) -- low
+character_specific.ibuki.moves["50066"] = make_specific_move(2) -- low
+
 
 -- menu
 function checkbox_menu_item(_name, _property_name)
@@ -445,6 +473,7 @@ training_settings = {
   infinite_time = true,
   infinite_life = true,
   no_stun = true,
+  display_input = true,
 }
 
 menu = {
@@ -455,6 +484,7 @@ menu = {
   checkbox_menu_item("Infinite Time", "infinite_time"),
   checkbox_menu_item("Infinite Life", "infinite_life"),
   checkbox_menu_item("No Stun", "no_stun"),
+  checkbox_menu_item("Display Input", "display_input"),
 }
 
 -- save/load
@@ -565,7 +595,7 @@ function before_frame()
   -- player data
   P1.character = memory.readbyte(0x02011387)
   P1.facing_right = memory.readbyte(0x02068C77) > 0
-  P1.has_active = memory.readbyte(0x02069094) > 0
+  P1.is_attacking = memory.readbyte(0x02069094) > 0
   P1.pos_x = memory_read(0x02068CD0, 2)
   P1.pos_y = memory_read(0x02068CD4, 2)
   P1.action = memory_read(0x02068D19, 3)
@@ -598,7 +628,7 @@ function before_frame()
   end
 
   -- pose
-  if is_in_match and not knockeddown then
+  if is_in_match and not training_settings.swap_characters and not knockeddown then
     if training_settings.pose == 2 then
       input['P2 Down'] = true
     elseif training_settings.pose == 3 then
@@ -613,15 +643,57 @@ function before_frame()
   end
 
   -- blocking
-  if training_settings.blocking_mode == 2 then
-    if P1.has_active then
-      if P2.facing_right then
-        input['P2 Left'] = true
-      else
-        input['P2 Right'] = true
+  if is_in_match and not training_settings.swap_characters and training_settings.blocking_mode == 2 then
+    if P1.is_attacking and not P1_previous_is_attacking then
+      waiting_for_block = true
+      waiting_for_block_frame = 0
+      low_attack = frame_input.P1.down.down
+    end
+
+    if not P1.is_attacking and P1_previous_is_attacking then
+      waiting_for_block = false
+    end
+
+    if waiting_for_block then
+      print(string.format("%X", P1.action).."."..(P1.pos_x - P2.pos_x).."."..tostring(low_attack))
+
+      local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x)
+      local current_move = string.format("%X", P1.action)
+      local blocking_distance = 150
+      local frame_delay = 1
+
+      if character_specific[characters[P1.character]].moves[current_move] ~= nil then
+        local specific_hit_type = character_specific[characters[P1.character]].moves[current_move].hit_type
+        local specific_blocking_distance = character_specific[characters[P1.character]].moves[current_move].blocking_distance
+        local specific_frame_delay = character_specific[characters[P1.character]].moves[current_move].frame_delay
+
+        if specific_hit_type == 2 then
+          low_attack = true
+        elseif specific_hit_type == 3 then
+          low_attack = false          
+        end
+        if specific_blocking_distance then blocking_distance = specific_blocking_distance end
+        if specific_frame_delay then frame_delay = specific_frame_delay end
       end
+
+      if distance_from_enemy < blocking_distance and waiting_for_block_frame >= frame_delay then
+
+
+
+        if P2.facing_right then
+          input['P2 Left'] = true
+        else
+          input['P2 Right'] = true
+        end
+
+        input['P2 Down'] = low_attack
+
+      end
+
+      waiting_for_block_frame = waiting_for_block_frame + 1
     end
   end
+  P1_previous_is_attacking = P1.is_attacking
 
   -- fast recovery
   if is_in_match then
@@ -739,15 +811,12 @@ function on_gui()
     gui.clearuncommitted()
   end
 
-  local i = joypad.get()
-  display_input(45, 190, i, "P1 ")
-  display_input(280, 190, i, "P2 ")
-
+  if is_in_match and training_settings.display_input then
+    local i = joypad.get()
+    draw_input(45, 190, i, "P1 ")
+    draw_input(280, 190, i, "P2 ")
+  end
 end
-
-emu.registerstart(on_start)
-emu.registerbefore(before_frame)
-gui.register(on_gui)
 
 -- toolbox
 function memory_read(_address, _size, _reverse)
@@ -763,7 +832,7 @@ function memory_read(_address, _size, _reverse)
   return result
 end
 
-function display_input(_x, _y, _input, _prefix)
+function draw_input(_x, _y, _input, _prefix)
   local up = _input[_prefix.."Up"]
   local down = _input[_prefix.."Down"]
   local left = _input[_prefix.."Left"]
@@ -802,3 +871,8 @@ function string:split(sep)
    self:gsub(pattern, function(c) fields[#fields+1] = c end)
    return fields
 end
+
+-- registers
+emu.registerstart(on_start)
+emu.registerbefore(before_frame)
+gui.register(on_gui)
