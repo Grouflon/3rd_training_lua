@@ -1,35 +1,6 @@
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
 -- https://github.com/TASVideos/mame-rr/wiki/Lua-scripting-functions
 
--- app data
-is_menu_open = false
-menu_selected_index = 1
-pending_input_sequence = nil
-
--- game data
-frame_number = 0
-preparing_counterattack = false
-recovery_time = 0
-is_in_match = false
-knockeddown = false
-flying_after_knockdown = false
-onground_after_knockdown = false
-fastrecovery_countdown = -1
-P1_previous_is_attacking = false
-
-function make_player()
-  return {
-    character = -1,
-    facing_right = false,
-    is_attacking = false,
-    pos_x = 0,
-    pos_y = 0,
-    action = 0,
-  }
-end
-P1 = make_player()
-P2 = make_player()
-
 -- input
 function make_input_set()
   return {
@@ -355,6 +326,12 @@ character_specific.ibuki.moves["50028"] = make_specific_move(2) -- low
 character_specific.ibuki.moves["5002A"] = make_specific_move(2) -- low
 character_specific.ibuki.moves["50066"] = make_specific_move(2) -- low
 
+-- penguin Kick
+character_specific.ibuki.moves["5001C"] = make_specific_move(3) -- overhead
+character_specific.ibuki.moves["5001D"] = make_specific_move(3) -- overhead
+character_specific.ibuki.moves["5001E"] = make_specific_move(3) -- overhead
+character_specific.ibuki.moves["5001F"] = make_specific_move(3) -- overhead
+
 
 -- menu
 function checkbox_menu_item(_name, _property_name)
@@ -547,6 +524,38 @@ function swap_inputs(_in_input_table, _out_input_table)
   swap("Strong Kick")
 end
 
+-- app data
+is_menu_open = false
+menu_selected_index = 1
+pending_input_sequence = nil
+
+-- game data
+frame_number = 0
+preparing_counterattack = false
+recovery_time = 0
+is_in_match = false
+knockeddown = false
+flying_after_knockdown = false
+onground_after_knockdown = false
+fastrecovery_countdown = -1
+P1_previous_is_attacking = false
+P1_previous_is_attacking_ext = false
+P1_previous_action_ext = nil
+
+function make_player()
+  return {
+    character = -1,
+    facing_right = false,
+    is_attacking = false,
+    is_attacking_ext = false, -- for target combos
+    pos_x = 0,
+    pos_y = 0,
+    action = 0,
+  }
+end
+P1 = make_player()
+P2 = make_player()
+
 -- program
 
 function on_start()
@@ -596,10 +605,11 @@ function before_frame()
   P1.character = memory.readbyte(0x02011387)
   P1.facing_right = memory.readbyte(0x02068C77) > 0
   P1.is_attacking = memory.readbyte(0x02069094) > 0
+  P1.is_attacking_ext = memory.readbyte(0x02069095) > 0
   P1.pos_x = memory_read(0x02068CD0, 2)
   P1.pos_y = memory_read(0x02068CD4, 2)
   P1.action = memory_read(0x02068D19, 3)
-
+  P1.action_ext = memory_read(0x02068D99, 3)
 
   P2.character = memory.readbyte(0x02011388)
   P2.facing_right = memory.readbyte(0x0206910F) > 0
@@ -644,49 +654,71 @@ function before_frame()
 
   -- blocking
   if is_in_match and not training_settings.swap_characters and training_settings.blocking_mode == 2 then
-    if P1.is_attacking and not P1_previous_is_attacking then
-      waiting_for_block = true
-      waiting_for_block_frame = 0
-      low_attack = frame_input.P1.down.down
+    if not P1.is_attacking_ext then
+      if P1.is_attacking and not P1_previous_is_attacking then
+        waiting_for_block = true
+        waiting_for_block_frame = 0
+
+        hit_type = 1
+        if P1.pos_y > 0 then
+          hit_type = 3
+        elseif frame_input.P1.down.down then
+          hit_type = 2
+        end
+        blocking_distance = 150
+        blocking_frame_delay = 1
+
+        local current_move = string.format("%X", P1.action)
+        if character_specific[characters[P1.character]].moves[current_move] ~= nil then
+          local specific_hit_type = character_specific[characters[P1.character]].moves[current_move].hit_type
+          local specific_blocking_distance = character_specific[characters[P1.character]].moves[current_move].blocking_distance
+          local specific_blocking_frame_delay = character_specific[characters[P1.character]].moves[current_move].frame_delay
+
+          if specific_hit_type then hit_type = specific_hit_type end
+          if specific_blocking_distance then blocking_distance = specific_blocking_distance end
+          if specific_blocking_frame_delay then blocking_frame_delay = specific_blocking_frame_delay end
+        end
+        --print(current_move.."."..tostring(low_attack).."."..blocking_distance.."."..blocking_frame_delay)
+      end
+    else
+      if P1.action_ext ~= P1_previous_action_ext then
+        waiting_for_block = true
+        waiting_for_block_frame = 0
+
+        hit_type = 1
+        if P1.pos_y > 0 then
+          hit_type = 3
+        elseif frame_input.P1.down.down then
+          hit_type = 2
+        end
+        blocking_distance = 150
+        blocking_frame_delay = 1
+
+        local current_move = string.format("%X", P1.action_ext)
+      end
     end
 
-    if not P1.is_attacking and P1_previous_is_attacking then
+    if (not P1.is_attacking and P1_previous_is_attacking) then
       waiting_for_block = false
     end
 
     if waiting_for_block then
-      print(string.format("%X", P1.action).."."..(P1.pos_x - P2.pos_x).."."..tostring(low_attack))
+      --print(string.format("%X", P1.action).."."..(P1.pos_x - P2.pos_x).."."..hit_type)
 
       local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x)
-      local current_move = string.format("%X", P1.action)
-      local blocking_distance = 150
-      local frame_delay = 1
 
-      if character_specific[characters[P1.character]].moves[current_move] ~= nil then
-        local specific_hit_type = character_specific[characters[P1.character]].moves[current_move].hit_type
-        local specific_blocking_distance = character_specific[characters[P1.character]].moves[current_move].blocking_distance
-        local specific_frame_delay = character_specific[characters[P1.character]].moves[current_move].frame_delay
-
-        if specific_hit_type == 2 then
-          low_attack = true
-        elseif specific_hit_type == 3 then
-          low_attack = false          
-        end
-        if specific_blocking_distance then blocking_distance = specific_blocking_distance end
-        if specific_frame_delay then frame_delay = specific_frame_delay end
-      end
-
-      if distance_from_enemy < blocking_distance and waiting_for_block_frame >= frame_delay then
-
-
-
+      if (distance_from_enemy < blocking_distance and waiting_for_block_frame >= blocking_frame_delay) then
         if P2.facing_right then
           input['P2 Left'] = true
         else
           input['P2 Right'] = true
         end
 
-        input['P2 Down'] = low_attack
+        if hit_type == 2 then
+          input['P2 Down'] = true
+        elseif hit_type == 3 then
+          input['P2 Down'] = false
+        end
 
       end
 
@@ -694,6 +726,8 @@ function before_frame()
     end
   end
   P1_previous_is_attacking = P1.is_attacking
+  P1_previous_is_attacking_ext = P1.is_attacking_ext
+  P1_previous_action_ext = P1.action_ext
 
   -- fast recovery
   if is_in_match then
