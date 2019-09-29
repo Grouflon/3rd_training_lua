@@ -275,6 +275,12 @@ fast_recovery_mode =
   "always",
 }
 
+blocking_style =
+{
+  "block",
+  "parry",
+}
+
 blocking_mode =
 {
   "never",
@@ -287,6 +293,14 @@ hit_type =
   "normal",
   "low",
   "overhead",
+}
+
+standing_state =
+{
+  "knockeddown",
+  "standing",
+  "crouched",
+  "airborne",
 }
 
 -- character specific stuff
@@ -309,28 +323,37 @@ for i = 1, #characters do
   character_specific[characters[i]] = make_character_specific()
 end
 
--- HK
-character_specific.ibuki.moves["40010"] = make_specific_move(1, 8, 135)
+debug_framedata = true
 
--- FMK
-character_specific.ibuki.moves["4000E"] = make_specific_move(3) -- overhead
+-- IBUKI
+character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 120, type = 1 } -- LP
+character_specific.ibuki.moves["f690"] = { startup = 6, active = 2, range = 120, type = 1 } -- MP
+character_specific.ibuki.moves["f838"] = { -- back MP
+  { startup = 6, active = 1, range = 100, type = 1 },
+  { startup = 8, active = 5, range = 100, type = 1 },
+}
+character_specific.ibuki.moves["3a48"] = { -- target MP
+  { startup = 6, active = 1, range = 100, type = 1 },
+  { startup = 8, active = 7, range = 100, type = 1 },
+}
+character_specific.ibuki.moves["fc48"] = { -- HP
+  { startup = 13, active = 8, range = 100, type = 1 },
+  { startup = 18, active = 3, range = 120, type = 1 },
+}
+character_specific.ibuki.moves["fa10"] = { -- close HP
+  { startup = 9, active = 1, range = 70, type = 1 },
+  { startup = 10, active = 4, range = 70, type = 1 },
+}
+character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 150, type = 3 } -- Air MK
 
--- neck breaker
-character_specific.ibuki.moves["50024"] = make_specific_move(2) -- low
-character_specific.ibuki.moves["50025"] = make_specific_move(2) -- low
-character_specific.ibuki.moves["50026"] = make_specific_move(2) -- low
-character_specific.ibuki.moves["50027"] = make_specific_move(2) -- low
-
--- rekka
-character_specific.ibuki.moves["50028"] = make_specific_move(2) -- low
-character_specific.ibuki.moves["5002A"] = make_specific_move(2) -- low
-character_specific.ibuki.moves["50066"] = make_specific_move(2) -- low
-
--- penguin Kick
-character_specific.ibuki.moves["5001C"] = make_specific_move(3) -- overhead
-character_specific.ibuki.moves["5001D"] = make_specific_move(3) -- overhead
-character_specific.ibuki.moves["5001E"] = make_specific_move(3) -- overhead
-character_specific.ibuki.moves["5001F"] = make_specific_move(3) -- overhead
+-- ALEX
+character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 100, type = 1 } -- LP
+character_specific.alex.moves["b224"] = { startup = 16, active = 5, range = 125, type = 1 } -- HK
+character_specific.alex.moves["b714"] = { startup = 13, active = 5, range = 125, type = 1 } -- CRHP
+character_specific.alex.moves["5e54"] = { -- Flash Chop (Ex) (does not correspond to the frame data. I don't know why, maybe it's split in several animations)
+  { startup = 4, active = 2, range = 125, type = 1 },
+  { startup = 8, active = 2, range = 125, type = 1 },
+}
 
 
 -- menu
@@ -445,6 +468,7 @@ end
 training_settings = {
   swap_characters = false,
   pose = 1,
+  blocking_style = 1,
   blocking_mode = 1,
   fast_recovery_mode = 1,
   infinite_time = true,
@@ -456,6 +480,7 @@ training_settings = {
 menu = {
   checkbox_menu_item("Swap Characters", "swap_characters"),
   list_menu_item("Pose", "pose", pose),
+  list_menu_item("Blocking Style", "blocking_style", blocking_style),
   list_menu_item("Blocking", "blocking_mode", blocking_mode),
   list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
   checkbox_menu_item("Infinite Time", "infinite_time"),
@@ -538,9 +563,17 @@ knockeddown = false
 flying_after_knockdown = false
 onground_after_knockdown = false
 fastrecovery_countdown = -1
+
 P1_previous_is_attacking = false
 P1_previous_is_attacking_ext = false
 P1_previous_action_ext = nil
+P1_previous_action_count = 0
+P1_previous_standing_state = 1
+P1_current_animation = 0
+P1_current_animation_startframe = 0
+P1_current_animation_activeframe = 0
+P1_current_animation_recoverframe = 0
+P1_current_animation_freezeframes = 0
 
 function make_player()
   return {
@@ -548,9 +581,15 @@ function make_player()
     facing_right = false,
     is_attacking = false,
     is_attacking_ext = false, -- for target combos
+    input_capacity = 0,
+    standing_state = 1,
     pos_x = 0,
     pos_y = 0,
     action = 0,
+    action_ext = 0,
+    action_count = 0,
+    animation = 0,
+    is_blocking = false,
   }
 end
 P1 = make_player()
@@ -606,15 +645,21 @@ function before_frame()
   P1.facing_right = memory.readbyte(0x02068C77) > 0
   P1.is_attacking = memory.readbyte(0x02069094) > 0
   P1.is_attacking_ext = memory.readbyte(0x02069095) > 0
+  P1.input_capacity = memory_read(0x020690D8, 2)
+  P1.standing_state = memory.readbyte(0x02068F03)
   P1.pos_x = memory_read(0x02068CD0, 2)
   P1.pos_y = memory_read(0x02068CD4, 2)
   P1.action = memory_read(0x02068D19, 3)
   P1.action_ext = memory_read(0x02068D99, 3)
+  P1.action_count = memory.readbyte(0x020690C5)
+  P1.animation = bit.tohex(memory_read(0x02068E6E, 2),4)
+
 
   P2.character = memory.readbyte(0x02011388)
   P2.facing_right = memory.readbyte(0x0206910F) > 0
   P2.pos_x = memory_read(0x02069168, 2)
   P2.pos_y = memory_read(0x0206916C, 2)
+  P2.is_blocking = memory.readbyte(0x020694D7) > 0
   P2.action = memory_read(0x020691B1, 3)
 
   -- life bars
@@ -654,80 +699,175 @@ function before_frame()
 
   -- blocking
   if is_in_match and not training_settings.swap_characters and training_settings.blocking_mode == 2 then
-    if not P1.is_attacking_ext then
-      if P1.is_attacking and not P1_previous_is_attacking then
-        waiting_for_block = true
-        waiting_for_block_frame = 0
-
-        hit_type = 1
-        if P1.pos_y > 0 then
-          hit_type = 3
-        elseif frame_input.P1.down.down then
-          hit_type = 2
-        end
-        blocking_distance = 150
-        blocking_frame_delay = 1
-
-        local current_move = string.format("%X", P1.action)
-        if character_specific[characters[P1.character]].moves[current_move] ~= nil then
-          local specific_hit_type = character_specific[characters[P1.character]].moves[current_move].hit_type
-          local specific_blocking_distance = character_specific[characters[P1.character]].moves[current_move].blocking_distance
-          local specific_blocking_frame_delay = character_specific[characters[P1.character]].moves[current_move].frame_delay
-
-          if specific_hit_type then hit_type = specific_hit_type end
-          if specific_blocking_distance then blocking_distance = specific_blocking_distance end
-          if specific_blocking_frame_delay then blocking_frame_delay = specific_blocking_frame_delay end
-        end
-        --print(current_move.."."..tostring(low_attack).."."..blocking_distance.."."..blocking_frame_delay)
-      end
-    else
-      if P1.action_ext ~= P1_previous_action_ext then
-        waiting_for_block = true
-        waiting_for_block_frame = 0
-
-        hit_type = 1
-        if P1.pos_y > 0 then
-          hit_type = 3
-        elseif frame_input.P1.down.down then
-          hit_type = 2
-        end
-        blocking_distance = 150
-        blocking_frame_delay = 1
-
-        local current_move = string.format("%X", P1.action_ext)
-      end
-    end
-
-    if (not P1.is_attacking and P1_previous_is_attacking) then
+    if waiting_for_block
+    and (frame_number - P1_current_animation_startframe) >= 2
+    and (
+      (bit.band(P1.input_capacity, 0x0087) == 0x0087 or bit.band(P1.input_capacity, 0x0086) == 0x0086)
+      or (P1_previous_standing_state >= 3 and P1.standing_state < 3) -- landing
+    )
+    then
       waiting_for_block = false
+      --print(bit.tohex(P1_current_animation)..": "..(P1_current_animation_activeframe - P1_current_animation_startframe).."/"..(frame_number - P1_current_animation_activeframe))
+      if debug_framedata then
+        print(P1_current_animation.." : "..(P1_current_animation_activeframe - P1_current_animation_startframe).."/"..(P1_current_animation_recoverframe - P1_current_animation_activeframe).."/"..(frame_number - P1_current_animation_recoverframe))
+      end
+      --print("end")
     end
+
+    if not waiting_for_block and P1.is_attacking and not P1_previous_is_attacking then
+      waiting_for_block = true
+      --print("begin")
+      P1_current_animation = P1.animation
+      P1_current_animation_startframe = frame_number
+      P1_current_animation_activeframe = frame_number
+      P1_current_animation_recoverframe = frame_number
+      P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
+      --print(P1_current_animation_freezeframes)
+      P1_has_parried = {}
+      --print("1 "..bit.tohex(P1_current_animation))
+    end
+    --print(bit.tohex(P1.input_capacity))
+
 
     if waiting_for_block then
-      --print(string.format("%X", P1.action).."."..(P1.pos_x - P2.pos_x).."."..hit_type)
+      --print(bit.tohex(P1.input_capacity))
 
-      local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x)
-
-      if (distance_from_enemy < blocking_distance and waiting_for_block_frame >= blocking_frame_delay) then
-        if P2.facing_right then
-          input['P2 Left'] = true
-        else
-          input['P2 Right'] = true
+      if P1_current_animation ~= P1.animation then
+        if debug_framedata then
+          print(P1_current_animation.." : "..(P1_current_animation_activeframe - P1_current_animation_startframe).."/"..(P1_current_animation_recoverframe - P1_current_animation_activeframe).."/"..(frame_number - P1_current_animation_recoverframe))
         end
 
-        if hit_type == 2 then
-          input['P2 Down'] = true
-        elseif hit_type == 3 then
-          input['P2 Down'] = false
-        end
-
+        --print("begin")
+        P1_current_animation = P1.animation
+        P1_current_animation_startframe = frame_number
+        P1_current_animation_activeframe = frame_number
+        P1_current_animation_recoverframe = frame_number
+        P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
+        --print(P1_current_animation_freezeframes)
+        P1_has_parried = {}
+        --sprint("2 "..bit.tohex(P1_current_animation))
       end
 
-      waiting_for_block_frame = waiting_for_block_frame + 1
+      --if (memory.readbyte(0x02068CB1) > 0 or memory.readbyte(0x0206914B) > 0) then
+      --  print(memory.readbyte(0x02068CB1).." "..memory.readbyte(0x0206914B).." "..(0xFFFF - memory_read(0x02069148, 2)))
+      --end
+
+      if P1.action_count ~= P1_previous_action_count and P1.action_count > P1_previous_action_count then
+        P1_current_animation_activeframe = frame_number
+        --P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
+        if (debug_framedata) then
+          print("dist: "..math.abs(P1.pos_x - P2.pos_x))
+        end
+        --print("active")
+        --print(P1_current_animation_freezeframes)
+      end
+
+      if not P1.is_attacking and P1_previous_is_attacking then
+        --print("recover")
+        P1_current_animation_recoverframe = frame_number
+      end
+
+      function handle_move(_move, _move_index)
+        if _move_index == nil then _move_index = 1 end
+
+        local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x)
+        local block_startframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup - 1
+        local block_stopframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup + _move.active
+        if training_settings.blocking_style == 1 and (distance_from_enemy <= _move.range and frame_number >= block_startframe and frame_number < block_stopframe) then
+          if P2.facing_right then
+            input['P2 Left'] = true
+          else
+            input['P2 Right'] = true
+          end
+
+          if _move.type == 2 then
+            input['P2 Down'] = true
+          elseif _move.type == 3 then
+            input['P2 Down'] = false
+          end
+        end
+
+        -- Parry test
+        local parry_startframe = block_startframe + (#P1_has_parried * 16)
+        if  training_settings.blocking_style == 2 and (distance_from_enemy <= _move.range and frame_number >= parry_startframe) and not P1_has_parried[_move_index] then
+          P1_has_parried[_move_index] = true
+          print("hop"..parry_startframe.." "..(frame_number - P1_current_animation_startframe))
+          if _move.type == 2 then
+            input['P2 Down'] = true
+          else
+            if P2.facing_right then
+              input['P2 Right'] = true
+            else
+              input['P2 Left'] = true
+            end
+          end
+        end
+      end
+
+      local move = {}
+      local default_startup = 2
+      local default_active = 10
+      local default_range = 150
+      local default_type = 1
+
+      if P1.standing_state == 1 then -- STANDING
+        default_type = 1
+      elseif P1.standing_state == 2 then --CROUCHED
+        default_type = 2
+      elseif P1.standing_state >= 3 then --AIRBORNE
+        default_type = 3
+      end
+
+      if (character_specific[characters[P1.character]].moves[P1_current_animation]) then
+        local hit_count = #character_specific[characters[P1.character]].moves[P1_current_animation]
+        if hit_count > 0 then
+          -- multi hit
+          for i = 1, hit_count do
+            move.startup = character_specific[characters[P1.character]].moves[P1_current_animation][i].startup
+            move.active = character_specific[characters[P1.character]].moves[P1_current_animation][i].active
+            move.range = character_specific[characters[P1.character]].moves[P1_current_animation][i].range
+            move.type = character_specific[characters[P1.character]].moves[P1_current_animation][i].type
+
+            if move.startup == nil then move.startup = default_startup end
+            if move.active == nil then move.active = default_active end
+            if move.range == nil then move.range = default_range end
+            if move.type == nil then move.type = default_type end
+
+            handle_move(move, i)
+          end
+        else
+          -- single hit
+          move.startup = character_specific[characters[P1.character]].moves[P1_current_animation].startup
+          move.active = character_specific[characters[P1.character]].moves[P1_current_animation].active
+          move.range = character_specific[characters[P1.character]].moves[P1_current_animation].range
+          move.type = character_specific[characters[P1.character]].moves[P1_current_animation].type
+
+          if move.startup == nil then move.startup = default_startup end
+          if move.active == nil then move.active = default_active end
+          if move.range == nil then move.range = default_range end
+          if move.type == nil then move.type = default_type end
+
+          handle_move(move)
+        end
+      else
+        -- generic handling
+        move.startup = default_startup
+        move.active = default_active
+        move.range = default_range
+        move.type = default_type
+
+        handle_move(move)
+      end
+
+      --print(P1.action_count)
     end
   end
+
   P1_previous_is_attacking = P1.is_attacking
   P1_previous_is_attacking_ext = P1.is_attacking_ext
   P1_previous_action_ext = P1.action_ext
+  P1_previous_action_count = P1.action_count
+  P1_previous_standing_state = P1.standing_state
 
   -- fast recovery
   if is_in_match then
