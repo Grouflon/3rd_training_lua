@@ -310,14 +310,6 @@ function make_character_specific()
   }
 end
 
-function make_specific_move(_hit_type, _frame_delay, _blocking_distance)
-  return {
-    hit_type = _hit_type,
-    frame_delay = _frame_delay,
-    blocking_distance = _blocking_distance,
-  }
-end
-
 character_specific = {}
 for i = 1, #characters do
   character_specific[characters[i]] = make_character_specific()
@@ -344,12 +336,51 @@ character_specific.ibuki.moves["fa10"] = { -- close HP
   { startup = 9, active = 1, range = 70, type = 1 },
   { startup = 10, active = 4, range = 70, type = 1 },
 }
-character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 150, type = 3 } -- Air MK
+character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 110, type = 1 } -- LK
+character_specific.ibuki.moves["01a8"] = { -- forward LK (not actual multihit, but self cancellable moves are hard to detect and considering them as multihit does the trick)
+  { startup = 5, active = 4, range = 110, type = 1 },
+  { startup = 14, active = 4, range = 110, type = 1 },
+  { startup = 23, active = 4, range = 110, type = 1 },
+  { startup = 34, active = 4, range = 110, type = 1 },
+  { startup = 43, active = 4, range = 110, type = 1 },
+  { startup = 52, active = 4, range = 110, type = 1 },
+  { startup = 61, active = 4, range = 110, type = 1 },
+  { startup = 70, active = 4, range = 110, type = 1 }, -- will hit after that if you continue spamming the move, but it's good enough right now
+}
+character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 85, type = 1 } -- MK
+character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 120, type = 1 } -- Back MK
+character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 110, type = 1 } -- Forward MK
+character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 110, type = 1 } -- Target Forward MK
+character_specific.ibuki.moves["0b10"] = { startup = 9, active = 3, range = 135, type = 1 } -- HK
+character_specific.ibuki.moves["0d90"] = { startup = 12, active = 1, range = 140, type = 1 } -- Forward HK
+character_specific.ibuki.moves["0920"] = { -- Close HK
+  { startup = 5, active = 1, range = 70, type = 1 },
+  { startup = 7, active = 6, range = 70, type = 1 },
+}
+character_specific.ibuki.moves["1058"] = { startup = 3, active = 3, range = 103, type = 1 } -- Cr LP
+character_specific.ibuki.moves["1118"] = { startup = 9, active = 7, range = 140, type = 1 } -- Cr MP
+character_specific.ibuki.moves["12a8"] = { startup = 8, active = 3, range = 95, type = 1 } -- Cr HP
+character_specific.ibuki.moves["14e0"] = { startup = 5, active = 3, range = 111, type = 2 } -- Cr LK
+character_specific.ibuki.moves["15f0"] = { startup = 6, active = 5, range = 141, type = 2 } -- Cr MK
+character_specific.ibuki.moves["19c0"] = { startup = 10, active = 2, range = 130, type = 2 } -- Cr HK
+character_specific.ibuki.moves["1c10"] = { startup = 3, active = 100, range = 115, vertical_range = 55, type = 3 } -- Neutral Air LP
+character_specific.ibuki.moves["1d10"] = { startup = 5, active = 7, range = 115, vertical_range = 65, type = 3 } -- Neutral Air MP
+character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 115, vertical_range = 75, type = 3 } -- Neutral Air HP
+character_specific.ibuki.moves["20f0"] = { startup = 4, active = 100, range = 122, vertical_range = 80, type = 3 } -- Neutral Air LK
+character_specific.ibuki.moves["2210"] = { startup = 5, active = 7, range = 122, vertical_range = 80, type = 3 } -- Neutral Air MK
+character_specific.ibuki.moves["2330"] = { startup = 10, active = 3, range = 125, vertical_range = 75, type = 3 } -- Neutral Air HK
+
+character_specific.ibuki.moves["2450"] = { startup = 3, active = 19, range = 110, vertical_range = 83, type = 3 } -- Air LP
+character_specific.ibuki.moves["25b0"] = { startup = 6, active = 13, range = 110, vertical_range = 83, type = 3 } -- Air MP
+character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 130, type = 3 } -- Air HP
+character_specific.ibuki.moves["2748"] = { startup = 3, active = 100, range = 90, type = 3 } -- Air LK
+character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 130, type = 3 } -- Air MK
+character_specific.ibuki.moves["29a8"] = character_specific.ibuki.moves["2330"] -- Air HK
 
 -- ALEX
 character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 100, type = 1 } -- LP
 character_specific.alex.moves["b224"] = { startup = 16, active = 5, range = 125, type = 1 } -- HK
-character_specific.alex.moves["b714"] = { startup = 13, active = 5, range = 125, type = 1 } -- CRHP
+character_specific.alex.moves["b714"] = { startup = 13, active = 5, range = 125, type = 1 } -- Cr HP
 character_specific.alex.moves["5e54"] = { -- Flash Chop (Ex) (does not correspond to the frame data. I don't know why, maybe it's split in several animations)
   { startup = 4, active = 2, range = 125, type = 1 },
   { startup = 8, active = 2, range = 125, type = 1 },
@@ -756,7 +787,7 @@ function before_frame()
         P1_current_animation_activeframe = frame_number
         --P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
         if (debug_framedata) then
-          print("dist: "..math.abs(P1.pos_x - P2.pos_x))
+          print("dist: "..math.abs(P1.pos_x - P2.pos_x)..","..(P1.pos_y - P2.pos_y))
         end
         --print("active")
         --print(P1_current_animation_freezeframes)
@@ -771,9 +802,16 @@ function before_frame()
         if _move_index == nil then _move_index = 1 end
 
         local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x)
+        local vertical_distance_from_enemy = P1.pos_y - P2.pos_y
+
+        -- completely release crouch when trying to parry
+        if  training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range then
+          input['P2 Down'] = false
+        end
+
         local block_startframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup - 1
         local block_stopframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup + _move.active
-        if training_settings.blocking_style == 1 and (distance_from_enemy <= _move.range and frame_number >= block_startframe and frame_number < block_stopframe) then
+        if training_settings.blocking_style == 1 and (distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range and frame_number >= block_startframe and frame_number < block_stopframe) then
           if P2.facing_right then
             input['P2 Left'] = true
           else
@@ -787,18 +825,24 @@ function before_frame()
           end
         end
 
-        -- Parry test
+        -- Parry
         local parry_startframe = block_startframe + (#P1_has_parried * 16)
-        if  training_settings.blocking_style == 2 and (distance_from_enemy <= _move.range and frame_number >= parry_startframe) and not P1_has_parried[_move_index] then
-          P1_has_parried[_move_index] = true
-          print("hop"..parry_startframe.." "..(frame_number - P1_current_animation_startframe))
-          if _move.type == 2 then
-            input['P2 Down'] = true
-          else
-            if P2.facing_right then
-              input['P2 Right'] = true
+        local parry_stopframe = block_stopframe + (#P1_has_parried * 16)
+        --print(distance_from_enemy..","..vertical_distance_from_enemy)
+        if  training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range then
+          if frame_number >= parry_startframe and frame_number < parry_stopframe and not P1_has_parried[_move_index] then
+            P1_has_parried[_move_index] = true
+            print("hop"..(parry_startframe - P1_current_animation_startframe).." "..(frame_number - P1_current_animation_startframe))
+            --print("l"..(P1_current_animation_freezeframes).." "..(_move.startup))
+
+            if _move.type == 2 then
+              input['P2 Down'] = true
             else
-              input['P2 Left'] = true
+              if P2.facing_right then
+                input['P2 Right'] = true
+              else
+                input['P2 Left'] = true
+              end
             end
           end
         end
@@ -808,6 +852,7 @@ function before_frame()
       local default_startup = 2
       local default_active = 10
       local default_range = 150
+      local default_vertical_range = 500
       local default_type = 1
 
       if P1.standing_state == 1 then -- STANDING
@@ -826,11 +871,13 @@ function before_frame()
             move.startup = character_specific[characters[P1.character]].moves[P1_current_animation][i].startup
             move.active = character_specific[characters[P1.character]].moves[P1_current_animation][i].active
             move.range = character_specific[characters[P1.character]].moves[P1_current_animation][i].range
+            move.vertical_range = character_specific[characters[P1.character]].moves[P1_current_animation][i].vertical_range
             move.type = character_specific[characters[P1.character]].moves[P1_current_animation][i].type
 
             if move.startup == nil then move.startup = default_startup end
             if move.active == nil then move.active = default_active end
             if move.range == nil then move.range = default_range end
+            if move.vertical_range == nil then move.vertical_range = default_vertical_range end
             if move.type == nil then move.type = default_type end
 
             handle_move(move, i)
@@ -840,11 +887,13 @@ function before_frame()
           move.startup = character_specific[characters[P1.character]].moves[P1_current_animation].startup
           move.active = character_specific[characters[P1.character]].moves[P1_current_animation].active
           move.range = character_specific[characters[P1.character]].moves[P1_current_animation].range
+          move.vertical_range = character_specific[characters[P1.character]].moves[P1_current_animation].vertical_range
           move.type = character_specific[characters[P1.character]].moves[P1_current_animation].type
 
           if move.startup == nil then move.startup = default_startup end
           if move.active == nil then move.active = default_active end
           if move.range == nil then move.range = default_range end
+          if move.vertical_range == nil then move.vertical_range = default_vertical_range end
           if move.type == nil then move.type = default_type end
 
           handle_move(move)
@@ -854,6 +903,7 @@ function before_frame()
         move.startup = default_startup
         move.active = default_active
         move.range = default_range
+        move.vertical_range = default_vertical_range
         move.type = default_type
 
         handle_move(move)
