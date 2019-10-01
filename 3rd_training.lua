@@ -128,8 +128,6 @@ function update_input()
   update_player_input(frame_input.P2, "HK", P2.HK)
 end
 
-seq_dp = { {"forward"}, {"down"}, {"down", "forward", "HP", "MP"} }
-
 function queue_input_sequence(_player, _sequence)
   if #_sequence == 0 then
     return
@@ -203,6 +201,10 @@ function process_pending_input_sequence()
   end
 end
 
+function clear_input_sequence()
+  pending_input_sequence = nil
+end
+
 -- training settings
 pose = {
   "normal",
@@ -225,10 +227,14 @@ stick_gesture = {
   "DPB",
   "HCharge",
   "VCharge",
+  "360",
   "DQCF",
   "DQCB",
-  "back+back",
-  "forward+forward",
+  "720",
+  "back dash",
+  "forward dash",
+  "Shun Goku Ratsu", -- Gouki hidden SA1
+  "Kongou Kokuretsu Zan", -- Gouki hidden SA2
 }
 
 button_gesture =
@@ -237,14 +243,55 @@ button_gesture =
   "LP",
   "MP",
   "HP",
-  "2P",
-  "3P",
+  "EXP",
   "LK",
   "MK",
   "HK",
-  "2K",
-  "3K",
+  "EXK",
 }
+
+function make_input_sequence(_stick, _button)
+  local sequence = {}
+  if      _stick == "none"    then sequence = { { } }
+  elseif  _stick == "forward" then sequence = { { "forward" } }
+  elseif  _stick == "back"    then sequence = { { "back" } }
+  elseif  _stick == "down"    then sequence = { { "down" } }
+  elseif  _stick == "up"      then sequence = { { "up" } }
+  elseif  _stick == "QCF"     then sequence = { { "down" }, {"down", "forward"}, {"forward"} }
+  elseif  _stick == "QCB"     then sequence = { { "down" }, {"down", "back"}, {"back"} }
+  elseif  _stick == "HCF"     then sequence = { { "back" }, {"down", "back"}, {"down"}, {"down", "forward"}, {"forward"} }
+  elseif  _stick == "HCB"     then sequence = { { "forward" }, {"down", "forward"}, {"down"}, {"down", "back"}, {"back"} }
+  elseif  _stick == "DPF"     then sequence = { { "forward" }, {"down"}, {"down", "forward"} }
+  elseif  _stick == "DPB"     then sequence = { { "back" }, {"down"}, {"down", "back"} }
+  elseif  _stick == "HCharge" then sequence = { { "back" }, {"forward"} }
+  elseif  _stick == "VCharge" then sequence = { { "down" }, {"up"} }
+  elseif  _stick == "360"     then sequence = { }
+  elseif  _stick == "DQCF"    then sequence = { { "down" }, {"down", "forward"}, {"forward"}, { "down" }, {"down", "forward"}, {"forward"} }
+  elseif  _stick == "DQCB"    then sequence = { { "down" }, {"down", "back"}, {"back"}, { "down" }, {"down", "back"}, {"back"} }
+  -- full moves special cases
+  elseif  _stick == "back dash" then sequence = { { "back" }, {}, { "back" } }
+    return sequence
+  elseif  _stick == "forward dash" then sequence = { { "forward" }, {}, { "forward" } }
+    return sequence
+  elseif  _stick == "Shun Goku Ratsu" then sequence = { { "LP" }, { "LP" }, { "forward", "LK" }, { "HP" } }
+    return sequence
+  elseif  _stick == "Kongou Kokuretsu Zan" then sequence = { { "down" }, {}, { "down" }, {}, { "down", "LP", "MP", "HP" } }
+    return sequence
+  end
+
+  if     _button == "none" then
+  elseif _button == "EXP"  then
+    table.insert(sequence[#sequence], "MP")
+    table.insert(sequence[#sequence], "HP")
+  elseif _button == "EXK"  then
+    table.insert(sequence[#sequence], "MK")
+    table.insert(sequence[#sequence], "HK")
+  else
+    table.insert(sequence[#sequence], _button)
+  end
+
+  return sequence
+end
 
 characters =
 {
@@ -306,7 +353,9 @@ standing_state =
 -- character specific stuff
 function make_character_specific()
   return {
-    moves={}
+    half_width = 40,
+    height = 40,
+    moves = {},
   }
 end
 
@@ -315,75 +364,116 @@ for i = 1, #characters do
   character_specific[characters[i]] = make_character_specific()
 end
 
+character_specific.alex.half_width = 45
+character_specific.chunli.half_width = 39
+character_specific.dudley.half_width = 29
+character_specific.elena.half_width = 44
+character_specific.gouki.half_width = 33
+character_specific.hugo.half_width = 43
+character_specific.ibuki.half_width = 34
+character_specific.ken.half_width = 30
+character_specific.makoto.half_width = 42
+character_specific.necro.half_width = 26
+character_specific.oro.half_width = 40
+character_specific.q.half_width = 25
+character_specific.remy.half_width = 32
+character_specific.ryu.half_width = 31
+character_specific.sean.half_width = 29
+character_specific.twelve.half_width = 33
+character_specific.urien.half_width = 36
+character_specific.yang.half_width = 41
+character_specific.yun.half_width = 37
+
+character_specific.alex.height = 104
+character_specific.chunli.height = 97
+character_specific.dudley.height = 109
+character_specific.elena.height = 88
+character_specific.gouki.height = 107
+character_specific.hugo.height = 137
+character_specific.ibuki.height = 92
+character_specific.ken.height = 107
+character_specific.makoto.height = 90
+character_specific.necro.height = 89
+character_specific.oro.height = 88
+character_specific.q.height = 130
+character_specific.remy.height = 114
+character_specific.ryu.height = 101
+character_specific.sean.height = 103
+character_specific.twelve.height = 91
+character_specific.urien.height = 121
+character_specific.yang.height = 89
+character_specific.yun.height = 89
+
+
 debug_framedata = true
 
 -- IBUKI
-character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 120, type = 1 } -- LP
-character_specific.ibuki.moves["f690"] = { startup = 6, active = 2, range = 120, type = 1 } -- MP
+character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 84, type = 1 } -- LP
+character_specific.ibuki.moves["f690"] = { startup = 6, active = 2, range = 84, type = 1 } -- MP
 character_specific.ibuki.moves["f838"] = { -- back MP
-  { startup = 6, active = 1, range = 100, type = 1 },
-  { startup = 8, active = 5, range = 100, type = 1 },
+  { startup = 6, active = 1, range = 64, type = 1 },
+  { startup = 8, active = 5, range = 64, type = 1 },
 }
 character_specific.ibuki.moves["3a48"] = { -- target MP
-  { startup = 6, active = 1, range = 100, type = 1 },
-  { startup = 8, active = 7, range = 100, type = 1 },
+  { startup = 6, active = 1, range = 64, type = 1 },
+  { startup = 8, active = 7, range = 64, type = 1 },
 }
 character_specific.ibuki.moves["fc48"] = { -- HP
-  { startup = 13, active = 8, range = 100, type = 1 },
-  { startup = 18, active = 3, range = 120, type = 1 },
+  { startup = 13, active = 8, range = 64, type = 1 },
+  { startup = 18, active = 3, range = 84, type = 1 },
 }
 character_specific.ibuki.moves["fa10"] = { -- close HP
-  { startup = 9, active = 1, range = 70, type = 1 },
-  { startup = 10, active = 4, range = 70, type = 1 },
+  { startup = 9, active = 1, range = 34, type = 1 },
+  { startup = 10, active = 4, range = 34, type = 1 },
 }
-character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 110, type = 1 } -- LK
+character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 74, type = 1 } -- LK
 character_specific.ibuki.moves["01a8"] = { -- forward LK (not actual multihit, but self cancellable moves are hard to detect and considering them as multihit does the trick)
-  { startup = 5, active = 4, range = 110, type = 1 },
-  { startup = 14, active = 4, range = 110, type = 1 },
-  { startup = 23, active = 4, range = 110, type = 1 },
-  { startup = 34, active = 4, range = 110, type = 1 },
-  { startup = 43, active = 4, range = 110, type = 1 },
-  { startup = 52, active = 4, range = 110, type = 1 },
-  { startup = 61, active = 4, range = 110, type = 1 },
-  { startup = 70, active = 4, range = 110, type = 1 }, -- will hit after that if you continue spamming the move, but it's good enough right now
+  { startup = 5, active = 4, range = 74, type = 1 },
+  { startup = 14, active = 4, range = 74, type = 1 },
+  { startup = 23, active = 4, range = 74, type = 1 },
+  { startup = 34, active = 4, range = 74, type = 1 },
+  { startup = 43, active = 4, range = 74, type = 1 },
+  { startup = 52, active = 4, range = 74, type = 1 },
+  { startup = 61, active = 4, range = 74, type = 1 },
+  { startup = 70, active = 4, range = 74, type = 1 }, -- will hit after that if you continue spamming the move, but it's good enough right now
 }
-character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 85, type = 1 } -- MK
-character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 120, type = 1 } -- Back MK
-character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 110, type = 1 } -- Forward MK
-character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 110, type = 1 } -- Target Forward MK
-character_specific.ibuki.moves["0b10"] = { startup = 9, active = 3, range = 135, type = 1 } -- HK
-character_specific.ibuki.moves["0d90"] = { startup = 12, active = 1, range = 140, type = 1 } -- Forward HK
+character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 49, type = 1 } -- MK
+character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 84, type = 1 } -- Back MK
+character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 74, type = 1 } -- Forward MK
+character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 74, type = 1 } -- Target Forward MK
+character_specific.ibuki.moves["0b10"] = { startup = 9, active = 3, range = 99, type = 1 } -- HK
+character_specific.ibuki.moves["0d90"] = { startup = 12, active = 1, range = 104, type = 1 } -- Forward HK
 character_specific.ibuki.moves["0920"] = { -- Close HK
-  { startup = 5, active = 1, range = 70, type = 1 },
-  { startup = 7, active = 6, range = 70, type = 1 },
+  { startup = 5, active = 1, range = 34, type = 1 },
+  { startup = 7, active = 6, range = 34, type = 1 },
 }
-character_specific.ibuki.moves["1058"] = { startup = 3, active = 3, range = 103, type = 1 } -- Cr LP
-character_specific.ibuki.moves["1118"] = { startup = 9, active = 7, range = 140, type = 1 } -- Cr MP
-character_specific.ibuki.moves["12a8"] = { startup = 8, active = 3, range = 95, type = 1 } -- Cr HP
-character_specific.ibuki.moves["14e0"] = { startup = 5, active = 3, range = 111, type = 2 } -- Cr LK
-character_specific.ibuki.moves["15f0"] = { startup = 6, active = 5, range = 141, type = 2 } -- Cr MK
-character_specific.ibuki.moves["19c0"] = { startup = 10, active = 2, range = 130, type = 2 } -- Cr HK
-character_specific.ibuki.moves["1c10"] = { startup = 3, active = 100, range = 115, vertical_range = 55, type = 3 } -- Neutral Air LP
-character_specific.ibuki.moves["1d10"] = { startup = 5, active = 7, range = 115, vertical_range = 65, type = 3 } -- Neutral Air MP
-character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 115, vertical_range = 75, type = 3 } -- Neutral Air HP
-character_specific.ibuki.moves["20f0"] = { startup = 4, active = 100, range = 122, vertical_range = 80, type = 3 } -- Neutral Air LK
-character_specific.ibuki.moves["2210"] = { startup = 5, active = 7, range = 122, vertical_range = 80, type = 3 } -- Neutral Air MK
-character_specific.ibuki.moves["2330"] = { startup = 10, active = 3, range = 125, vertical_range = 75, type = 3 } -- Neutral Air HK
+character_specific.ibuki.moves["1058"] = { startup = 3, active = 3, range = 67, type = 1 } -- Cr LP
+character_specific.ibuki.moves["1118"] = { startup = 9, active = 7, range = 104, type = 1 } -- Cr MP
+character_specific.ibuki.moves["12a8"] = { startup = 8, active = 3, range = 59, type = 1 } -- Cr HP
+character_specific.ibuki.moves["14e0"] = { startup = 5, active = 3, range = 75, type = 2 } -- Cr LK
+character_specific.ibuki.moves["15f0"] = { startup = 6, active = 5, range = 105, type = 2 } -- Cr MK
+character_specific.ibuki.moves["19c0"] = { startup = 10, active = 2, range = 94, type = 2 } -- Cr HK
+character_specific.ibuki.moves["1c10"] = { startup = 3, active = 100, range = 79, vertical_range = -66, type = 3 } -- Neutral Air LP
+character_specific.ibuki.moves["1d10"] = { startup = 5, active = 7, range = 79, vertical_range = -56, type = 3 } -- Neutral Air MP
+character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 79, vertical_range = -46, type = 3 } -- Neutral Air HP
+character_specific.ibuki.moves["20f0"] = { startup = 4, active = 100, range = 86, vertical_range = -41, type = 3 } -- Neutral Air LK
+character_specific.ibuki.moves["2210"] = { startup = 5, active = 7, range = 86, vertical_range = -41, type = 3 } -- Neutral Air MK
+character_specific.ibuki.moves["2330"] = { startup = 10, active = 3, range = 89, vertical_range = -46, type = 3 } -- Neutral Air HK
 
-character_specific.ibuki.moves["2450"] = { startup = 3, active = 19, range = 110, vertical_range = 83, type = 3 } -- Air LP
-character_specific.ibuki.moves["25b0"] = { startup = 6, active = 13, range = 110, vertical_range = 83, type = 3 } -- Air MP
-character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 130, type = 3 } -- Air HP
-character_specific.ibuki.moves["2748"] = { startup = 3, active = 100, range = 90, type = 3 } -- Air LK
-character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 130, type = 3 } -- Air MK
+character_specific.ibuki.moves["2450"] = { startup = 3, active = 19, range = 84, vertical_range = -38, type = 3 } -- Air LP
+character_specific.ibuki.moves["25b0"] = { startup = 6, active = 13, range = 84, vertical_range = -38, type = 3 } -- Air MP
+character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 94, type = 3 } -- Air HP
+character_specific.ibuki.moves["2748"] = { startup = 3, active = 100, range = 54, type = 3 } -- Air LK
+character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 94, type = 3 } -- Air MK
 character_specific.ibuki.moves["29a8"] = character_specific.ibuki.moves["2330"] -- Air HK
 
 -- ALEX
-character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 100, type = 1 } -- LP
-character_specific.alex.moves["b224"] = { startup = 16, active = 5, range = 125, type = 1 } -- HK
-character_specific.alex.moves["b714"] = { startup = 13, active = 5, range = 125, type = 1 } -- Cr HP
+character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 69, type = 1 } -- LP
+character_specific.alex.moves["b224"] = { startup = 16, active = 5, range = 94, type = 1 } -- HK
+character_specific.alex.moves["b714"] = { startup = 13, active = 5, range = 94, type = 1 } -- Cr HP
 character_specific.alex.moves["5e54"] = { -- Flash Chop (Ex) (does not correspond to the frame data. I don't know why, maybe it's split in several animations)
-  { startup = 4, active = 2, range = 125, type = 1 },
-  { startup = 8, active = 2, range = 125, type = 1 },
+  { startup = 4, active = 2, range = 94, type = 1 },
+  { startup = 8, active = 2, range = 94, type = 1 },
 }
 
 
@@ -501,6 +591,8 @@ training_settings = {
   pose = 1,
   blocking_style = 1,
   blocking_mode = 1,
+  counter_attack_stick = 1,
+  counter_attack_button = 1,
   fast_recovery_mode = 1,
   infinite_time = true,
   infinite_life = true,
@@ -513,6 +605,8 @@ menu = {
   list_menu_item("Pose", "pose", pose),
   list_menu_item("Blocking Style", "blocking_style", blocking_style),
   list_menu_item("Blocking", "blocking_mode", blocking_mode),
+  list_menu_item("Counter-Attack Move", "counter_attack_stick", stick_gesture),
+  list_menu_item("Counter-Attack Button", "counter_attack_button", button_gesture),
   list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
   checkbox_menu_item("Infinite Time", "infinite_time"),
   checkbox_menu_item("Infinite Life", "infinite_life"),
@@ -587,7 +681,7 @@ pending_input_sequence = nil
 
 -- game data
 frame_number = 0
-preparing_counterattack = false
+counterattack_sequence = nil
 recovery_time = 0
 is_in_match = false
 knockeddown = false
@@ -714,7 +808,7 @@ function before_frame()
   end
 
   -- pose
-  if is_in_match and not training_settings.swap_characters and not knockeddown then
+  if is_in_match and not training_settings.swap_characters and not knockeddown and pending_input_sequence == nil then
     if training_settings.pose == 2 then
       input['P2 Down'] = true
     elseif training_settings.pose == 3 then
@@ -729,7 +823,7 @@ function before_frame()
   end
 
   -- blocking
-  if is_in_match and not training_settings.swap_characters and training_settings.blocking_mode == 2 then
+  if is_in_match and not training_settings.swap_characters and training_settings.blocking_mode == 2 and pending_input_sequence == nil then
     if waiting_for_block
     and (frame_number - P1_current_animation_startframe) >= 2
     and (
@@ -787,7 +881,7 @@ function before_frame()
         P1_current_animation_activeframe = frame_number
         --P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
         if (debug_framedata) then
-          print("dist: "..math.abs(P1.pos_x - P2.pos_x)..","..(P1.pos_y - P2.pos_y))
+          print("dist: "..(math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width)..","..((P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height))
         end
         --print("active")
         --print(P1_current_animation_freezeframes)
@@ -801,8 +895,8 @@ function before_frame()
       function handle_move(_move, _move_index)
         if _move_index == nil then _move_index = 1 end
 
-        local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x)
-        local vertical_distance_from_enemy = P1.pos_y - P2.pos_y
+        local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width
+        local vertical_distance_from_enemy = (P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height
 
         -- completely release crouch when trying to parry
         if  training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range then
@@ -851,7 +945,7 @@ function before_frame()
       local move = {}
       local default_startup = 2
       local default_active = 10
-      local default_range = 150
+      local default_range = 114
       local default_vertical_range = 500
       local default_type = 1
 
@@ -967,16 +1061,18 @@ function before_frame()
   end
 
   -- counter attack
-  local local_recovery_time = memory.readbyte(0x0206928B)
-  if (local_recovery_time ~= 0) and (recovery_time == 0) then
-    recovery_time = local_recovery_time + 1
-    preparing_counterattack = true
+  if is_in_match and (training_settings.counter_attack_stick ~= 1 or training_settings.counter_attack_button ~= 1) then
+    local local_recovery_time = memory.readbyte(0x0206928B)
+    if local_recovery_time ~= 0 and local_recovery_time >= recovery_time then
+      clear_input_sequence()
+      recovery_time = local_recovery_time + 2
+      counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
+    end
   end
 
-  if (preparing_counterattack and recovery_time <= (#seq_dp + 1)) then
-    --input['P2 Up'] = true
-    --queue_input_sequence(2, seq_dp)
-    preparing_counterattack = false
+  if (counterattack_sequence and recovery_time <= (#counterattack_sequence + 1)) then
+    queue_input_sequence(2, counterattack_sequence)
+    counterattack_sequence = nil
   end
 
   if recovery_time > 0 then
