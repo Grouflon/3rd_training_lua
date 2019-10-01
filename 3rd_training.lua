@@ -596,6 +596,7 @@ training_settings = {
   fast_recovery_mode = 1,
   infinite_time = true,
   infinite_life = true,
+  infinite_meter = true,
   no_stun = true,
   display_input = true,
 }
@@ -610,6 +611,7 @@ menu = {
   list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
   checkbox_menu_item("Infinite Time", "infinite_time"),
   checkbox_menu_item("Infinite Life", "infinite_life"),
+  checkbox_menu_item("Infinite Meter", "infinite_meter"),
   checkbox_menu_item("No Stun", "no_stun"),
   checkbox_menu_item("Display Input", "display_input"),
 }
@@ -791,6 +793,16 @@ function before_frame()
   if training_settings.infinite_life then
     memory.writebyte(0x02068d0b, 160) -- p1
     memory.writebyte(0x020691a3, 160) -- p2
+  end
+
+  -- meter
+  if training_settings.infinite_meter then
+    -- 0x020695BF P1 meter count
+    -- 0x020695BD P1 max meter count
+    memory.writebyte(0x020695BF, memory.readbyte(0x020695BD))
+    -- 0x020695EB P2 meter count
+    -- 0x020695E9 P2 max meter count
+    memory.writebyte(0x020695EB, memory.readbyte(0x020695E9))
   end
 
   -- stun
