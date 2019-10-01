@@ -248,6 +248,9 @@ button_gesture =
   "MK",
   "HK",
   "EXK",
+  "LP+LK",
+  "MP+MK",
+  "HP+HK",
 }
 
 function make_input_sequence(_stick, _button)
@@ -285,6 +288,15 @@ function make_input_sequence(_stick, _button)
     table.insert(sequence[#sequence], "HP")
   elseif _button == "EXK"  then
     table.insert(sequence[#sequence], "MK")
+    table.insert(sequence[#sequence], "HK")
+  elseif _button == "LP+LK" then
+    table.insert(sequence[#sequence], "LP")
+    table.insert(sequence[#sequence], "LK")
+  elseif _button == "MP+MK" then
+    table.insert(sequence[#sequence], "MP")
+    table.insert(sequence[#sequence], "MK")
+  elseif _button == "HP+HK" then
+    table.insert(sequence[#sequence], "HP")
     table.insert(sequence[#sequence], "HK")
   else
     table.insert(sequence[#sequence], _button)
