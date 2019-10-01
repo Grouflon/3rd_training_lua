@@ -405,7 +405,7 @@ character_specific.yang.height = 89
 character_specific.yun.height = 89
 
 
-debug_framedata = true
+debug_framedata = false
 
 -- IBUKI
 character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 84, type = 1 } -- LP
@@ -1074,7 +1074,15 @@ function before_frame()
 
   -- counter attack
   if is_in_match and (training_settings.counter_attack_stick ~= 1 or training_settings.counter_attack_button ~= 1) then
-    local local_recovery_time = memory.readbyte(0x0206928B)
+
+    local local_recovery_time = 0
+    local freeze_time = 0xff - memory.readbyte(0x02069149)
+    if training_settings.blocking_style == 2 and freeze_time < 0x20 then
+      local_recovery_time = freeze_time
+      --print("fr."..freeze_time)
+    else
+      local_recovery_time = memory.readbyte(0x0206928B)
+    end
     if local_recovery_time ~= 0 and local_recovery_time >= recovery_time then
       clear_input_sequence()
       recovery_time = local_recovery_time + 2
