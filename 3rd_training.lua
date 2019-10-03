@@ -327,15 +327,15 @@ function make_input_sequence(_stick, _button)
   elseif  _stick == "DPB"     then sequence = { { "back" }, {"down"}, {"down", "back"} }
   elseif  _stick == "HCharge" then sequence = { { "back", "h_charge" }, {"forward"} }
   elseif  _stick == "VCharge" then sequence = { { "down", "v_charge" }, {"up"} }
-  elseif  _stick == "360"     then sequence = { }
+  elseif  _stick == "360"     then sequence = { { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" }, { "up" } }
   elseif  _stick == "DQCF"    then sequence = { { "down" }, {"down", "forward"}, {"forward"}, { "down" }, {"down", "forward"}, {"forward"} }
-  elseif  _stick == "720"     then sequence = { }
+  elseif  _stick == "720"     then sequence = { { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" }, { "up" }, { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" } }
   -- full moves special cases
   elseif  _stick == "back dash" then sequence = { { "back" }, {}, { "back" } }
     return sequence
   elseif  _stick == "forward dash" then sequence = { { "forward" }, {}, { "forward" } }
     return sequence
-  elseif  _stick == "Shun Goku Ratsu" then sequence = { { "LP" }, { "LP" }, { "forward", "LK" }, { "HP" } }
+  elseif  _stick == "Shun Goku Ratsu" then sequence = { { "LP" }, {}, {}, { "LP" }, { "forward" }, {"LK"}, {}, { "HP" } }
     return sequence
   elseif  _stick == "Kongou Kokuretsu Zan" then sequence = { { "down" }, {}, { "down" }, {}, { "down", "LP", "MP", "HP" } }
     return sequence
@@ -806,6 +806,10 @@ function before_frame()
 
   local input = {}
 
+  if frame_input.P2.pressed.start then
+    queue_input_sequence(2, make_input_sequence("Shun Goku Ratsu", "none"))
+  end
+
   -- frame number
   frame_number = memory_read(0x02007F00, 4)
 
@@ -1158,6 +1162,9 @@ function before_frame()
     if local_recovery_time ~= 0 and local_recovery_time >= recovery_time then
       clear_input_sequence()
       recovery_time = local_recovery_time + 2
+      if stick_gesture[training_settings.counter_attack_stick] == "Shun Goku Ratsu" and training_settings.blocking_style == 2 then
+        recovery_time = recovery_time + 2 -- timing of this move seems to be so tight we need to adjust the timing in order to put it out after a parry
+      end
       counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
     end
   end
