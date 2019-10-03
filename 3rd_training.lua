@@ -160,7 +160,25 @@ function process_pending_input_sequence()
     player_data = P2
   end
 
-  print(player_data.facing_right)
+  --print(player_data.facing_right)
+
+  -- Charge moves memory locations
+  -- P1
+  -- 0x020259D8 H/Urien V/Oro V/Chun H/Q V/Remy
+  -- 0x020259F4 (+1C) V/Urien H/Q H/Remy
+  -- 0x02025A10 (+38) H/Oro H/Remy
+  -- 0x02025A2C (+54) V/Urien V/Alex
+  -- 0x02025A48 (+70) H/Alex
+
+  -- P2
+  -- 0x02025FF8
+  -- 0x02026014
+  -- 0x02026030
+  -- 0x0202604C
+  -- 0x02026068
+
+  local charge_gauges = { { 0x020259D8, 0x020259F4, 0x02025A10, 0x02025A2C, 0x02025A48 }, { 0x02025FF8, 0x02026014, 0x02026030, 0x0202604C, 0x02026068 } }
+  local character = player_data.character
 
   local s = ""
   local input = {}
@@ -187,13 +205,55 @@ function process_pending_input_sequence()
       input_name = input_name.."Medium Kick"
     elseif current_frame_input[i] == "HK" then
       input_name = input_name.."Strong Kick"
+    elseif current_frame_input[i] == "h_charge" then
+      if characters[player_data.character] == "urien" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[player_data.character] == "oro" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][3], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][3]+1, 0xFF)
+      elseif characters[player_data.character] == "chunli" then
+      elseif characters[player_data.character] == "q" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][2], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
+      elseif characters[player_data.character] == "remy" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][2], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][3], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][3]+1, 0xFF)
+      elseif characters[player_data.character] == "alex" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][5], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][5]+1, 0xFF)
+      end
+    elseif current_frame_input[i] == "v_charge" then
+      if characters[player_data.character] == "urien" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][2], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][4], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][4]+1, 0xFF)
+      elseif characters[player_data.character] == "oro" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[player_data.character] == "chunli" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[player_data.character] == "q" then
+      elseif characters[player_data.character] == "remy" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[player_data.character] == "alex" then
+        memory.writebyte(charge_gauges[pending_input_sequence.player][4], 0xFF)
+        memory.writebyte(charge_gauges[pending_input_sequence.player][4]+1, 0xFF)
+      end
     end
     input[input_name] = true
     s = s..input_name
   end
   joypad.set(input)
 
-  print(s)
+  --print(s)
 
   pending_input_sequence.current_frame = pending_input_sequence.current_frame + 1
   if pending_input_sequence.current_frame > #pending_input_sequence.sequence then
@@ -229,7 +289,6 @@ stick_gesture = {
   "VCharge",
   "360",
   "DQCF",
-  "DQCB",
   "720",
   "back dash",
   "forward dash",
@@ -266,11 +325,11 @@ function make_input_sequence(_stick, _button)
   elseif  _stick == "HCB"     then sequence = { { "forward" }, {"down", "forward"}, {"down"}, {"down", "back"}, {"back"} }
   elseif  _stick == "DPF"     then sequence = { { "forward" }, {"down"}, {"down", "forward"} }
   elseif  _stick == "DPB"     then sequence = { { "back" }, {"down"}, {"down", "back"} }
-  elseif  _stick == "HCharge" then sequence = { { "back" }, {"forward"} }
-  elseif  _stick == "VCharge" then sequence = { { "down" }, {"up"} }
+  elseif  _stick == "HCharge" then sequence = { { "back", "h_charge" }, {"forward"} }
+  elseif  _stick == "VCharge" then sequence = { { "down", "v_charge" }, {"up"} }
   elseif  _stick == "360"     then sequence = { }
   elseif  _stick == "DQCF"    then sequence = { { "down" }, {"down", "forward"}, {"forward"}, { "down" }, {"down", "forward"}, {"forward"} }
-  elseif  _stick == "DQCB"    then sequence = { { "down" }, {"down", "back"}, {"back"}, { "down" }, {"down", "back"}, {"back"} }
+  elseif  _stick == "720"     then sequence = { }
   -- full moves special cases
   elseif  _stick == "back dash" then sequence = { { "back" }, {}, { "back" } }
     return sequence
@@ -321,6 +380,7 @@ characters =
   "sean",
   "urien",
   "gouki",
+  "gill",
   "chunli",
   "makoto",
   "q",
@@ -1171,6 +1231,14 @@ function on_gui()
 end
 
 -- toolbox
+function to_bit(_bool)
+  if _bool then
+    return 1
+  else
+    return 0
+  end
+end
+
 function memory_read(_address, _size, _reverse)
   if _reverse == nil then _reverse = true end
   local result = 0
