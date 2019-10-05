@@ -477,7 +477,7 @@ character_specific.yang.height = 89
 character_specific.yun.height = 89
 
 
-debug_framedata = false
+debug_framedata = true
 
 -- IBUKI
 character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 84, type = 1 } -- LP
@@ -492,11 +492,11 @@ character_specific.ibuki.moves["3a48"] = { -- target MP
 }
 character_specific.ibuki.moves["fc48"] = { -- HP
   { startup = 13, active = 8, range = 64, type = 1 },
-  { startup = 18, active = 3, range = 84, type = 1 },
+  { startup = 28, active = 3, range = 84, type = 1 },
 }
 character_specific.ibuki.moves["fa10"] = { -- close HP
   { startup = 9, active = 1, range = 34, type = 1 },
-  { startup = 10, active = 4, range = 34, type = 1 },
+  { startup = 12, active = 6, range = 34, type = 1 },
 }
 character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 74, type = 1 } -- LK
 character_specific.ibuki.moves["01a8"] = { -- forward LK (not actual multihit, but self cancellable moves are hard to detect and considering them as multihit does the trick)
@@ -510,10 +510,12 @@ character_specific.ibuki.moves["01a8"] = { -- forward LK (not actual multihit, b
   { startup = 70, active = 4, range = 74, type = 1 }, -- will hit after that if you continue spamming the move, but it's good enough right now
 }
 character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 49, type = 1 } -- MK
-character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 84, type = 1 } -- Back MK
-character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 74, type = 1 } -- Forward MK
-character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 74, type = 1 } -- Target Forward MK
+character_specific.ibuki.moves["36c8"] = { startup = 3, active = 4, range = 49, type = 1 } -- Target MK
+character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 105, type = 1 } -- Back MK
+character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 74, type = 3 } -- Forward MK
+character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 74, type = 3 } -- Target Forward MK
 character_specific.ibuki.moves["0b10"] = { startup = 9, active = 3, range = 99, type = 1 } -- HK
+character_specific.ibuki.moves["3828"] = { startup = 6, active = 3, range = 99, type = 1 } -- Taret HK
 character_specific.ibuki.moves["0d90"] = { startup = 12, active = 1, range = 104, type = 1 } -- Forward HK
 character_specific.ibuki.moves["0920"] = { -- Close HK
   { startup = 5, active = 1, range = 34, type = 1 },
@@ -538,6 +540,55 @@ character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 94,
 character_specific.ibuki.moves["2748"] = { startup = 3, active = 100, range = 54, type = 3 } -- Air LK
 character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 94, type = 3 } -- Air MK
 character_specific.ibuki.moves["29a8"] = character_specific.ibuki.moves["2330"] -- Air HK
+
+character_specific.ibuki.moves["7ca0"] = { -- L Hien
+  { startup = 22, active = 3, range = 50, type = 3 },
+  { startup = 25, active = 8, range = 50, type = 3 },
+}
+character_specific.ibuki.moves["8100"] = { -- M Hien
+  { startup = 25, active = 3, range = 50, type = 3 },
+  { startup = 28, active = 8, range = 50, type = 3 },
+}
+character_specific.ibuki.moves["8560"] = { -- H Hien
+  { startup = 28, active = 4, range = 50, type = 3 },
+  { startup = 32, active = 8, range = 50, type = 3 },
+}
+character_specific.ibuki.moves["89c0"] = { -- EX Hien
+  { startup = 26, active = 4, range = 50, type = 3 },
+  { startup = 30, active = 8, range = 50, type = 3 },
+}
+
+character_specific.ibuki.moves["9910"] = { -- L Tsumuji
+  { startup = 11, active = 1, range = 105, type = 1 },
+  { startup = 26, active = 1, range = 105, type = 1 },
+}
+character_specific.ibuki.moves["a768"] = { startup = 10, active = 2, range = 105, type = 2 } -- L Tsumuji Kara
+character_specific.ibuki.moves["9de8"] = { -- M Tsumuji
+  { startup = 13, active = 1, range = 105, type = 1 },
+  { startup = 29, active = 2, range = 105, type = 1 },
+}
+character_specific.ibuki.moves["a428"] = { -- H Tsumuji
+  { startup = 14, active = 1, range = 105, type = 1 },
+  { startup = 28, active = 2, range = 105, type = 1 },
+}
+character_specific.ibuki.moves["f980"] = { startup = 6, active = 1, range = 105, type = 1 } -- H Tsumuji Kara
+character_specific.ibuki.moves["fc60"] = { startup = 9, active = 2, range = 110, type = 2 } -- H Tsumuji Kara
+
+character_specific.ibuki.moves["e490"] = { startup = 7, active = 1, range = 105, type = 1 } -- Ex Tsumuji (1)
+character_specific.ibuki.moves["e6f8"] = { -- Ex Tsumuji Kara (2-3 up)
+  { startup = 4, active = 1, range = 90, type = 1 },
+  { startup = 14, active = 2, range = 90, type = 1 },
+}
+character_specific.ibuki.moves["e988"] = { startup = 5, active = 1, range = 110, type = 1 } -- Ex Tsumuji Kara (4 up)
+character_specific.ibuki.moves["e810"] = { -- Ex Tsumuji Kara (2-3 down)
+  { startup = 9, active = 2, range = 110, type = 2 },
+  { startup = 26, active = 2, range = 110, type = 2 },
+}
+character_specific.ibuki.moves["eb60"] = { startup = 9, active = 2, range = 110, type = 2 } -- Ex Tsumuji Kara (4 down)
+
+character_specific.ibuki.moves["f320"] = { no_hit = true } -- L Kasumi Gake
+character_specific.ibuki.moves["f540"] = { no_hit = true } -- L Kasumi Gake
+character_specific.ibuki.moves["f760"] = { no_hit = true } -- L Kasumi Gake
 
 -- ALEX
 character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 69, type = 1 } -- LP
@@ -806,10 +857,6 @@ function before_frame()
 
   local input = {}
 
-  if frame_input.P2.pressed.start then
-    queue_input_sequence(2, make_input_sequence("Shun Goku Ratsu", "none"))
-  end
-
   -- frame number
   frame_number = memory_read(0x02007F00, 4)
 
@@ -969,7 +1016,7 @@ function before_frame()
         P1_current_animation_activeframe = frame_number
         --P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
         if (debug_framedata) then
-          print("dist: "..(math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width)..","..((P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height))
+          print("[hit] frame: "..(P1_current_animation_activeframe - P1_current_animation_startframe)..", dist: "..(math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width)..","..((P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height))
         end
         --print("active")
         --print(P1_current_animation_freezeframes)
@@ -983,16 +1030,26 @@ function before_frame()
       function handle_move(_move, _move_index)
         if _move_index == nil then _move_index = 1 end
 
+        if (character_specific[characters[P1.character]].moves[P1_current_animation]) then
+          if character_specific[characters[P1.character]].moves[P1_current_animation].no_hit then
+            --return
+          end
+        end
+
         local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width
         local vertical_distance_from_enemy = (P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height
 
+        local block_startframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup - 1
+        local block_stopframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup + _move.active
+        local parry_startframe = block_startframe + (#P1_has_parried * 16)
+        local parry_stopframe = block_stopframe + (#P1_has_parried * 16)
+
         -- completely release crouch when trying to parry
-        if  training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range then
+        if training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range and frame_number >= (parry_startframe - 1) and frame_number < parry_stopframe then
           input['P2 Down'] = false
         end
 
-        local block_startframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup - 1
-        local block_stopframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup + _move.active
+
         if training_settings.blocking_style == 1 and (distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range and frame_number >= block_startframe and frame_number < block_stopframe) then
           if P2.facing_right then
             input['P2 Left'] = true
@@ -1008,8 +1065,7 @@ function before_frame()
         end
 
         -- Parry
-        local parry_startframe = block_startframe + (#P1_has_parried * 16)
-        local parry_stopframe = block_stopframe + (#P1_has_parried * 16)
+
         --print(distance_from_enemy..","..vertical_distance_from_enemy)
         if  training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range then
           if frame_number >= parry_startframe and frame_number < parry_stopframe and not P1_has_parried[_move_index] then
@@ -1021,6 +1077,7 @@ function before_frame()
               input['P2 Down'] = true
             else
               if P2.facing_right then
+                print("right")
                 input['P2 Right'] = true
               else
                 input['P2 Left'] = true
