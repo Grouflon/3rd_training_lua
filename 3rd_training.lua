@@ -492,7 +492,7 @@ character_specific.ibuki.moves["3a48"] = { -- target MP
 }
 character_specific.ibuki.moves["fc48"] = { -- HP
   { startup = 13, active = 8, range = 64, type = 1 },
-  { startup = 28, active = 3, range = 84, type = 1 },
+  { startup = 18, active = 3, range = 84, type = 1 },
 }
 character_specific.ibuki.moves["fa10"] = { -- close HP
   { startup = 9, active = 1, range = 34, type = 1 },
@@ -1041,8 +1041,12 @@ function before_frame()
 
         local block_startframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup - 1
         local block_stopframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup + _move.active
-        local parry_startframe = block_startframe + (#P1_has_parried * 16)
-        local parry_stopframe = block_stopframe + (#P1_has_parried * 16)
+        local parry_count = 0
+        for i = 1,(_move_index - 1) do
+          if P1_has_parried[i] then parry_count = parry_count + 1 end
+        end
+        local parry_startframe = block_startframe + (parry_count * 16)
+        local parry_stopframe = block_stopframe + (parry_count * 16)
 
         -- completely release crouch when trying to parry
         if training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range and frame_number >= (parry_startframe - 1) and frame_number < parry_stopframe then
@@ -1070,14 +1074,13 @@ function before_frame()
         if  training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range then
           if frame_number >= parry_startframe and frame_number < parry_stopframe and not P1_has_parried[_move_index] then
             P1_has_parried[_move_index] = true
-            print("hop"..(parry_startframe - P1_current_animation_startframe).." "..(frame_number - P1_current_animation_startframe))
+            --print("hop"..(parry_startframe - P1_current_animation_startframe).." "..(frame_number - P1_current_animation_startframe))
             --print("l"..(P1_current_animation_freezeframes).." "..(_move.startup))
 
             if _move.type == 2 then
               input['P2 Down'] = true
             else
               if P2.facing_right then
-                print("right")
                 input['P2 Right'] = true
               else
                 input['P2 Left'] = true
@@ -1235,6 +1238,9 @@ function before_frame()
     recovery_time = recovery_time - 1
   end
 
+  if waiting_for_block then
+    --print("U:"..to_bit(input["P2 Up"]).." R:"..to_bit(input["P2 Right"]).." D:"..to_bit(input["P2 Down"]).." L:"..to_bit(input["P2 Left"]))
+  end
   joypad.set(input)
   process_pending_input_sequence()
 end
