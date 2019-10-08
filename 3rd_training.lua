@@ -160,8 +160,6 @@ function process_pending_input_sequence()
     player_data = P2
   end
 
-  --print(player_data.facing_right)
-
   -- Charge moves memory locations
   -- P1
   -- 0x020259D8 H/Urien V/Oro V/Chun H/Q V/Remy
@@ -421,184 +419,6 @@ standing_state =
   "crouched",
   "airborne",
 }
-
--- character specific stuff
-function make_character_specific()
-  return {
-    half_width = 40,
-    height = 40,
-    moves = {},
-  }
-end
-
-character_specific = {}
-for i = 1, #characters do
-  character_specific[characters[i]] = make_character_specific()
-end
-
-character_specific.alex.half_width = 45
-character_specific.chunli.half_width = 39
-character_specific.dudley.half_width = 29
-character_specific.elena.half_width = 44
-character_specific.gouki.half_width = 33
-character_specific.hugo.half_width = 43
-character_specific.ibuki.half_width = 34
-character_specific.ken.half_width = 30
-character_specific.makoto.half_width = 42
-character_specific.necro.half_width = 26
-character_specific.oro.half_width = 40
-character_specific.q.half_width = 25
-character_specific.remy.half_width = 32
-character_specific.ryu.half_width = 31
-character_specific.sean.half_width = 29
-character_specific.twelve.half_width = 33
-character_specific.urien.half_width = 36
-character_specific.yang.half_width = 41
-character_specific.yun.half_width = 37
-
-character_specific.alex.height = 104
-character_specific.chunli.height = 97
-character_specific.dudley.height = 109
-character_specific.elena.height = 88
-character_specific.gouki.height = 107
-character_specific.hugo.height = 137
-character_specific.ibuki.height = 92
-character_specific.ken.height = 107
-character_specific.makoto.height = 90
-character_specific.necro.height = 89
-character_specific.oro.height = 88
-character_specific.q.height = 130
-character_specific.remy.height = 114
-character_specific.ryu.height = 101
-character_specific.sean.height = 103
-character_specific.twelve.height = 91
-character_specific.urien.height = 121
-character_specific.yang.height = 89
-character_specific.yun.height = 89
-
-
-debug_framedata = true
-
--- IBUKI
-character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 84, type = 1 } -- LP
-character_specific.ibuki.moves["f690"] = { startup = 6, active = 2, range = 84, type = 1 } -- MP
-character_specific.ibuki.moves["f838"] = { -- back MP
-  { startup = 6, active = 1, range = 64, type = 1 },
-  { startup = 8, active = 5, range = 64, type = 1 },
-}
-character_specific.ibuki.moves["3a48"] = { -- target MP
-  { startup = 6, active = 1, range = 64, type = 1 },
-  { startup = 8, active = 7, range = 64, type = 1 },
-}
-character_specific.ibuki.moves["fc48"] = { -- HP
-  { startup = 13, active = 8, range = 64, type = 1 },
-  { startup = 18, active = 3, range = 84, type = 1 },
-}
-character_specific.ibuki.moves["fa10"] = { -- close HP
-  { startup = 9, active = 1, range = 34, type = 1 },
-  { startup = 12, active = 6, range = 34, type = 1 },
-}
-character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 74, type = 1 } -- LK
-character_specific.ibuki.moves["01a8"] = { -- forward LK (not actual multihit, but self cancellable moves are hard to detect and considering them as multihit does the trick)
-  { startup = 5, active = 4, range = 74, type = 1 },
-  { startup = 14, active = 4, range = 74, type = 1 },
-  { startup = 23, active = 4, range = 74, type = 1 },
-  { startup = 34, active = 4, range = 74, type = 1 },
-  { startup = 43, active = 4, range = 74, type = 1 },
-  { startup = 52, active = 4, range = 74, type = 1 },
-  { startup = 61, active = 4, range = 74, type = 1 },
-  { startup = 70, active = 4, range = 74, type = 1 }, -- will hit after that if you continue spamming the move, but it's good enough right now
-}
-character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 49, type = 1 } -- MK
-character_specific.ibuki.moves["36c8"] = { startup = 3, active = 4, range = 49, type = 1 } -- Target MK
-character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 105, type = 1 } -- Back MK
-character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 74, type = 3 } -- Forward MK
-character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 74, type = 3 } -- Target Forward MK
-character_specific.ibuki.moves["0b10"] = { startup = 9, active = 3, range = 99, type = 1 } -- HK
-character_specific.ibuki.moves["3828"] = { startup = 6, active = 3, range = 99, type = 1 } -- Taret HK
-character_specific.ibuki.moves["0d90"] = { startup = 12, active = 1, range = 104, type = 1 } -- Forward HK
-character_specific.ibuki.moves["0920"] = { -- Close HK
-  { startup = 5, active = 1, range = 34, type = 1 },
-  { startup = 7, active = 6, range = 34, type = 1 },
-}
-character_specific.ibuki.moves["1058"] = { startup = 3, active = 3, range = 67, type = 1 } -- Cr LP
-character_specific.ibuki.moves["1118"] = { startup = 9, active = 7, range = 104, type = 1 } -- Cr MP
-character_specific.ibuki.moves["12a8"] = { startup = 8, active = 3, range = 59, type = 1 } -- Cr HP
-character_specific.ibuki.moves["14e0"] = { startup = 5, active = 3, range = 75, type = 2 } -- Cr LK
-character_specific.ibuki.moves["15f0"] = { startup = 6, active = 5, range = 105, type = 2 } -- Cr MK
-character_specific.ibuki.moves["19c0"] = { startup = 10, active = 2, range = 94, type = 2 } -- Cr HK
-character_specific.ibuki.moves["1c10"] = { startup = 3, active = 100, range = 79, vertical_range = -66, type = 3 } -- Neutral Air LP
-character_specific.ibuki.moves["1d10"] = { startup = 5, active = 7, range = 79, vertical_range = -56, type = 3 } -- Neutral Air MP
-character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 79, vertical_range = -46, type = 3 } -- Neutral Air HP
-character_specific.ibuki.moves["20f0"] = { startup = 4, active = 100, range = 86, vertical_range = -41, type = 3 } -- Neutral Air LK
-character_specific.ibuki.moves["2210"] = { startup = 5, active = 7, range = 86, vertical_range = -41, type = 3 } -- Neutral Air MK
-character_specific.ibuki.moves["2330"] = { startup = 10, active = 3, range = 89, vertical_range = -46, type = 3 } -- Neutral Air HK
-
-character_specific.ibuki.moves["2450"] = { startup = 3, active = 19, range = 84, vertical_range = -38, type = 3 } -- Air LP
-character_specific.ibuki.moves["25b0"] = { startup = 6, active = 13, range = 84, vertical_range = -38, type = 3 } -- Air MP
-character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 94, type = 3 } -- Air HP
-character_specific.ibuki.moves["2748"] = { startup = 3, active = 100, range = 54, type = 3 } -- Air LK
-character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 94, type = 3 } -- Air MK
-character_specific.ibuki.moves["29a8"] = character_specific.ibuki.moves["2330"] -- Air HK
-
-character_specific.ibuki.moves["7ca0"] = { -- L Hien
-  { startup = 22, active = 3, range = 50, type = 3 },
-  { startup = 25, active = 8, range = 50, type = 3 },
-}
-character_specific.ibuki.moves["8100"] = { -- M Hien
-  { startup = 25, active = 3, range = 50, type = 3 },
-  { startup = 28, active = 8, range = 50, type = 3 },
-}
-character_specific.ibuki.moves["8560"] = { -- H Hien
-  { startup = 28, active = 4, range = 50, type = 3 },
-  { startup = 32, active = 8, range = 50, type = 3 },
-}
-character_specific.ibuki.moves["89c0"] = { -- EX Hien
-  { startup = 26, active = 4, range = 50, type = 3 },
-  { startup = 30, active = 8, range = 50, type = 3 },
-}
-
-character_specific.ibuki.moves["9910"] = { -- L Tsumuji
-  { startup = 11, active = 1, range = 105, type = 1 },
-  { startup = 26, active = 1, range = 105, type = 1 },
-}
-character_specific.ibuki.moves["a768"] = { startup = 10, active = 2, range = 105, type = 2 } -- L Tsumuji Kara
-character_specific.ibuki.moves["9de8"] = { -- M Tsumuji
-  { startup = 13, active = 1, range = 105, type = 1 },
-  { startup = 29, active = 2, range = 105, type = 1 },
-}
-character_specific.ibuki.moves["a428"] = { -- H Tsumuji
-  { startup = 14, active = 1, range = 105, type = 1 },
-  { startup = 28, active = 2, range = 105, type = 1 },
-}
-character_specific.ibuki.moves["f980"] = { startup = 6, active = 1, range = 105, type = 1 } -- H Tsumuji Kara
-character_specific.ibuki.moves["fc60"] = { startup = 9, active = 2, range = 110, type = 2 } -- H Tsumuji Kara
-
-character_specific.ibuki.moves["e490"] = { startup = 7, active = 1, range = 105, type = 1 } -- Ex Tsumuji (1)
-character_specific.ibuki.moves["e6f8"] = { -- Ex Tsumuji Kara (2-3 up)
-  { startup = 4, active = 1, range = 90, type = 1 },
-  { startup = 14, active = 2, range = 90, type = 1 },
-}
-character_specific.ibuki.moves["e988"] = { startup = 5, active = 1, range = 110, type = 1 } -- Ex Tsumuji Kara (4 up)
-character_specific.ibuki.moves["e810"] = { -- Ex Tsumuji Kara (2-3 down)
-  { startup = 9, active = 2, range = 110, type = 2 },
-  { startup = 26, active = 2, range = 110, type = 2 },
-}
-character_specific.ibuki.moves["eb60"] = { startup = 9, active = 2, range = 110, type = 2 } -- Ex Tsumuji Kara (4 down)
-
-character_specific.ibuki.moves["f320"] = { no_hit = true } -- L Kasumi Gake
-character_specific.ibuki.moves["f540"] = { no_hit = true } -- L Kasumi Gake
-character_specific.ibuki.moves["f760"] = { no_hit = true } -- L Kasumi Gake
-
--- ALEX
-character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 69, type = 1 } -- LP
-character_specific.alex.moves["b224"] = { startup = 16, active = 5, range = 94, type = 1 } -- HK
-character_specific.alex.moves["b714"] = { startup = 13, active = 5, range = 94, type = 1 } -- Cr HP
-character_specific.alex.moves["5e54"] = { -- Flash Chop (Ex) (does not correspond to the frame data. I don't know why, maybe it's split in several animations)
-  { startup = 4, active = 2, range = 94, type = 1 },
-  { startup = 8, active = 2, range = 94, type = 1 },
-}
-
 
 -- menu
 function checkbox_menu_item(_name, _property_name)
@@ -1366,3 +1186,183 @@ end
 emu.registerstart(on_start)
 emu.registerbefore(before_frame)
 gui.register(on_gui)
+
+
+-- character specific stuff
+function make_character_specific()
+  return {
+    half_width = 40,
+    height = 40,
+    moves = {},
+  }
+end
+
+character_specific = {}
+for i = 1, #characters do
+  character_specific[characters[i]] = make_character_specific()
+end
+
+-- Character Dimensions
+character_specific.alex.half_width = 45
+character_specific.chunli.half_width = 39
+character_specific.dudley.half_width = 29
+character_specific.elena.half_width = 44
+character_specific.gouki.half_width = 33
+character_specific.hugo.half_width = 43
+character_specific.ibuki.half_width = 34
+character_specific.ken.half_width = 30
+character_specific.makoto.half_width = 42
+character_specific.necro.half_width = 26
+character_specific.oro.half_width = 40
+character_specific.q.half_width = 25
+character_specific.remy.half_width = 32
+character_specific.ryu.half_width = 31
+character_specific.sean.half_width = 29
+character_specific.twelve.half_width = 33
+character_specific.urien.half_width = 36
+character_specific.yang.half_width = 41
+character_specific.yun.half_width = 37
+
+character_specific.alex.height = 104
+character_specific.chunli.height = 97
+character_specific.dudley.height = 109
+character_specific.elena.height = 88
+character_specific.gouki.height = 107
+character_specific.hugo.height = 137
+character_specific.ibuki.height = 92
+character_specific.ken.height = 107
+character_specific.makoto.height = 90
+character_specific.necro.height = 89
+character_specific.oro.height = 88
+character_specific.q.height = 130
+character_specific.remy.height = 114
+character_specific.ryu.height = 101
+character_specific.sean.height = 103
+character_specific.twelve.height = 91
+character_specific.urien.height = 121
+character_specific.yang.height = 89
+character_specific.yun.height = 89
+
+
+-- Character Moves
+debug_framedata = true
+
+-- IBUKI
+character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 84, type = 1 } -- LP
+character_specific.ibuki.moves["f690"] = { startup = 6, active = 2, range = 84, type = 1 } -- MP
+character_specific.ibuki.moves["f838"] = { -- back MP
+  { startup = 6, active = 1, range = 64, type = 1 },
+  { startup = 8, active = 5, range = 64, type = 1 },
+}
+character_specific.ibuki.moves["3a48"] = { -- target MP
+  { startup = 6, active = 1, range = 64, type = 1 },
+  { startup = 8, active = 7, range = 64, type = 1 },
+}
+character_specific.ibuki.moves["fc48"] = { -- HP
+  { startup = 13, active = 8, range = 64, type = 1 },
+  { startup = 18, active = 3, range = 84, type = 1 },
+}
+character_specific.ibuki.moves["fa10"] = { -- close HP
+  { startup = 9, active = 1, range = 34, type = 1 },
+  { startup = 12, active = 6, range = 34, type = 1 },
+}
+character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 74, type = 1 } -- LK
+character_specific.ibuki.moves["01a8"] = { -- forward LK (not actual multihit, but self cancellable moves are hard to detect and considering them as multihit does the trick)
+  { startup = 5, active = 4, range = 74, type = 1 },
+  { startup = 14, active = 4, range = 74, type = 1 },
+  { startup = 23, active = 4, range = 74, type = 1 },
+  { startup = 34, active = 4, range = 74, type = 1 },
+  { startup = 43, active = 4, range = 74, type = 1 },
+  { startup = 52, active = 4, range = 74, type = 1 },
+  { startup = 61, active = 4, range = 74, type = 1 },
+  { startup = 70, active = 4, range = 74, type = 1 }, -- will hit after that if you continue spamming the move, but it's good enough right now
+}
+character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 49, type = 1 } -- MK
+character_specific.ibuki.moves["36c8"] = { startup = 3, active = 4, range = 49, type = 1 } -- Target MK
+character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 105, type = 1 } -- Back MK
+character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 74, type = 3 } -- Forward MK
+character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 74, type = 3 } -- Target Forward MK
+character_specific.ibuki.moves["0b10"] = { startup = 9, active = 3, range = 99, type = 1 } -- HK
+character_specific.ibuki.moves["3828"] = { startup = 6, active = 3, range = 99, type = 1 } -- Taret HK
+character_specific.ibuki.moves["0d90"] = { startup = 12, active = 1, range = 104, type = 1 } -- Forward HK
+character_specific.ibuki.moves["0920"] = { -- Close HK
+  { startup = 5, active = 1, range = 34, type = 1 },
+  { startup = 7, active = 6, range = 34, type = 1 },
+}
+character_specific.ibuki.moves["1058"] = { startup = 3, active = 3, range = 67, type = 1 } -- Cr LP
+character_specific.ibuki.moves["1118"] = { startup = 9, active = 7, range = 104, type = 1 } -- Cr MP
+character_specific.ibuki.moves["12a8"] = { startup = 8, active = 3, range = 59, type = 1 } -- Cr HP
+character_specific.ibuki.moves["14e0"] = { startup = 5, active = 3, range = 75, type = 2 } -- Cr LK
+character_specific.ibuki.moves["15f0"] = { startup = 6, active = 5, range = 105, type = 2 } -- Cr MK
+character_specific.ibuki.moves["19c0"] = { startup = 10, active = 2, range = 94, type = 2 } -- Cr HK
+character_specific.ibuki.moves["1c10"] = { startup = 3, active = 100, range = 79, vertical_range = -66, type = 3 } -- Neutral Air LP
+character_specific.ibuki.moves["1d10"] = { startup = 5, active = 7, range = 79, vertical_range = -56, type = 3 } -- Neutral Air MP
+character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 79, vertical_range = -46, type = 3 } -- Neutral Air HP
+character_specific.ibuki.moves["20f0"] = { startup = 4, active = 100, range = 86, vertical_range = -41, type = 3 } -- Neutral Air LK
+character_specific.ibuki.moves["2210"] = { startup = 5, active = 7, range = 86, vertical_range = -41, type = 3 } -- Neutral Air MK
+character_specific.ibuki.moves["2330"] = { startup = 10, active = 3, range = 89, vertical_range = -46, type = 3 } -- Neutral Air HK
+
+character_specific.ibuki.moves["2450"] = { startup = 3, active = 19, range = 84, vertical_range = -38, type = 3 } -- Air LP
+character_specific.ibuki.moves["25b0"] = { startup = 6, active = 13, range = 84, vertical_range = -38, type = 3 } -- Air MP
+character_specific.ibuki.moves["1ee8"] = { startup = 11, active = 5, range = 94, type = 3 } -- Air HP
+character_specific.ibuki.moves["2748"] = { startup = 3, active = 100, range = 54, type = 3 } -- Air LK
+character_specific.ibuki.moves["2878"] = { startup = 7, active = 13, range = 94, type = 3 } -- Air MK
+character_specific.ibuki.moves["29a8"] = character_specific.ibuki.moves["2330"] -- Air HK
+
+character_specific.ibuki.moves["7ca0"] = { -- L Hien
+  { startup = 22, active = 3, range = 50, type = 3 },
+  { startup = 25, active = 8, range = 50, type = 3 },
+}
+character_specific.ibuki.moves["8100"] = { -- M Hien
+  { startup = 25, active = 3, range = 50, type = 3 },
+  { startup = 28, active = 8, range = 50, type = 3 },
+}
+character_specific.ibuki.moves["8560"] = { -- H Hien
+  { startup = 28, active = 4, range = 50, type = 3 },
+  { startup = 32, active = 8, range = 50, type = 3 },
+}
+character_specific.ibuki.moves["89c0"] = { -- EX Hien
+  { startup = 26, active = 4, range = 50, type = 3 },
+  { startup = 30, active = 8, range = 50, type = 3 },
+}
+
+character_specific.ibuki.moves["9910"] = { -- L Tsumuji
+  { startup = 11, active = 1, range = 105, type = 1 },
+  { startup = 26, active = 1, range = 105, type = 1 },
+}
+character_specific.ibuki.moves["a768"] = { startup = 10, active = 2, range = 105, type = 2 } -- L Tsumuji Kara
+character_specific.ibuki.moves["9de8"] = { -- M Tsumuji
+  { startup = 13, active = 1, range = 105, type = 1 },
+  { startup = 29, active = 2, range = 105, type = 1 },
+}
+character_specific.ibuki.moves["a428"] = { -- H Tsumuji
+  { startup = 14, active = 1, range = 105, type = 1 },
+  { startup = 28, active = 2, range = 105, type = 1 },
+}
+character_specific.ibuki.moves["f980"] = { startup = 6, active = 1, range = 105, type = 1 } -- H Tsumuji Kara
+character_specific.ibuki.moves["fc60"] = { startup = 9, active = 2, range = 110, type = 2 } -- H Tsumuji Kara
+
+character_specific.ibuki.moves["e490"] = { startup = 7, active = 1, range = 105, type = 1 } -- Ex Tsumuji (1)
+character_specific.ibuki.moves["e6f8"] = { -- Ex Tsumuji Kara (2-3 up)
+  { startup = 4, active = 1, range = 90, type = 1 },
+  { startup = 14, active = 2, range = 90, type = 1 },
+}
+character_specific.ibuki.moves["e988"] = { startup = 5, active = 1, range = 110, type = 1 } -- Ex Tsumuji Kara (4 up)
+character_specific.ibuki.moves["e810"] = { -- Ex Tsumuji Kara (2-3 down)
+  { startup = 9, active = 2, range = 110, type = 2 },
+  { startup = 26, active = 2, range = 110, type = 2 },
+}
+character_specific.ibuki.moves["eb60"] = { startup = 9, active = 2, range = 110, type = 2 } -- Ex Tsumuji Kara (4 down)
+
+character_specific.ibuki.moves["f320"] = { no_hit = true } -- L Kasumi Gake
+character_specific.ibuki.moves["f540"] = { no_hit = true } -- L Kasumi Gake
+character_specific.ibuki.moves["f760"] = { no_hit = true } -- L Kasumi Gake
+
+-- ALEX
+character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 69, type = 1 } -- LP
+character_specific.alex.moves["b224"] = { startup = 16, active = 5, range = 94, type = 1 } -- HK
+character_specific.alex.moves["b714"] = { startup = 13, active = 5, range = 94, type = 1 } -- Cr HP
+character_specific.alex.moves["5e54"] = { -- Flash Chop (Ex) (does not correspond to the frame data. I don't know why, maybe it's split in several animations)
+  { startup = 4, active = 2, range = 94, type = 1 },
+  { startup = 8, active = 2, range = 94, type = 1 },
+}
