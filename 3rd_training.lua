@@ -510,7 +510,7 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop)
         if self.loop then
           training_settings[self.property_name] = self.max
         else
-          training_settings[self.property_name] = self.max
+          training_settings[self.property_name] = self.min
         end
       end
     end
