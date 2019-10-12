@@ -422,17 +422,21 @@ standing_state =
 }
 
 -- menu
+default_color = 0xFFFFFFFF
+selected_color = 0xFF0000FF
+disabled_color = 0x999999FF
+
 function checkbox_menu_item(_name, _property_name)
   local o = {}
   o.name = _name
   o.property_name = _property_name
 
   function o:draw(_x, _y, _selected)
-    local c = 0xFFFFFFFF
+    local c = default_color
     local prefix = ""
     local suffix = ""
     if _selected then
-      c = 0xFF0000FF
+      c = selected_color
       prefix = "< "
       suffix = " >"
     end
@@ -457,11 +461,11 @@ function list_menu_item(_name, _property_name, _list)
     o.list = _list
 
     function o:draw(_x, _y, _selected)
-      local c = 0xFFFFFFFF
+      local c = default_color
       local prefix = ""
       local suffix = ""
       if _selected then
-        c = 0xFF0000FF
+        c = selected_color
         prefix = "< "
         suffix = " >"
       end
@@ -494,11 +498,11 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop)
     o.loop = _loop
 
     function o:draw(_x, _y, _selected)
-      local c = 0xFFFFFFFF
+      local c = default_color
       local prefix = ""
       local suffix = ""
       if _selected then
-        c = 0xFF0000FF
+        c = selected_color
         prefix = "< "
         suffix = " >"
       end
@@ -547,19 +551,29 @@ training_settings = {
 }
 
 menu = {
-  checkbox_menu_item("Swap Characters", "swap_characters"),
-  list_menu_item("Pose", "pose", pose),
-  list_menu_item("Blocking Style", "blocking_style", blocking_style),
-  list_menu_item("Blocking", "blocking_mode", blocking_mode),
-  integer_menu_item("Hits before Red Parry", "red_parry_hit_count", 1, 20, true),
-  list_menu_item("Counter-Attack Move", "counter_attack_stick", stick_gesture),
-  list_menu_item("Counter-Attack Button", "counter_attack_button", button_gesture),
-  list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
-  checkbox_menu_item("Infinite Time", "infinite_time"),
-  checkbox_menu_item("Infinite Life", "infinite_life"),
-  checkbox_menu_item("Infinite Meter", "infinite_meter"),
-  checkbox_menu_item("No Stun", "no_stun"),
-  checkbox_menu_item("Display Input", "display_input"),
+  {
+    name = "Dummy Settings",
+    entries = {
+      list_menu_item("Pose", "pose", pose),
+      list_menu_item("Blocking Style", "blocking_style", blocking_style),
+      list_menu_item("Blocking", "blocking_mode", blocking_mode),
+      integer_menu_item("Hits before Red Parry", "red_parry_hit_count", 1, 20, true),
+      list_menu_item("Counter-Attack Move", "counter_attack_stick", stick_gesture),
+      list_menu_item("Counter-Attack Button", "counter_attack_button", button_gesture),
+      list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
+    }
+  },
+  {
+    name = "Training Settings",
+    entries = {
+      checkbox_menu_item("Swap Characters", "swap_characters"),
+      checkbox_menu_item("Infinite Time", "infinite_time"),
+      checkbox_menu_item("Infinite Life", "infinite_life"),
+      checkbox_menu_item("Infinite Meter", "infinite_meter"),
+      checkbox_menu_item("No Stun", "no_stun"),
+      checkbox_menu_item("Display Input", "display_input"),
+    }
+  },
 }
 
 -- save/load
@@ -622,13 +636,9 @@ function swap_inputs(_in_input_table, _out_input_table)
   swap("Strong Kick")
 end
 
--- app data
-is_menu_open = false
-menu_selected_index = 1
-pending_input_sequence = nil
-
 -- game data
 frame_number = 0
+pending_input_sequence = nil
 counterattack_sequence = nil
 is_in_match = false
 knockeddown = false
@@ -1119,53 +1129,12 @@ function before_frame()
   process_pending_input_sequence()
 end
 
+is_menu_open = false
+main_menu_selected_index = 1
+is_main_menu_selected = true
+sub_menu_selected_index = 1
+
 function on_gui()
-
-  if is_in_match then
-    if frame_input.P1.pressed.start then
-      is_menu_open = (not is_menu_open)
-    end
-  else
-    is_menu_open = false
-  end
-
-  if is_menu_open then
-    local menu_x = 10
-    local menu_y = 10
-    local menu_y_interval = 9
-
-    if frame_input.P1.pressed.down then
-      menu_selected_index = menu_selected_index + 1
-      if menu_selected_index > #menu then
-        menu_selected_index = 1
-      end
-    end
-
-    if frame_input.P1.pressed.up then
-      menu_selected_index = menu_selected_index - 1
-      if menu_selected_index == 0 then
-        menu_selected_index = #menu
-      end
-    end
-
-    if frame_input.P1.pressed.left then
-      menu[menu_selected_index]:left()
-      save_training_data()
-    end
-
-    if frame_input.P1.pressed.right then
-      menu[menu_selected_index]:right()
-      save_training_data()
-    end
-
-    gui.box(0,0,383,223, 0x000000AA, 0x000000AA)
-
-    for i = 1, #menu do
-      menu[i]:draw(menu_x, menu_y + menu_y_interval * (i - 1), menu_selected_index == i)
-    end
-  else
-    gui.clearuncommitted()
-  end
 
   if is_in_match and training_settings.display_input then
     local i = joypad.get()
@@ -1173,7 +1142,7 @@ function on_gui()
     draw_input(280, 190, i, "P2 ")
   end
 
-  local debug_current_animation = true
+  local debug_current_animation = false
   if current_animation then
     last_valid_current_animation = current_animation
   end
@@ -1195,7 +1164,90 @@ function on_gui()
     if last_valid_next_hit then
       gui.text(_x + 5 , _y + _line_height * 2 , "next_hit: "..(last_valid_next_hit.start - last_valid_current_animation.start_frame)..", "..(last_valid_next_hit.stop - last_valid_current_animation.start_frame))
     end
+  end
 
+  if is_in_match then
+    if frame_input.P1.pressed.start then
+      is_menu_open = (not is_menu_open)
+    end
+  else
+    is_menu_open = false
+  end
+
+  if is_menu_open then
+
+    if frame_input.P1.pressed.down then
+      if is_main_menu_selected then
+        is_main_menu_selected = false
+        sub_menu_selected_index = 1
+      else
+        sub_menu_selected_index = sub_menu_selected_index + 1
+        if sub_menu_selected_index > #menu[main_menu_selected_index].entries then
+          is_main_menu_selected = true
+        end
+      end
+    end
+
+    if frame_input.P1.pressed.up then
+      if is_main_menu_selected then
+        is_main_menu_selected = false
+        sub_menu_selected_index = #menu[main_menu_selected_index].entries
+      else
+        sub_menu_selected_index = sub_menu_selected_index - 1
+        if sub_menu_selected_index == 0 then
+          is_main_menu_selected = true
+        end
+      end
+    end
+
+    if frame_input.P1.pressed.left then
+      if is_main_menu_selected then
+        main_menu_selected_index = main_menu_selected_index - 1
+        if main_menu_selected_index == 0 then
+          main_menu_selected_index = #menu
+        end
+      else
+        menu[main_menu_selected_index].entries[sub_menu_selected_index]:left()
+        save_training_data()
+      end
+    end
+
+    if frame_input.P1.pressed.right then
+      if is_main_menu_selected then
+        main_menu_selected_index = main_menu_selected_index + 1
+        if main_menu_selected_index > #menu then
+          main_menu_selected_index = 1
+        end
+      else
+        menu[main_menu_selected_index].entries[sub_menu_selected_index]:right()
+        save_training_data()
+      end
+    end
+
+    gui.box(0,0,383,223, 0x000000AA, 0x000000AA)
+    gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
+
+    for i = 1, #menu do
+      local _c = disabled_color
+      local _t = menu[i].name
+      if is_main_menu_selected and i == main_menu_selected_index then
+        _t = "< ".._t.." >"
+        _c = selected_color
+      elseif i == main_menu_selected_index then
+        _c = default_color
+      end
+      gui.text(10 + (i - 1) * 100, 6, _t, _c)
+    end
+
+
+    local _menu_x = 10
+    local _menu_y = 25
+    local _menu_y_interval = 9
+    for i = 1, #menu[main_menu_selected_index].entries do
+      menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * (i - 1), not is_main_menu_selected and sub_menu_selected_index == i)
+    end
+  else
+    gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
   end
 end
 
