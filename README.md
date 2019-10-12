@@ -10,3 +10,4 @@ Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR emulator
 - Record & replay system (random replay, replay as counter-attack)
 - Split options in several menus
 - Counter-Attack: Kara cancels
+- Detect self cancelled moves

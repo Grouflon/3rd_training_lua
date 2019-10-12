@@ -396,6 +396,7 @@ blocking_style =
 {
   "block",
   "parry",
+  "red parry",
 }
 
 blocking_mode =
@@ -534,6 +535,7 @@ training_settings = {
   pose = 1,
   blocking_style = 1,
   blocking_mode = 1,
+  red_parry_hit_count = 1,
   counter_attack_stick = 1,
   counter_attack_button = 1,
   fast_recovery_mode = 1,
@@ -549,6 +551,7 @@ menu = {
   list_menu_item("Pose", "pose", pose),
   list_menu_item("Blocking Style", "blocking_style", blocking_style),
   list_menu_item("Blocking", "blocking_mode", blocking_mode),
+  integer_menu_item("Hits before Red Parry", "red_parry_hit_count", 1, 20, true),
   list_menu_item("Counter-Attack Move", "counter_attack_stick", stick_gesture),
   list_menu_item("Counter-Attack Button", "counter_attack_button", button_gesture),
   list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
@@ -627,23 +630,11 @@ pending_input_sequence = nil
 -- game data
 frame_number = 0
 counterattack_sequence = nil
-recovery_time = 0
 is_in_match = false
 knockeddown = false
 flying_after_knockdown = false
 onground_after_knockdown = false
 fastrecovery_countdown = -1
-
-P1_previous_is_attacking = false
-P1_previous_is_attacking_ext = false
-P1_previous_action_ext = nil
-P1_previous_action_count = 0
-P1_previous_standing_state = 1
-P1_current_animation = 0
-P1_current_animation_startframe = 0
-P1_current_animation_activeframe = 0
-P1_current_animation_recoverframe = 0
-P1_current_animation_freezeframes = 0
 
 function make_player()
   return {
@@ -658,8 +649,11 @@ function make_player()
     action = 0,
     action_ext = 0,
     action_count = 0,
+    hit_count = 0,
+    block_count = 0,
     animation = 0,
     is_blocking = false,
+    remaining_freeze_frames = 0,
   }
 end
 P1 = make_player()
@@ -722,7 +716,10 @@ function before_frame()
   P1.action = memory_read(0x02068D19, 3)
   P1.action_ext = memory_read(0x02068D99, 3)
   P1.action_count = memory.readbyte(0x020690C5)
+  P1.connected_action_count = memory.readbyte(0x02068DE7)
+  P1.hit_count = memory.readbyte(0x02068DF5)
   P1.animation = bit.tohex(memory_read(0x02068E6E, 2),4)
+  P1.remaining_freeze_frames = memory.readbyte(0x02068CB1)
 
 
   P2.character = memory.readbyte(0x02011388)
@@ -731,6 +728,35 @@ function before_frame()
   P2.pos_y = memory_read(0x0206916C, 2)
   P2.is_blocking = memory.readbyte(0x020694D7) > 0
   P2.action = memory_read(0x020691B1, 3)
+
+  --
+
+  local debug_state_variables = false
+
+  P1_has_just_attacked = P1_previous_is_attacking ~= nil and P1.is_attacking and not P1_previous_is_attacking
+  if debug_state_variables and P1_has_just_attacked then print(frame_number.." - attacked") end
+  P1_previous_is_attacking = P1.is_attacking
+
+  P1_has_just_acted = P1_previous_action_count ~= nil and P1.action_count > P1_previous_action_count
+  if debug_state_variables and P1_has_just_acted then print(frame_number.." - acted ("..P1_previous_action_count.." > "..P1.action_count..")") end
+  P1_previous_action_count = P1.action_count
+
+  P1_has_just_hit = P1_previous_hit_count ~= nil and P1.hit_count > P1_previous_hit_count
+  if debug_state_variables and P1_has_just_hit then print(frame_number.." - hit ("..P1_previous_hit_count.." > "..P1.hit_count..")") end
+  P1_previous_hit_count = P1.hit_count
+
+  local _P1_blocked_count = P1.connected_action_count - P1.hit_count
+  P1_has_just_been_blocked = P1_previous_blocked_count ~= nil and _P1_blocked_count > P1_previous_blocked_count
+  if debug_state_variables and P1_has_just_been_blocked then print(frame_number.." - blocked ("..P1_previous_blocked_count.." > ".._P1_blocked_count..")") end
+  P1_previous_blocked_count = _P1_blocked_count
+
+  P1_has_just_landed = P1_previous_standing_state ~= nil and P1_previous_standing_state >= 3 and P1.standing_state < 3
+  if debug_state_variables and P1_has_just_landed then print(frame_number.." - landed ("..P1_previous_standing_state.." > "..P1.standing_state..")") end
+  P1_previous_standing_state = P1.standing_state
+
+  P1_has_animation_just_changed = P1_previous_animation ~= nil and P1_previous_animation ~= P1.animation
+  if debug_state_variables and P1_has_animation_just_changed then print(frame_number.." - animation changed ("..P1_previous_animation.." > "..P1.animation..")") end
+  P1_previous_animation = P1.animation
 
   -- life bars
   if training_settings.infinite_life then
@@ -777,209 +803,233 @@ function before_frame()
     end
   end
 
-  -- blocking
-  if is_in_match and not training_settings.swap_characters and training_settings.blocking_mode == 2 and pending_input_sequence == nil then
-    if waiting_for_block
-    and (frame_number - P1_current_animation_startframe) >= 2
-    and (
-      (bit.band(P1.input_capacity, 0x0087) == 0x0087 or bit.band(P1.input_capacity, 0x0086) == 0x0086)
-      or (P1_previous_standing_state >= 3 and P1.standing_state < 3) -- landing
-    )
-    then
-      waiting_for_block = false
-      --print(bit.tohex(P1_current_animation)..": "..(P1_current_animation_activeframe - P1_current_animation_startframe).."/"..(frame_number - P1_current_animation_activeframe))
-      if debug_framedata then
-        print(P1_current_animation.." : "..(P1_current_animation_activeframe - P1_current_animation_startframe).."/"..(P1_current_animation_recoverframe - P1_current_animation_activeframe).."/"..(frame_number - P1_current_animation_recoverframe))
+  --
+  function make_animation(_animation_id)
+
+    local _moves = character_specific[characters[P1.character]].moves[_animation_id]
+
+    -- normalize move data
+    if _moves == nil then
+      local _type = 1
+      if P1.standing_state == 1 then -- STANDING
+        _type = 1
+      elseif P1.standing_state == 2 then --CROUCHED
+        _type = 2
+      elseif P1.standing_state >= 3 then --AIRBORNE
+        _type = 3
       end
-      --print("end")
+      _moves = {
+        { startup = 2, active = 101, range = 114, vertical_range = 500, type = _type }
+      }
+    elseif #_moves == 0 then
+      _moves = {_moves}
     end
 
-    if not waiting_for_block and P1.is_attacking and not P1_previous_is_attacking then
-      waiting_for_block = true
-      --print("begin")
-      P1_current_animation = P1.animation
-      P1_current_animation_startframe = frame_number
-      P1_current_animation_activeframe = frame_number
-      P1_current_animation_recoverframe = frame_number
-      P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
-      --print(P1_current_animation_freezeframes)
-      P1_has_parried = {}
-      --print("1 "..bit.tohex(P1_current_animation))
+    -- force default vars
+    for i = 1,#_moves do
+      if _moves[i].vertical_range == nil then
+        _moves[i].vertical_range = 500
+      end
     end
-    --print(bit.tohex(P1.input_capacity))
 
+    local _animation = {}
+    _animation.id = _animation_id
+    _animation.moves = _moves
+    _animation.start_frame = frame_number
+    _animation.freeze_frames = {}
 
-    if waiting_for_block then
-      --print(bit.tohex(P1.input_capacity))
+    function _animation.get_next_hit(_frame)
+      if _frame == nil then _frame = frame_number end
 
-      if P1_current_animation ~= P1.animation then
-        if debug_framedata then
-          print(P1_current_animation.." : "..(P1_current_animation_activeframe - P1_current_animation_startframe).."/"..(P1_current_animation_recoverframe - P1_current_animation_activeframe).."/"..(frame_number - P1_current_animation_recoverframe))
+      for i = 1,#_animation.moves do
+        if not _animation.moves[i].no_hit then
+          local _active_begin = _animation.start_frame + _animation.moves[i].startup
+          -- add freeze frames
+          for j = 1, #_animation.freeze_frames do
+            if _animation.freeze_frames[j].start < _active_begin then
+              _active_begin = _active_begin + (_animation.freeze_frames[j].length)
+            end
+          end
+          local _active_end = _active_begin + _animation.moves[i].active
+          -- add freeze frames
+          for j = 1, #_animation.freeze_frames do
+            if _animation.freeze_frames[j].start < _active_end then
+              _active_end = _active_end + (_animation.freeze_frames[j].length)
+            end
+          end
+
+          -- let's assume everything is ordered correctly and take the first one
+          if _frame <= _active_end then
+            return {
+              start = _active_begin,
+              stop = _active_end,
+              range = _animation.moves[i].range,
+              vertical_range = _animation.moves[i].vertical_range,
+              type = _animation.moves[i].type,
+            }
+          end
         end
-
-        --print("begin")
-        P1_current_animation = P1.animation
-        P1_current_animation_startframe = frame_number
-        P1_current_animation_activeframe = frame_number
-        P1_current_animation_recoverframe = frame_number
-        P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
-        --print(P1_current_animation_freezeframes)
-        P1_has_parried = {}
-        --sprint("2 "..bit.tohex(P1_current_animation))
       end
 
-      --if (memory.readbyte(0x02068CB1) > 0 or memory.readbyte(0x0206914B) > 0) then
-      --  print(memory.readbyte(0x02068CB1).." "..memory.readbyte(0x0206914B).." "..(0xFFFF - memory_read(0x02069148, 2)))
+      return nil
+    end
+
+    return _animation
+  end
+
+  -- current animation
+  -- detects some of the self cancelled moves, but can't detect when a single hit move is cancelled during its active frames (i.e. ibuki's forward LK)
+  local _self_cancelled = false
+  if P1_has_just_attacked and current_animation and current_animation.id == P1.animation then
+    local _passed_last_hit = true
+    for i=1, #current_animation.moves do
+      if current_animation.start_frame + current_animation.moves[i].startup >= frame_number then
+        _passed_last_hit = false
+      end
+    end
+    _self_cancelled = _passed_last_hit
+  end
+  if P1_has_just_attacked or (current_animation and P1_has_animation_just_changed) or _self_cancelled then
+    if current_animation == nil or current_animation.id ~= P1.animation or _self_cancelled then
+      local _new_animation = make_animation(P1.animation)
+      if current_animation then
+        for i=1, #current_animation.freeze_frames do
+          local _freeze_frame = current_animation.freeze_frames[i]
+          local _freeze_frame_stop = _freeze_frame.start + _freeze_frame.length
+          if _new_animation.start_frame > _freeze_frame.start and _new_animation.start_frame < _freeze_frame_stop then
+            _new_animation.start_frame = _freeze_frame_stop
+          end
+        end
+      end
+      current_animation = _new_animation
+      next_hit_frame = current_animation.start_frame
+      --print("aseeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
+      --local __next_hit = current_animation.get_next_hit(next_hit_frame)
+      --if __next_hit then
+        --print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
       --end
+    end
+  elseif current_animation
+  and (bit.band(P1.input_capacity, 0x0087) == 0x0087 or bit.band(P1.input_capacity, 0x0086) == 0x0086)
+  or P1_has_just_landed
+  then
+    current_animation = nil
+  end
 
-      if P1.action_count ~= P1_previous_action_count and P1.action_count > P1_previous_action_count then
-        P1_current_animation_activeframe = frame_number
-        --P1_current_animation_freezeframes = memory.readbyte(0x02068CB1)
-        if (debug_framedata) then
-          print("[hit] frame: "..(P1_current_animation_activeframe - P1_current_animation_startframe)..", dist: "..(math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width)..","..((P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height))
+  -- freeze_frames
+  local _freeze_diff = 0
+  if P1_previous_remaining_freeze_frames then _freeze_diff = P1.remaining_freeze_frames - P1_previous_remaining_freeze_frames end
+  P1_previous_remaining_freeze_frames = P1.remaining_freeze_frames
+
+  -- only add freeze frame diff in case it is increases without having reached zero (not sure it actually happens)
+  if current_animation and _freeze_diff > 0 then
+    table.insert(current_animation.freeze_frames, { start = frame_number, length = _freeze_diff})
+  end
+
+  --if P1_has_just_hit and current_animation then
+  --  print("hit at frame "..frame_number - current_animation.start_frame)
+  --end
+  --if P1_has_just_been_blocked and current_animation then
+  --  print("blocked at frame "..frame_number - current_animation.start_frame)
+  --end
+
+  -- consecutive blocks
+  P1_has_just_been_parried = false
+
+  if current_animation and P1_has_just_been_blocked then
+    if training_settings.blocking_style == 2 then
+      P1_has_just_been_parried = true
+    elseif training_settings.blocking_style == 3 and P1_consecutive_blocked == training_settings.red_parry_hit_count then
+      P1_has_just_been_parried = true
+    end
+    P1_consecutive_blocked = P1_consecutive_blocked + 1
+  elseif not current_animation then
+    P1_consecutive_blocked = 0
+  end
+
+
+  if is_in_match
+  and not training_settings.swap_characters
+  and training_settings.blocking_mode ~= 1
+  and pending_input_sequence == nil
+  and current_animation ~= nil
+  then
+
+    -- blocking
+    local _next_hit = current_animation.get_next_hit(next_hit_frame)
+    --print("next hit frame "..next_hit_frame)
+    if _next_hit then
+
+      local _distance_from_enemy = math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width
+      local _vertical_distance_from_enemy = (P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height
+
+      local _is_within_range = _distance_from_enemy <= _next_hit.range and _vertical_distance_from_enemy <= _next_hit.vertical_range
+
+      if _is_within_range then
+        local _should_block = training_settings.blocking_style == 1 or (training_settings.blocking_style == 3 and training_settings.red_parry_hit_count ~= P1_consecutive_blocked)
+        local _should_parry = training_settings.blocking_style == 2 or (training_settings.blocking_style == 3 and training_settings.red_parry_hit_count == P1_consecutive_blocked)
+
+        if (P1_has_just_been_blocked or P1_has_just_hit) then
+
+          next_hit_frame = _next_hit.stop + 1
+          --print("bseeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
+          --local __next_hit = current_animation.get_next_hit(next_hit_frame)
+          --if __next_hit then
+          --  print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
+          --end
+        elseif frame_number >= _next_hit.stop then
+          next_hit_frame = _next_hit.stop + 1
+          --print("cseeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
+          --local __next_hit = current_animation.get_next_hit(next_hit_frame)
+          --if __next_hit then
+          --  print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
+          --end
         end
-        --print("active")
-        --print(P1_current_animation_freezeframes)
-      end
 
-      if not P1.is_attacking and P1_previous_is_attacking then
-        --print("recover")
-        P1_current_animation_recoverframe = frame_number
-      end
+        if _should_block then
+          --if (frame_number == (_next_hit.start - 1)) then
+          --  print("start block at frame "..(frame_number - current_animation.start_frame))
+          --end
 
-      function handle_move(_move, _move_index)
-        if _move_index == nil then _move_index = 1 end
+          if frame_number >= (_next_hit.start - 1) and frame_number < _next_hit.stop then
+            if P2.facing_right then
+              input['P2 Left'] = true
+              input['P2 Right'] = false
+            else
+              input['P2 Right'] = true
+              input['P2 Left'] = false
+            end
 
-        if (character_specific[characters[P1.character]].moves[P1_current_animation]) then
-          if character_specific[characters[P1.character]].moves[P1_current_animation].no_hit then
-            --return
+            if _next_hit.type == 2 then
+              input['P2 Down'] = true
+            elseif _next_hit.type == 3 then
+              input['P2 Down'] = false
+            end
           end
         end
 
-        local distance_from_enemy = math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width
-        local vertical_distance_from_enemy = (P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height
-
-        local block_startframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup - 1
-        local block_stopframe = P1_current_animation_startframe + P1_current_animation_freezeframes + _move.startup + _move.active
-        local parry_count = 0
-        for i = 1,(_move_index - 1) do
-          if P1_has_parried[i] then parry_count = parry_count + 1 end
-        end
-        local parry_startframe = block_startframe + (parry_count * 16)
-        local parry_stopframe = block_stopframe + (parry_count * 16)
-
-        -- completely release crouch when trying to parry
-        if training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range and frame_number >= (parry_startframe - 1) and frame_number < parry_stopframe then
-          input['P2 Down'] = false
-        end
-
-
-        if training_settings.blocking_style == 1 and (distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range and frame_number >= block_startframe and frame_number < block_stopframe) then
-          if P2.facing_right then
-            input['P2 Left'] = true
-          else
-            input['P2 Right'] = true
-          end
-
-          if _move.type == 2 then
-            input['P2 Down'] = true
-          elseif _move.type == 3 then
+        if _should_parry then
+          -- completely release crouch when trying to parry
+          if frame_number >= (_next_hit.start - 2) and frame_number < _next_hit.stop then
             input['P2 Down'] = false
           end
-        end
-
-        -- Parry
-
-        --print(distance_from_enemy..","..vertical_distance_from_enemy)
-        if  training_settings.blocking_style == 2 and distance_from_enemy <= _move.range and vertical_distance_from_enemy <= _move.vertical_range then
-          if frame_number >= parry_startframe and frame_number < parry_stopframe and not P1_has_parried[_move_index] then
-            P1_has_parried[_move_index] = true
-            --print("hop"..(parry_startframe - P1_current_animation_startframe).." "..(frame_number - P1_current_animation_startframe))
-            --print("l"..(P1_current_animation_freezeframes).." "..(_move.startup))
-
-            if _move.type == 2 then
+          if frame_number >= (_next_hit.start - 1) and frame_number < _next_hit.stop then
+            if _next_hit.type == 2 then
               input['P2 Down'] = true
             else
               if P2.facing_right then
                 input['P2 Right'] = true
+                input['P2 Left'] = false
               else
                 input['P2 Left'] = true
+                input['P2 Right'] = false
               end
             end
           end
         end
       end
-
-      local move = {}
-      local default_startup = 2
-      local default_active = 10
-      local default_range = 114
-      local default_vertical_range = 500
-      local default_type = 1
-
-      if P1.standing_state == 1 then -- STANDING
-        default_type = 1
-      elseif P1.standing_state == 2 then --CROUCHED
-        default_type = 2
-      elseif P1.standing_state >= 3 then --AIRBORNE
-        default_type = 3
-      end
-
-      if (character_specific[characters[P1.character]].moves[P1_current_animation]) then
-        local hit_count = #character_specific[characters[P1.character]].moves[P1_current_animation]
-        if hit_count > 0 then
-          -- multi hit
-          for i = 1, hit_count do
-            move.startup = character_specific[characters[P1.character]].moves[P1_current_animation][i].startup
-            move.active = character_specific[characters[P1.character]].moves[P1_current_animation][i].active
-            move.range = character_specific[characters[P1.character]].moves[P1_current_animation][i].range
-            move.vertical_range = character_specific[characters[P1.character]].moves[P1_current_animation][i].vertical_range
-            move.type = character_specific[characters[P1.character]].moves[P1_current_animation][i].type
-
-            if move.startup == nil then move.startup = default_startup end
-            if move.active == nil then move.active = default_active end
-            if move.range == nil then move.range = default_range end
-            if move.vertical_range == nil then move.vertical_range = default_vertical_range end
-            if move.type == nil then move.type = default_type end
-
-            handle_move(move, i)
-          end
-        else
-          -- single hit
-          move.startup = character_specific[characters[P1.character]].moves[P1_current_animation].startup
-          move.active = character_specific[characters[P1.character]].moves[P1_current_animation].active
-          move.range = character_specific[characters[P1.character]].moves[P1_current_animation].range
-          move.vertical_range = character_specific[characters[P1.character]].moves[P1_current_animation].vertical_range
-          move.type = character_specific[characters[P1.character]].moves[P1_current_animation].type
-
-          if move.startup == nil then move.startup = default_startup end
-          if move.active == nil then move.active = default_active end
-          if move.range == nil then move.range = default_range end
-          if move.vertical_range == nil then move.vertical_range = default_vertical_range end
-          if move.type == nil then move.type = default_type end
-
-          handle_move(move)
-        end
-      else
-        -- generic handling
-        move.startup = default_startup
-        move.active = default_active
-        move.range = default_range
-        move.vertical_range = default_vertical_range
-        move.type = default_type
-
-        handle_move(move)
-      end
-
-      --print(P1.action_count)
     end
   end
-
-  P1_previous_is_attacking = P1.is_attacking
-  P1_previous_is_attacking_ext = P1.is_attacking_ext
-  P1_previous_action_ext = P1.action_ext
-  P1_previous_action_count = P1.action_count
-  P1_previous_standing_state = P1.standing_state
 
   -- fast recovery
   if is_in_match then
@@ -1031,36 +1081,40 @@ function before_frame()
   -- counter attack
   if is_in_match and (training_settings.counter_attack_stick ~= 1 or training_settings.counter_attack_button ~= 1) then
 
-    local local_recovery_time = 0
-    local freeze_time = 0xff - memory.readbyte(0x02069149)
-    if training_settings.blocking_style == 2 and freeze_time < 0x20 then
-      local_recovery_time = freeze_time
-      --print("fr."..freeze_time)
-    else
-      local_recovery_time = memory.readbyte(0x0206928B)
-    end
-    if local_recovery_time ~= 0 and local_recovery_time >= recovery_time then
-      clear_input_sequence()
-      recovery_time = local_recovery_time + 2
-      if stick_gesture[training_settings.counter_attack_stick] == "Shun Goku Ratsu" and training_settings.blocking_style == 2 then
-        recovery_time = recovery_time + 2 -- timing of this move seems to be so tight we need to adjust the timing in order to put it out after a parry
-      end
+    if P1_has_just_been_parried then
+      --print(frame_number.." - setup ca")
+      counte_attack_frame = frame_number + 16
       counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
+      P2_counter_ref_time = -1
+    elseif P1_has_just_hit or P1_has_just_been_blocked then
+      --print(frame_number.." - init ca")
+      P2_counter_ref_time = memory.readbyte(0x0206928B)
+      clear_input_sequence()
+      counterattack_sequence = nil
+    end
+
+    if not counterattack_sequence then
+      local _recovery_time = memory.readbyte(0x0206928B)
+      if P2_counter_ref_time ~= -1 and _recovery_time ~= P2_counter_ref_time then
+        --print(frame_number.." - setup ca")
+        counte_attack_frame = frame_number + _recovery_time + 2
+        counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
+        P2_counter_ref_time = -1
+      end
+    end
+
+
+    if counterattack_sequence then
+      local _frames_remaining = counte_attack_frame - frame_number
+      --print(_frames_remaining)
+      if _frames_remaining <= (#counterattack_sequence + 1) then
+        --print(frame_number.." - queue ca")
+        queue_input_sequence(2, counterattack_sequence)
+        counterattack_sequence = nil
+      end
     end
   end
 
-  if (counterattack_sequence and recovery_time <= (#counterattack_sequence + 1)) then
-    queue_input_sequence(2, counterattack_sequence)
-    counterattack_sequence = nil
-  end
-
-  if recovery_time > 0 then
-    recovery_time = recovery_time - 1
-  end
-
-  if waiting_for_block then
-    --print("U:"..to_bit(input["P2 Up"]).." R:"..to_bit(input["P2 Right"]).." D:"..to_bit(input["P2 Down"]).." L:"..to_bit(input["P2 Left"]))
-  end
   joypad.set(input)
   process_pending_input_sequence()
 end
@@ -1117,6 +1171,31 @@ function on_gui()
     local i = joypad.get()
     draw_input(45, 190, i, "P1 ")
     draw_input(280, 190, i, "P2 ")
+  end
+
+  local debug_current_animation = true
+  if current_animation then
+    last_valid_current_animation = current_animation
+  end
+  if debug_current_animation and last_valid_current_animation then
+    local _x = 300
+    local _y = 20
+    local _line_height = 10
+    gui.text(_x + 5 , _y + _line_height * 0 , "animation: "..last_valid_current_animation.id)
+    local _freeze_frames = 0
+    for i = 1, #last_valid_current_animation.freeze_frames do
+      _freeze_frames = _freeze_frames + last_valid_current_animation.freeze_frames[i].length
+    end
+    gui.text(_x + 5 , _y + _line_height * 1 , "freeze_frames: ".._freeze_frames)
+
+    local _next_hit = last_valid_current_animation.get_next_hit()
+    if _next_hit then
+      last_valid_next_hit = _next_hit
+    end
+    if last_valid_next_hit then
+      gui.text(_x + 5 , _y + _line_height * 2 , "next_hit: "..(last_valid_next_hit.start - last_valid_current_animation.start_frame)..", "..(last_valid_next_hit.stop - last_valid_current_animation.start_frame))
+    end
+
   end
 end
 
@@ -1252,7 +1331,7 @@ character_specific.ibuki.moves["f5b0"] = { startup = 2, active = 2, range = 84, 
 character_specific.ibuki.moves["f690"] = { startup = 6, active = 2, range = 84, type = 1 } -- MP
 character_specific.ibuki.moves["f838"] = { -- back MP
   { startup = 6, active = 1, range = 64, type = 1 },
-  { startup = 8, active = 5, range = 64, type = 1 },
+  { startup = 7, active = 5, range = 64, type = 1 },
 }
 character_specific.ibuki.moves["3a48"] = { -- target MP
   { startup = 6, active = 1, range = 64, type = 1 },
@@ -1264,26 +1343,17 @@ character_specific.ibuki.moves["fc48"] = { -- HP
 }
 character_specific.ibuki.moves["fa10"] = { -- close HP
   { startup = 9, active = 1, range = 34, type = 1 },
-  { startup = 12, active = 6, range = 34, type = 1 },
+  { startup = 10, active = 6, range = 34, type = 1 },
 }
 character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 74, type = 1 } -- LK
-character_specific.ibuki.moves["01a8"] = { -- forward LK (not actual multihit, but self cancellable moves are hard to detect and considering them as multihit does the trick)
-  { startup = 5, active = 4, range = 74, type = 1 },
-  { startup = 14, active = 4, range = 74, type = 1 },
-  { startup = 23, active = 4, range = 74, type = 1 },
-  { startup = 34, active = 4, range = 74, type = 1 },
-  { startup = 43, active = 4, range = 74, type = 1 },
-  { startup = 52, active = 4, range = 74, type = 1 },
-  { startup = 61, active = 4, range = 74, type = 1 },
-  { startup = 70, active = 4, range = 74, type = 1 }, -- will hit after that if you continue spamming the move, but it's good enough right now
-}
+character_specific.ibuki.moves["01a8"] = { startup = 5, active = 4, range = 74, type = 1 } -- forward LK
 character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 49, type = 1 } -- MK
-character_specific.ibuki.moves["36c8"] = { startup = 3, active = 4, range = 49, type = 1 } -- Target MK
+character_specific.ibuki.moves["36c8"] = { startup = 4, active = 4, range = 49, type = 1 } -- Target MK
 character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 105, type = 1 } -- Back MK
 character_specific.ibuki.moves["0748"] = { startup = 3, active = 3, range = 74, type = 3 } -- Forward MK
 character_specific.ibuki.moves["30a0"] = { startup = 27, active = 3, range = 74, type = 3 } -- Target Forward MK
 character_specific.ibuki.moves["0b10"] = { startup = 9, active = 3, range = 99, type = 1 } -- HK
-character_specific.ibuki.moves["3828"] = { startup = 6, active = 3, range = 99, type = 1 } -- Taret HK
+character_specific.ibuki.moves["3828"] = { startup = 7, active = 3, range = 99, type = 1 } -- Target HK
 character_specific.ibuki.moves["0d90"] = { startup = 12, active = 1, range = 104, type = 1 } -- Forward HK
 character_specific.ibuki.moves["0920"] = { -- Close HK
   { startup = 5, active = 1, range = 34, type = 1 },
