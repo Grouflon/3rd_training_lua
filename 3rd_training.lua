@@ -422,9 +422,10 @@ standing_state =
 }
 
 -- menu
-default_color = 0xFFFFFFFF
-selected_color = 0xFF0000FF
-disabled_color = 0x999999FF
+text_default_color = 0xF7FFF7FF
+text_default_border_color = 0x101008FF
+text_selected_color = 0xFF0000FF
+text_disabled_color = 0x999999FF
 
 function checkbox_menu_item(_name, _property_name)
   local o = {}
@@ -432,15 +433,15 @@ function checkbox_menu_item(_name, _property_name)
   o.property_name = _property_name
 
   function o:draw(_x, _y, _selected)
-    local c = default_color
+    local c = text_default_color
     local prefix = ""
     local suffix = ""
     if _selected then
-      c = selected_color
+      c = text_selected_color
       prefix = "< "
       suffix = " >"
     end
-    gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c)
+    gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c, text_default_border_color)
   end
 
   function o:left()
@@ -461,15 +462,15 @@ function list_menu_item(_name, _property_name, _list)
     o.list = _list
 
     function o:draw(_x, _y, _selected)
-      local c = default_color
+      local c = text_default_color
       local prefix = ""
       local suffix = ""
       if _selected then
-        c = selected_color
+        c = text_selected_color
         prefix = "< "
         suffix = " >"
       end
-      gui.text(_x, _y, prefix..self.name.." : "..tostring(self.list[training_settings[self.property_name]])..suffix, c)
+      gui.text(_x, _y, prefix..self.name.." : "..tostring(self.list[training_settings[self.property_name]])..suffix, c, text_default_border_color)
     end
 
     function o:left()
@@ -498,15 +499,15 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop)
     o.loop = _loop
 
     function o:draw(_x, _y, _selected)
-      local c = default_color
+      local c = text_default_color
       local prefix = ""
       local suffix = ""
       if _selected then
-        c = selected_color
+        c = text_selected_color
         prefix = "< "
         suffix = " >"
       end
-      gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c)
+      gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c, text_default_border_color)
     end
 
     function o:left()
@@ -1228,25 +1229,28 @@ function on_gui()
       end
     end
 
-    gui.box(0,0,383,223, 0x000000AA, 0x000000AA)
-    gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
+    -- screen size 383,223
+    gui.box(43,40,340,180, 0x293139FF, 0x840000FF)
+    --gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
 
+    local _bar_x = 53
+    local _bar_y = 46
     for i = 1, #menu do
-      local _c = disabled_color
+      local _c = text_disabled_color
       local _t = menu[i].name
       if is_main_menu_selected and i == main_menu_selected_index then
         _t = "< ".._t.." >"
-        _c = selected_color
+        _c = text_selected_color
       elseif i == main_menu_selected_index then
-        _c = default_color
+        _c = text_default_color
       end
-      gui.text(10 + (i - 1) * 100, 6, _t, _c)
+      gui.text(_bar_x + (i - 1) * 100, _bar_y, _t, _c, text_default_border_color)
     end
 
 
-    local _menu_x = 10
-    local _menu_y = 25
-    local _menu_y_interval = 9
+    local _menu_x = 53
+    local _menu_y = 63
+    local _menu_y_interval = 10
     for i = 1, #menu[main_menu_selected_index].entries do
       menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * (i - 1), not is_main_menu_selected and sub_menu_selected_index == i)
     end
@@ -1291,23 +1295,23 @@ function draw_input(_x, _y, _input, _prefix)
   local start = _input[_prefix.."Start"]
   local coin = _input[_prefix.."Coin"]
   function col(_value)
-    if _value then return 0xFF0000FF else return 0xFFFFFFFF end
+    if _value then return text_selected_color else return text_default_color end
   end
 
-  gui.text(_x + 5 , _y + 0 , "^", col(up))
-  gui.text(_x + 5 , _y + 10, "v", col(down))
-  gui.text(_x + 0 , _y + 5, "<", col(left))
-  gui.text(_x + 10, _y + 5, ">", col(right))
+  gui.text(_x + 5 , _y + 0 , "^", col(up), text_default_border_color)
+  gui.text(_x + 5 , _y + 10, "v", col(down), text_default_border_color)
+  gui.text(_x + 0 , _y + 5, "<", col(left), text_default_border_color)
+  gui.text(_x + 10, _y + 5, ">", col(right), text_default_border_color)
 
-  gui.text(_x + 20, _y + 0, "LP", col(LP))
-  gui.text(_x + 30, _y + 0, "MP", col(MP))
-  gui.text(_x + 40, _y + 0, "HP", col(HP))
-  gui.text(_x + 20, _y + 10, "LK", col(LK))
-  gui.text(_x + 30, _y + 10, "MK", col(MK))
-  gui.text(_x + 40, _y + 10, "HK", col(HK))
+  gui.text(_x + 20, _y + 0, "LP", col(LP), text_default_border_color)
+  gui.text(_x + 30, _y + 0, "MP", col(MP), text_default_border_color)
+  gui.text(_x + 40, _y + 0, "HP", col(HP), text_default_border_color)
+  gui.text(_x + 20, _y + 10, "LK", col(LK), text_default_border_color)
+  gui.text(_x + 30, _y + 10, "MK", col(MK), text_default_border_color)
+  gui.text(_x + 40, _y + 10, "HK", col(HK), text_default_border_color)
 
-  gui.text(_x + 55, _y + 0, "S", col(start))
-  gui.text(_x + 55, _y + 10, "C", col(coin))
+  gui.text(_x + 55, _y + 0, "S", col(start), text_default_border_color)
+  gui.text(_x + 55, _y + 10, "C", col(coin), text_default_border_color)
 end
 
 function string:split(sep)
