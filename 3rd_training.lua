@@ -427,10 +427,12 @@ text_default_border_color = 0x101008FF
 text_selected_color = 0xFF0000FF
 text_disabled_color = 0x999999FF
 
-function checkbox_menu_item(_name, _property_name)
+function checkbox_menu_item(_name, _property_name, _default_value)
+  if _default_value == nil then _default_value = false end
   local o = {}
   o.name = _name
   o.property_name = _property_name
+  o.default_value = _default_value
 
   function o:draw(_x, _y, _selected)
     local c = text_default_color
@@ -452,87 +454,103 @@ function checkbox_menu_item(_name, _property_name)
     training_settings[self.property_name] = not training_settings[self.property_name]
   end
 
+  function o:cancel()
+    training_settings[self.property_name] = self.default_value
+  end
+
   return o
 end
 
-function list_menu_item(_name, _property_name, _list)
-    local o = {}
-    o.name = _name
-    o.property_name = _property_name
-    o.list = _list
+function list_menu_item(_name, _property_name, _list, _default_value)
+  if _default_value == nil then _default_value = 1 end
+  local o = {}
+  o.name = _name
+  o.property_name = _property_name
+  o.list = _list
+  o.default_value = _default_value
 
-    function o:draw(_x, _y, _selected)
-      local c = text_default_color
-      local prefix = ""
-      local suffix = ""
-      if _selected then
-        c = text_selected_color
-        prefix = "< "
-        suffix = " >"
-      end
-      gui.text(_x, _y, prefix..self.name.." : "..tostring(self.list[training_settings[self.property_name]])..suffix, c, text_default_border_color)
+  function o:draw(_x, _y, _selected)
+    local c = text_default_color
+    local prefix = ""
+    local suffix = ""
+    if _selected then
+      c = text_selected_color
+      prefix = "< "
+      suffix = " >"
     end
+    gui.text(_x, _y, prefix..self.name.." : "..tostring(self.list[training_settings[self.property_name]])..suffix, c, text_default_border_color)
+  end
 
-    function o:left()
-      training_settings[self.property_name] = training_settings[self.property_name] - 1
-      if training_settings[self.property_name] == 0 then
-        training_settings[self.property_name] = #self.list
-      end
+  function o:left()
+    training_settings[self.property_name] = training_settings[self.property_name] - 1
+    if training_settings[self.property_name] == 0 then
+      training_settings[self.property_name] = #self.list
     end
+  end
 
-    function o:right()
-      training_settings[self.property_name] = training_settings[self.property_name] + 1
-      if training_settings[self.property_name] > #self.list then
-        training_settings[self.property_name] = 1
-      end
+  function o:right()
+    training_settings[self.property_name] = training_settings[self.property_name] + 1
+    if training_settings[self.property_name] > #self.list then
+      training_settings[self.property_name] = 1
     end
+  end
 
-    return o
+  function o:cancel()
+    training_settings[self.property_name] = self.default_value
+  end
+
+  return o
 end
 
-function integer_menu_item(_name, _property_name, _min, _max, _loop)
-    local o = {}
-    o.name = _name
-    o.property_name = _property_name
-    o.min = _min
-    o.max = _max
-    o.loop = _loop
+function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_value)
+  if _default_value == nil then _default_value = _min end
+  local o = {}
+  o.name = _name
+  o.property_name = _property_name
+  o.min = _min
+  o.max = _max
+  o.loop = _loop
+  o.default_value = _default_value
 
-    function o:draw(_x, _y, _selected)
-      local c = text_default_color
-      local prefix = ""
-      local suffix = ""
-      if _selected then
-        c = text_selected_color
-        prefix = "< "
-        suffix = " >"
-      end
-      gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c, text_default_border_color)
+  function o:draw(_x, _y, _selected)
+    local c = text_default_color
+    local prefix = ""
+    local suffix = ""
+    if _selected then
+      c = text_selected_color
+      prefix = "< "
+      suffix = " >"
     end
+    gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c, text_default_border_color)
+  end
 
-    function o:left()
-      training_settings[self.property_name] = training_settings[self.property_name] - 1
-      if training_settings[self.property_name] < self.min then
-        if self.loop then
-          training_settings[self.property_name] = self.max
-        else
-          training_settings[self.property_name] = self.min
-        end
-      end
-    end
-
-    function o:right()
-      training_settings[self.property_name] = training_settings[self.property_name] + 1
-      if training_settings[self.property_name] > self.max then
-        if self.loop then
-          training_settings[self.property_name] = self.min
-        else
-          training_settings[self.property_name] = self.max
-        end
+  function o:left()
+    training_settings[self.property_name] = training_settings[self.property_name] - 1
+    if training_settings[self.property_name] < self.min then
+      if self.loop then
+        training_settings[self.property_name] = self.max
+      else
+        training_settings[self.property_name] = self.min
       end
     end
+  end
 
-    return o
+  function o:right()
+    training_settings[self.property_name] = training_settings[self.property_name] + 1
+    if training_settings[self.property_name] > self.max then
+      if self.loop then
+        training_settings[self.property_name] = self.min
+      else
+        training_settings[self.property_name] = self.max
+      end
+    end
+  end
+
+  function o:cancel()
+    training_settings[self.property_name] = self.default_value
+  end
+
+  return o
 end
 
 training_settings = {
@@ -1229,6 +1247,14 @@ function on_gui()
       end
     end
 
+    if frame_input.P1.pressed.LK then
+      if is_main_menu_selected then
+      else
+        menu[main_menu_selected_index].entries[sub_menu_selected_index]:cancel()
+        save_training_data()
+      end
+    end
+
     -- screen size 383,223
     gui.box(43,40,340,180, 0x293139FF, 0x840000FF)
     --gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
@@ -1254,6 +1280,9 @@ function on_gui()
     for i = 1, #menu[main_menu_selected_index].entries do
       menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * (i - 1), not is_main_menu_selected and sub_menu_selected_index == i)
     end
+
+    gui.text(53, 168, "LK: Reset value to default", text_disabled_color, text_default_border_color)
+
   else
     gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
   end
