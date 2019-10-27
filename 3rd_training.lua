@@ -588,6 +588,10 @@ end
 
 function load_training_data()
   f = io.open(training_data_file, "r")
+  if f == nil then
+    return
+  end
+
   for line in f:lines() do
     local a1 = line:split("=")
     local key = nil
