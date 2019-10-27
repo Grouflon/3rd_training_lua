@@ -675,6 +675,9 @@ P2 = make_player()
 
 -- program
 
+debug_current_animation = false
+debug_state_variables = false
+
 function on_start()
   load_training_data()
 end
@@ -744,8 +747,6 @@ function before_frame()
   P2.action = memory_read(0x020691B1, 3)
 
   --
-
-  local debug_state_variables = false
 
   P1_has_just_attacked = P1_previous_is_attacking ~= nil and P1.is_attacking and not P1_previous_is_attacking
   if debug_state_variables and P1_has_just_attacked then print(frame_number.." - attacked") end
@@ -1146,7 +1147,6 @@ function on_gui()
     draw_input(280, 190, i, "P2 ")
   end
 
-  local debug_current_animation = false
   if current_animation then
     last_valid_current_animation = current_animation
   end
@@ -1483,6 +1483,29 @@ character_specific.ibuki.moves["eb60"] = { startup = 9, active = 2, range = 110,
 character_specific.ibuki.moves["f320"] = { no_hit = true } -- L Kasumi Gake
 character_specific.ibuki.moves["f540"] = { no_hit = true } -- L Kasumi Gake
 character_specific.ibuki.moves["f760"] = { no_hit = true } -- L Kasumi Gake
+
+character_specific.ibuki.moves["7120"] = { -- L Kazekiri
+  { startup = 4, active = 1, range = 50, type = 1 },
+  { startup = 5, active = 1, range = 50, type = 1 },
+  { startup = 6, active = 10, range = 75, type = 1 },
+}
+character_specific.ibuki.moves["7370"] = { -- M Kazekiri
+  { startup = 6, active = 1, range = 50, type = 1 },
+  { startup = 7, active = 1, range = 50, type = 1 },
+  { startup = 8, active = 8, range = 75, type = 1 },
+}
+character_specific.ibuki.moves["75f0"] = { -- H Kazekiri
+  { startup = 8, active = 1, range = 50, type = 1 },
+  { startup = 9, active = 1, range = 50, type = 1 },
+  { startup = 10, active = 2, range = 75, type = 1 },
+  { startup = 12, active = 7, range = 75, type = 1 },
+}
+character_specific.ibuki.moves["7888"] = { -- Ex Kazekiri
+  { startup = 4, active = 1, range = 50, type = 1 },
+  { startup = 5, active = 1, range = 50, type = 1 },
+  { startup = 6, active = 2, range = 75, type = 1 },
+  { startup = 8, active = 7, range = 75, type = 1 },
+}
 
 -- ALEX
 character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 69, type = 1 } -- LP
