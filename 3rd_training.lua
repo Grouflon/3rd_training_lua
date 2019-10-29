@@ -567,6 +567,7 @@ training_settings = {
   infinite_meter = true,
   no_stun = true,
   display_input = true,
+  display_debug_history = false,
 }
 
 menu = {
@@ -585,12 +586,18 @@ menu = {
   {
     name = "Training Settings",
     entries = {
-      checkbox_menu_item("Swap Characters", "swap_characters"),
       checkbox_menu_item("Infinite Time", "infinite_time"),
       checkbox_menu_item("Infinite Life", "infinite_life"),
       checkbox_menu_item("Infinite Meter", "infinite_meter"),
       checkbox_menu_item("No Stun", "no_stun"),
       checkbox_menu_item("Display Input", "display_input"),
+    }
+  },
+  {
+    name = "Debug Settings",
+    entries = {
+      checkbox_menu_item("Moves History", "display_debug_history"),
+      checkbox_menu_item("Swap Characters", "swap_characters"),
     }
   },
 }
@@ -692,6 +699,115 @@ end
 P1 = make_player()
 P2 = make_player()
 
+-- debug history
+
+debug_history = {}
+debug_history_max = 10
+
+function debug_find_or_add_animation(_animation_id)
+  local _a = nil
+  for i = 1, #debug_history do
+    if debug_history[i].id == _animation_id then
+      _a = debug_history[i]
+      -- move animation back up the list
+      table.remove(debug_history, i)
+      table.insert(debug_history, 1, _a)
+      break
+    end
+  end
+  if _a == nil then
+    _a = {
+      id = _animation_id,
+    }
+    table.insert(debug_history, 1, _a)
+    if #debug_history > debug_history_max then
+      table.remove(debug_history, debug_history_max)
+    end
+  end
+  return _a
+end
+
+function debug_animation_begin(_animation_id)
+  local _a = debug_find_or_add_animation(_animation_id)
+  _a.current_frame_begin = frame_number
+  _a.current_frame_end = nil
+  _a.current_freezes = {}
+  _a.current_act_begin = nil
+  _a.current_acts = {}
+
+  --print(frame_number.." - ".._animation_id.." - begin")
+end
+function debug_act(_animation_id)
+  local _a = debug_find_or_add_animation(_animation_id)
+
+  if _a.current_act_begin then
+    debug_active_end(_animation_id)
+  end
+  _a.current_act_begin = frame_number
+  _a.current_act_distance = { x = 0, y = -1000 }
+
+  --print(frame_number.." - ".._animation_id.." - act")
+end
+function debug_hit(_animation_id, _dist_x, _dist_y)
+  local _a = debug_find_or_add_animation(_animation_id)
+  _a.current_act_distance = { x = _dist_x, y = _dist_y }
+
+  --print(frame_number.." - ".._animation_id.." - hit ".._dist_x.." ".._dist_y)
+end
+function debug_freeze(_animation_id, _freeze_length)
+  local _a = debug_find_or_add_animation(_animation_id)
+  table.insert(_a.current_freezes, { frame = frame_number, length = _freeze_length })
+
+  --print(frame_number.." - ".._animation_id.." - freeze ".._freeze_length)
+end
+function debug_active_end(_animation_id)
+  local _a = debug_find_or_add_animation(_animation_id)
+  if _a.current_act_begin and _a.current_acts then
+    table.insert(_a.current_acts, { frame = _a.current_act_begin, length = frame_number - _a.current_act_begin })
+    _a.current_act_begin = nil
+  end
+  --print(frame_number.." - ".._animation_id.." - active_end")
+end
+function debug_animation_end(_animation_id)
+  local _a = debug_find_or_add_animation(_animation_id)
+  _a.current_frame_end = frame_number
+
+  if _a.current_act_begin then
+    debug_active_end(_animation_id)
+  end
+
+  _a.length = _a.current_frame_end - _a.current_frame_begin
+  for i = 1, #_a.current_freezes do
+    _a.length = _a.length - _a.current_freezes[i].length
+  end
+
+  if _a.acts == nil then
+    _a.acts = {}
+  end
+
+  for i = 1, #_a.current_acts do
+    local _startup = _a.current_acts[i].frame - _a.current_frame_begin
+    local _active = _a.current_acts[i].length
+    for j = 1, #_a.current_freezes do
+      if _a.current_acts[i].frame > _a.current_freezes[j].frame then _startup = _startup - _a.current_freezes[j].length end
+      local _act_end_frame = _a.current_acts[i].frame + _a.current_acts[i].length
+      if _act_end_frame > _a.current_freezes[j].frame then _active = _active - _a.current_freezes[j].length end
+    end
+    local _new_act = { startup = _startup, active = _active, dist_x = _a.current_act_distance.x, dist_y = _a.current_act_distance.y }
+    if _a.acts[i] then
+      _new_act.dist_x = math.max(_a.acts[i].dist_x, _new_act.dist_x)
+      _new_act.dist_y = math.max(_a.acts[i].dist_y, _new_act.dist_y)
+    end
+    _a.acts[i] = _new_act
+  end
+
+  if #_a.acts == 0 then
+    table.remove(debug_history, 1)
+  end
+
+  --print(frame_number.." - ".._animation_id.." - end")
+end
+
 -- program
 
 debug_current_animation = false
@@ -769,28 +885,37 @@ function before_frame()
 
   P1_has_just_attacked = P1_previous_is_attacking ~= nil and P1.is_attacking and not P1_previous_is_attacking
   if debug_state_variables and P1_has_just_attacked then print(frame_number.." - attacked") end
-  P1_previous_is_attacking = P1.is_attacking
 
   P1_has_just_acted = P1_previous_action_count ~= nil and P1.action_count > P1_previous_action_count
   if debug_state_variables and P1_has_just_acted then print(frame_number.." - acted ("..P1_previous_action_count.." > "..P1.action_count..")") end
-  P1_previous_action_count = P1.action_count
 
   P1_has_just_hit = P1_previous_hit_count ~= nil and P1.hit_count > P1_previous_hit_count
   if debug_state_variables and P1_has_just_hit then print(frame_number.." - hit ("..P1_previous_hit_count.." > "..P1.hit_count..")") end
-  P1_previous_hit_count = P1.hit_count
 
   local _P1_blocked_count = P1.connected_action_count - P1.hit_count
   P1_has_just_been_blocked = P1_previous_blocked_count ~= nil and _P1_blocked_count > P1_previous_blocked_count
   if debug_state_variables and P1_has_just_been_blocked then print(frame_number.." - blocked ("..P1_previous_blocked_count.." > ".._P1_blocked_count..")") end
-  P1_previous_blocked_count = _P1_blocked_count
 
   P1_has_just_landed = P1_previous_standing_state ~= nil and P1_previous_standing_state >= 3 and P1.standing_state < 3
   if debug_state_variables and P1_has_just_landed then print(frame_number.." - landed ("..P1_previous_standing_state.." > "..P1.standing_state..")") end
-  P1_previous_standing_state = P1.standing_state
 
   P1_has_animation_just_changed = P1_previous_animation ~= nil and P1_previous_animation ~= P1.animation
   if debug_state_variables and P1_has_animation_just_changed then print(frame_number.." - animation changed ("..P1_previous_animation.." > "..P1.animation..")") end
-  P1_previous_animation = P1.animation
+
+  -- debug history
+  if P1_has_just_acted then
+    debug_act(P1.animation)
+  end
+
+  if P1_has_just_hit or P1_has_just_been_blocked then
+    local _distance_from_enemy = math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width
+    local _vertical_distance_from_enemy = (P1.pos_y - P2.pos_y) - character_specific[characters[P1.character]].height
+    debug_hit(P1.animation, _distance_from_enemy, _vertical_distance_from_enemy)
+  end
+
+  if P1_previous_is_attacking and not P1.is_attacking then
+    debug_active_end(P1.animation)
+  end
 
   -- life bars
   if training_settings.infinite_life then
@@ -935,18 +1060,25 @@ function before_frame()
           end
         end
       end
+
+      if current_animation then debug_animation_end(current_animation.id) end
       current_animation = _new_animation
+      if current_animation then debug_animation_begin(current_animation.id) end
+
       next_hit_frame = current_animation.start_frame
       --print("aseeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
       --local __next_hit = current_animation.get_next_hit(next_hit_frame)
       --if __next_hit then
-        --print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
+      --  print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
       --end
     end
   elseif current_animation
-  and (bit.band(P1.input_capacity, 0x0087) == 0x0087 or bit.band(P1.input_capacity, 0x0086) == 0x0086)
-  or P1_has_just_landed
+  and (
+    (bit.band(P1.input_capacity, 0x0087) == 0x0087 or bit.band(P1.input_capacity, 0x0086) == 0x0086)
+    or P1_has_just_landed
+  )
   then
+    debug_animation_end(current_animation.id)
     current_animation = nil
   end
 
@@ -958,6 +1090,7 @@ function before_frame()
   -- only add freeze frame diff in case it is increases without having reached zero (not sure it actually happens)
   if current_animation and _freeze_diff > 0 then
     table.insert(current_animation.freeze_frames, { start = frame_number, length = _freeze_diff})
+    debug_freeze(current_animation.id, _freeze_diff)
   end
 
   --if P1_has_just_hit and current_animation then
@@ -1021,11 +1154,11 @@ function before_frame()
         end
 
         if _should_block then
-          --if (frame_number == (_next_hit.start - 1)) then
+          --if (frame_number == (_next_hit.start - 2)) then
           --  print("start block at frame "..(frame_number - current_animation.start_frame))
           --end
 
-          if frame_number >= (_next_hit.start - 1) and frame_number < _next_hit.stop then
+          if frame_number >= (_next_hit.start - 2) and frame_number < _next_hit.stop then
             if P2.facing_right then
               input['P2 Left'] = true
               input['P2 Right'] = false
@@ -1044,10 +1177,10 @@ function before_frame()
 
         if _should_parry then
           -- completely release crouch when trying to parry
-          if frame_number >= (_next_hit.start - 2) and frame_number < _next_hit.stop then
+          if frame_number >= (_next_hit.start - 3) and frame_number < _next_hit.stop then
             input['P2 Down'] = false
           end
-          if frame_number >= (_next_hit.start - 1) and frame_number < _next_hit.stop then
+          if frame_number >= (_next_hit.start - 2) and frame_number < _next_hit.stop then
             if _next_hit.type == 2 then
               input['P2 Down'] = true
             else
@@ -1151,6 +1284,14 @@ function before_frame()
 
   joypad.set(input)
   process_pending_input_sequence()
+
+  -- previous frame stuff
+  P1_previous_is_attacking = P1.is_attacking
+  P1_previous_action_count = P1.action_count
+  P1_previous_hit_count = P1.hit_count
+  P1_previous_blocked_count = _P1_blocked_count
+  P1_previous_standing_state = P1.standing_state
+  P1_previous_animation = P1.animation
 end
 
 is_menu_open = false
@@ -1164,6 +1305,23 @@ function on_gui()
     local i = joypad.get()
     draw_input(45, 190, i, "P1 ")
     draw_input(280, 190, i, "P2 ")
+  end
+
+  if is_in_match and training_settings.display_debug_history then
+    local _debug_history_x = 45
+    local _debug_history_y = 36
+    local _line_height = 10
+    for i = 1, #debug_history do
+      local _a = debug_history[i]
+      local _t = _a.id..": "
+      if _a.length then _t = _t.."".._a.length.." " end
+      if _a.acts then
+        for j = 1, #_a.acts do
+          _t = _t.."{".._a.acts[j].startup..",".._a.acts[j].active.." (".._a.acts[j].dist_x..",".._a.acts[j].dist_y..")} "
+        end
+      end
+      gui.text(_debug_history_x, _debug_history_y + (i - 1) * _line_height, _t, text_disabled_color, text_default_border_color);
+    end
   end
 
   if current_animation then
@@ -1434,8 +1592,8 @@ character_specific.ibuki.moves["fa10"] = { -- close HP
   { startup = 9, active = 1, range = 34, type = 1 },
   { startup = 10, active = 6, range = 34, type = 1 },
 }
-character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 74, type = 1 } -- LK
-character_specific.ibuki.moves["01a8"] = { startup = 5, active = 4, range = 74, type = 1 } -- forward LK
+character_specific.ibuki.moves["0018"] = { startup = 4, active = 4, range = 65, type = 1 } -- LK
+character_specific.ibuki.moves["01a8"] = { startup = 5, active = 4, range = 90, type = 1 } -- forward LK
 character_specific.ibuki.moves["05d0"] = { startup = 5, active = 4, range = 49, type = 1 } -- MK
 character_specific.ibuki.moves["36c8"] = { startup = 4, active = 4, range = 49, type = 1 } -- Target MK
 character_specific.ibuki.moves["0398"] = { startup = 13, active = 2, range = 105, type = 1 } -- Back MK
@@ -1538,6 +1696,47 @@ character_specific.ibuki.moves["7888"] = { -- Ex Kazekiri
   { startup = 5, active = 1, range = 50, type = 1 },
   { startup = 6, active = 2, range = 75, type = 1 },
   { startup = 8, active = 7, range = 75, type = 1 },
+}
+
+-- URIEN
+character_specific.urien.moves["d774"] = { startup = 4, active = 2, range = 78, type = 1 } -- LP
+character_specific.urien.moves["d864"] = { startup = 5, active = 5, range = 89, type = 1 } -- MP
+character_specific.urien.moves["fa84"] = { startup = 5, active = 5, range = 89, type = 1 } -- Target MP
+character_specific.urien.moves["d994"] = { startup = 9, active = 5, range = 83, type = 1 } -- Forward MP
+character_specific.urien.moves["daa4"] = { startup = 10, active = 4, range = 81, type = 1 } -- HP
+character_specific.urien.moves["dc1c"] = { startup = 14, active = 1, range = 76, type = 3 } -- Forward HP
+character_specific.urien.moves["fbb4"] = { startup = 10, active = 1, range = 76, type = 3 } -- Target HP
+character_specific.urien.moves["dcfc"] = { startup = 5, active = 2, range = 65, type = 1 } -- LK
+character_specific.urien.moves["ddac"] = { startup = 8, active = 2, range = 107, type = 1 } -- MK
+character_specific.urien.moves["df0c"] = { startup = 16, active = 5, range = 107, type = 1 } -- Forward MK
+character_specific.urien.moves["df0c"] = { -- HK
+  { startup = 17, active = 3, range = 80, vertical_range= -121, type = 3 },
+  { startup = 20, active = 3, range = 105, type = 3 }
+}
+
+character_specific.urien.moves["e4ac"] = { startup = 4, active = 2, range = 70, type = 1 } -- Cr LP
+character_specific.urien.moves["e65c"] = { startup = 11, active = 4, range = 65, type = 1 } -- Cr MP
+character_specific.urien.moves["e72c"] = { -- Cr HP
+  { startup = 9, active = 1, range = 50, type = 1 },
+  { startup = 10, active = 2, range = 50, type = 1 }
+}
+character_specific.urien.moves["eaf4"] = { startup = 5, active = 3, range = 90, type = 2 } -- Cr LK
+character_specific.urien.moves["ebc4"] = { startup = 5, active = 3, range = 105, type = 2 } -- Cr MK
+character_specific.urien.moves["ec84"] = { startup = 12, active = 3, range = 110, type = 2 } -- Cr HK
+
+character_specific.urien.moves["ee14"] = { startup = 4, active = 40, range = 50, vertical_range = -75, type = 3 } -- Air LP
+character_specific.urien.moves["eeb4"] = { startup = 6, active = 4, range = 85, vertical_range = -80, type = 3 } -- Air MP
+character_specific.urien.moves["ef94"] = { startup = 7, active = 6, range = 70, vertical_range = -70, type = 3 } -- Air HP
+character_specific.urien.moves["f074"] = { startup = 4, active = 10, range = 40, vertical_range = -65, type = 3 } -- Air LP
+character_specific.urien.moves["f114"] = { startup = 6, active = 4, range = 90, vertical_range = -90, type = 3 } -- Air MP
+character_specific.urien.moves["f1f4"] = { startup = 10, active = 3, range = 100, vertical_range = -60, type = 3 } -- Air HP
+
+character_specific.urien.moves["6c1c"] = { startup = 7, active = 10, range = 20, type = 1 } -- L Chariot Tackle
+character_specific.urien.moves["6dfc"] = { startup = 10, active = 12, range = 20, type = 1 } -- M Chariot Tackle
+character_specific.urien.moves["6fec"] = { startup = 13, active = 15, range = 20, type = 1 } -- H Chariot Tackle
+character_specific.urien.moves["720c"] = { -- EX Chariot Tackle
+  { startup = 6, active = 24, range = 20, type = 1 },
+  { startup = 30, active = 10, range = 20, type = 1 },
 }
 
 -- ALEX

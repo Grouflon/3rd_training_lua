@@ -16,30 +16,30 @@ Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR emulator
 
 ## Frame data database
 For the script to function at its best, we need to enter specific frame data for every character and every move into the script database.
-When a character frame data is correctly entered in the database, it allows the script to make any opponent dummy successfully block/parry the corresponding move. Otherwise, the script will fall back to a default frame data, that may not match the actual move properties.
+When a character frame data is correctly entered in the database, it allows the script to make any opponent dummy successfully block/parry/red parry the corresponding move. Otherwise, the script will fall back to a default frame data, that may not match the actual move properties.
 Here is a list of character/moves that has been done so far.
 ### Done characters
 - Ibuki : All normals + targets, All specials except projectiles, No supers yet.
+- Urien : All normals + targets, All specials except projectiles, knee drop and headbutt, No supers yet.
 
 ### Remaining characters
-- alex
-- ryu
-- yun
-- dudley
-- necro
-- hugo
-- elena
-- oro
-- yang
-- ken
-- sean
-- urien
-- gouki
-- chunli
-- makoto
-- q
-- twelve
-- remy
+- Alex
+- Ryu
+- Yun
+- Dudley
+- Necro
+- Hugo
+- Elena
+- Oro
+- Yang
+- Ken
+- Sean
+- Gouki
+- Chunli
+- Makoto
+- Q
+- Twelve
+- Remy
 
 ## References & Inspirations
 - [Wonderful 3S frame data reference](http://ensabahnur.free.fr/BastonNew/index.php)
