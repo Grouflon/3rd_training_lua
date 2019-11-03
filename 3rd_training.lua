@@ -969,6 +969,7 @@ function before_frame()
 
     -- normalize move data
     if _moves == nil then
+
       local _type = 1
       if P1.standing_state == 1 then -- STANDING
         _type = 1
@@ -996,45 +997,64 @@ function before_frame()
     _animation.moves = _moves
     _animation.start_frame = frame_number
     _animation.freeze_frames = {}
+    _animation.current_move = 1
+
+    function _animation.update()
+
+      if _animation.current_move <= #_animation.moves and not _animation.moves[_animation.current_move].no_hit then
+        local _freeze_length = 0
+        for j = 1, #_animation.freeze_frames do
+          _freeze_length = _freeze_length + _animation.freeze_frames[j].length
+        end
+
+        local _active_end = _animation.start_frame + _animation.moves[_animation.current_move].startup + _animation.moves[_animation.current_move].active + _freeze_length
+        if frame_number > _active_end then
+          _animation.current_move = _animation.current_move + 1
+        end
+      end
+
+      while _animation.current_move <= #_animation.moves and _animation.moves[_animation.current_move].no_hit do
+        _animation.current_move = _animation.current_move + 1
+      end
+
+      if P1_has_just_acted then
+        _animation.current_move = _animation.current_move + 1
+      end
+    end
 
     function _animation.get_next_hit(_frame)
       if _frame == nil then _frame = frame_number end
 
-      for i = 1,#_animation.moves do
-        if not _animation.moves[i].no_hit then
-          local _active_begin = _animation.start_frame + _animation.moves[i].startup
-          -- add freeze frames
-          for j = 1, #_animation.freeze_frames do
-            if _animation.freeze_frames[j].start < _active_begin then
-              _active_begin = _active_begin + (_animation.freeze_frames[j].length)
-            end
-          end
-          local _active_end = _active_begin + _animation.moves[i].active
-          -- add freeze frames
-          for j = 1, #_animation.freeze_frames do
-            if _animation.freeze_frames[j].start < _active_end then
-              _active_end = _active_end + (_animation.freeze_frames[j].length)
-            end
-          end
-
-          -- let's assume everything is ordered correctly and take the first one
-          if _frame <= _active_end then
-            return {
-              start = _active_begin,
-              stop = _active_end,
-              range = _animation.moves[i].range,
-              vertical_range = _animation.moves[i].vertical_range,
-              type = _animation.moves[i].type,
-            }
-          end
-        end
+      if #_animation.moves < _animation.current_move then
+        return nil
       end
 
-      return nil
+      if #_animation.moves < _animation.current_move then
+        return nil
+      end
+
+      -- add freeze frames
+      local _freeze_length = 0
+      for j = 1, #_animation.freeze_frames do
+        _freeze_length = _freeze_length + _animation.freeze_frames[j].length
+      end
+
+      local _active_begin = _animation.start_frame + _animation.moves[_animation.current_move].startup + _freeze_length
+      local _active_end = _active_begin + _animation.moves[_animation.current_move].active
+
+      return {
+        start = _active_begin,
+        stop = _active_end,
+        range = _animation.moves[_animation.current_move].range,
+        vertical_range = _animation.moves[_animation.current_move].vertical_range,
+        type = _animation.moves[_animation.current_move].type,
+      }
     end
 
     return _animation
   end
+
+  local _debug_blocking = false
 
   -- current animation
   -- detects some of the self cancelled moves, but can't detect when a single hit move is cancelled during its active frames (i.e. ibuki's forward LK)
@@ -1048,7 +1068,10 @@ function before_frame()
     end
     _self_cancelled = _passed_last_hit
   end
-  if P1_has_just_attacked or (current_animation and P1_has_animation_just_changed) or _self_cancelled then
+
+  local _is_landing_animation = P1_has_just_landed and character_specific[characters[P1.character]].moves[P1.animation] == nil
+
+  if not _is_landing_animation and (P1_has_just_attacked or (current_animation and P1_has_animation_just_changed) or _self_cancelled) then
     if current_animation == nil or current_animation.id ~= P1.animation or _self_cancelled then
       local _new_animation = make_animation(P1.animation)
       if current_animation then
@@ -1066,11 +1089,13 @@ function before_frame()
       if current_animation then debug_animation_begin(current_animation.id) end
 
       next_hit_frame = current_animation.start_frame
-      --print("aseeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
-      --local __next_hit = current_animation.get_next_hit(next_hit_frame)
-      --if __next_hit then
-      --  print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
-      --end
+      if _debug_blocking then
+        print("animation changed, seeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
+        local __next_hit = current_animation.get_next_hit(next_hit_frame)
+        if __next_hit then
+          print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
+        end
+      end
     end
   elseif current_animation
   and (
@@ -1093,12 +1118,10 @@ function before_frame()
     debug_freeze(current_animation.id, _freeze_diff)
   end
 
-  --if P1_has_just_hit and current_animation then
-  --  print("hit at frame "..frame_number - current_animation.start_frame)
-  --end
-  --if P1_has_just_been_blocked and current_animation then
-  --  print("blocked at frame "..frame_number - current_animation.start_frame)
-  --end
+  -- animation update
+  if current_animation then
+    current_animation.update()
+  end
 
   -- consecutive blocks
   P1_has_just_been_parried = false
@@ -1114,6 +1137,16 @@ function before_frame()
     P1_consecutive_blocked = 0
   end
 
+  if _debug_blocking then
+    if P1_has_just_hit and current_animation then
+      print("hit at frame "..frame_number - current_animation.start_frame)
+    end
+    if P1_has_just_been_parried and current_animation then
+      print("parried at frame "..frame_number - current_animation.start_frame)
+    elseif P1_has_just_been_blocked and current_animation then
+      print("blocked at frame "..frame_number - current_animation.start_frame)
+    end
+  end
 
   if is_in_match
   and not training_settings.swap_characters
@@ -1122,9 +1155,12 @@ function before_frame()
   and current_animation ~= nil
   then
 
+    if _debug_blocking then
+      print ("frame "..(frame_number - current_animation.start_frame))
+    end
+
     -- blocking
     local _next_hit = current_animation.get_next_hit(next_hit_frame)
-    --print("next hit frame "..next_hit_frame)
     if _next_hit then
 
       local _distance_from_enemy = math.abs(P1.pos_x - P2.pos_x) - character_specific[characters[P1.character]].half_width
@@ -1137,26 +1173,31 @@ function before_frame()
         local _should_parry = training_settings.blocking_style == 2 or (training_settings.blocking_style == 3 and training_settings.red_parry_hit_count == P1_consecutive_blocked)
 
         if (P1_has_just_been_blocked or P1_has_just_hit) then
-
           next_hit_frame = _next_hit.stop + 1
-          --print("bseeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
-          --local __next_hit = current_animation.get_next_hit(next_hit_frame)
-          --if __next_hit then
-          --  print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
-          --end
+          if _debug_blocking then
+            print("hit connected: seeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
+            local __next_hit = current_animation.get_next_hit(next_hit_frame)
+            if __next_hit then
+              print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
+            end
+          end
         elseif frame_number >= _next_hit.stop then
           next_hit_frame = _next_hit.stop + 1
-          --print("cseeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
-          --local __next_hit = current_animation.get_next_hit(next_hit_frame)
-          --if __next_hit then
-          --  print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
-          --end
+          if _debug_blocking then
+            print("hit past active frames: seeking next hit from frame "..(next_hit_frame - current_animation.start_frame))
+            local __next_hit = current_animation.get_next_hit(next_hit_frame)
+            if __next_hit then
+              print("    next hit at frame "..(__next_hit.start - current_animation.start_frame))
+            end
+          end
         end
 
         if _should_block then
-          --if (frame_number == (_next_hit.start - 2)) then
-          --  print("start block at frame "..(frame_number - current_animation.start_frame))
-          --end
+          if _debug_blocking then
+            if (frame_number == (_next_hit.start - 2)) then
+              print("start block at frame "..(frame_number - current_animation.start_frame))
+            end
+          end
 
           if frame_number >= (_next_hit.start - 2) and frame_number < _next_hit.stop then
             if P2.facing_right then
@@ -1176,6 +1217,11 @@ function before_frame()
         end
 
         if _should_parry then
+          if _debug_blocking then
+            if (frame_number == (_next_hit.start - 3)) then
+              print("start parry at frame "..(frame_number - current_animation.start_frame))
+            end
+          end
           -- completely release crouch when trying to parry
           if frame_number >= (_next_hit.start - 3) and frame_number < _next_hit.stop then
             input['P2 Down'] = false
@@ -1738,6 +1784,9 @@ character_specific.urien.moves["720c"] = { -- EX Chariot Tackle
   { startup = 6, active = 24, range = 20, type = 1 },
   { startup = 30, active = 10, range = 20, type = 1 },
 }
+
+character_specific.urien.moves["4cbc"] = { startup = 24, active = 12, range = 20, vertical_range=-100, type = 3 } -- L VCharge K
+
 
 -- ALEX
 character_specific.alex.moves["a444"] = { startup = 4, active = 3, range = 69, type = 1 } -- LP
