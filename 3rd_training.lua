@@ -952,13 +952,12 @@ function before_frame()
   if is_in_match and not training_settings.swap_characters and not knockeddown and pending_input_sequence == nil then
     if training_settings.pose == 2 then
       input['P2 Down'] = true
-    elseif training_settings.pose == 3 then
+    elseif training_settings.pose == 3 and P2.standing_state == 0x01 or P2.standing_state == 0x02  then
       input['P2 Up'] = true
     elseif training_settings.pose == 4 then
-      if (frame_number % 2) == 0 then
-        input['P2 Down'] = true
-      else
-        input['P2 Up'] = true
+      local _on_ground = (P2.standing_state == 0x01 or P2.standing_state == 0x02)
+      if _on_ground and pending_input_sequence == nil then
+        queue_input_sequence(2, {{"down"}, {"up"}})
       end
     end
   end
