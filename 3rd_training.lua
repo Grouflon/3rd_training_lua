@@ -1747,7 +1747,7 @@ character_specific.ibuki.moves["7888"] = { -- Ex Kazekiri
 -- URIEN
 character_specific.urien.moves["d774"] = { startup = 4, active = 2, range = 78, type = 1 } -- LP
 character_specific.urien.moves["d864"] = { startup = 5, active = 5, range = 89, type = 1 } -- MP
-character_specific.urien.moves["fa84"] = { startup = 5, active = 5, range = 89, type = 1 } -- Target MP
+character_specific.urien.moves["fa84"] = { startup = 7, active = 5, range = 89, type = 1 } -- Target MP
 character_specific.urien.moves["d994"] = { startup = 9, active = 5, range = 83, type = 1 } -- Forward MP
 character_specific.urien.moves["daa4"] = { startup = 10, active = 4, range = 81, type = 1 } -- HP
 character_specific.urien.moves["dc1c"] = { startup = 14, active = 1, range = 76, type = 3 } -- Forward HP
