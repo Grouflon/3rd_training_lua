@@ -876,6 +876,7 @@ function before_frame()
 
   P2.character = memory.readbyte(0x02011388)
   P2.facing_right = memory.readbyte(0x0206910F) > 0
+  P2.standing_state = memory.readbyte(0x0206939B)
   P2.pos_x = memory_read(0x02069168, 2)
   P2.pos_y = memory_read(0x0206916C, 2)
   P2.is_blocking = memory.readbyte(0x020694D7) > 0
@@ -1245,49 +1246,9 @@ function before_frame()
   end
 
   -- fast recovery
-  if is_in_match then
-    knockeddown = (
-      (bit.rshift(P2.action, 16) == 0x06) -- first flag at 0x06 means we are knocked down. Last flag means knock down variants
-      or (P2.action == 0x030001) -- throws
-    )
-
-    if knockeddown then
-      --print(string.format("%X", P2.action).."."..P2.pos_y)
-    end
-
-    if knockeddown and (not flying_after_knockdown) and (not onground_after_knockdown) and (P2.pos_y > 0) then
-      --print("frutu")
-      flying_after_knockdown = true
-    end
-
-    if flying_after_knockdown and (not onground_after_knockdown) and (P2.pos_y == 0) then
-      -- hugo makes a weird bounce for 1 frame, we wait for the second frame in order to skip that
-      if fastrecovery_framesonground == 1 then
-        fastrecovery_framesonground = 0
-        --print("priti")
-        flying_after_knockdown = false
-        onground_after_knockdown = true
-        fastrecovery_countdown = 0
-      else
-        fastrecovery_framesonground = fastrecovery_framesonground + 1
-      end
-    else
-      fastrecovery_framesonground = 0
-    end
-
-    if fastrecovery_countdown == 0 then
-      --print("prout")
-      if training_settings.fast_recovery_mode == 2 then
-        input['P2 Down'] = true
-      end
-      fastrecovery_countdown = -1
-    else
-      fastrecovery_countdown = fastrecovery_countdown - 1
-    end
-
-    if (not knockeddown) and onground_after_knockdown then
-      --print("prat."..string.format("%X", P2.action))
-      onground_after_knockdown = false
+  if is_in_match and training_settings.fast_recovery_mode == 2 then
+    if P2_previous_standing_state ~= nil and P2_previous_standing_state == 0x03 and P2.standing_state == 0x00 then
+      input['P2 Down'] = true
     end
   end
 
@@ -1337,6 +1298,7 @@ function before_frame()
   P1_previous_hit_count = P1.hit_count
   P1_previous_blocked_count = _P1_blocked_count
   P1_previous_standing_state = P1.standing_state
+  P2_previous_standing_state = P2.standing_state
   P1_previous_animation = P1.animation
 end
 
