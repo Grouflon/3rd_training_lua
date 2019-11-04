@@ -876,11 +876,13 @@ function before_frame()
 
   P2.character = memory.readbyte(0x02011388)
   P2.facing_right = memory.readbyte(0x0206910F) > 0
+  P2.input_capacity = memory_read(0x02069570, 2)
   P2.standing_state = memory.readbyte(0x0206939B)
   P2.pos_x = memory_read(0x02069168, 2)
   P2.pos_y = memory_read(0x0206916C, 2)
   P2.is_blocking = memory.readbyte(0x020694D7) > 0
   P2.action = memory_read(0x020691B1, 3)
+  P2.animation = bit.tohex(memory_read(0x2069306, 2),4)
 
   --
 
@@ -902,6 +904,42 @@ function before_frame()
 
   P1_has_animation_just_changed = P1_previous_animation ~= nil and P1_previous_animation ~= P1.animation
   if debug_state_variables and P1_has_animation_just_changed then print(frame_number.." - animation changed ("..P1_previous_animation.." > "..P1.animation..")") end
+
+  if is_in_match then
+    if not P2_is_waking_up and character_specific[characters[P2.character]].wake_ups then
+      for i = 1, #character_specific[characters[P2.character]].wake_ups do
+        if P2_previous_animation ~= character_specific[characters[P2.character]].wake_ups[i].animation and P2.animation == character_specific[characters[P2.character]].wake_ups[i].animation then
+          P2_is_waking_up = true
+          P2_wake_up_time = character_specific[characters[P2.character]].wake_ups[i].length
+          P2_waking_up_start_frame = frame_number
+          break
+        end
+      end
+    end
+
+    if not P2_is_fast_waking_up and character_specific[characters[P2.character]].fast_wake_ups then
+      for i = 1, #character_specific[characters[P2.character]].fast_wake_ups do
+        if P2_previous_animation ~= character_specific[characters[P2.character]].fast_wake_ups[i].animation and P2.animation == character_specific[characters[P2.character]].fast_wake_ups[i].animation then
+          P2_is_fast_waking_up = true
+          P2_wake_up_time = character_specific[characters[P2.character]].fast_wake_ups[i].length
+          P2_waking_up_start_frame = frame_number
+          break
+        end
+      end
+    end
+
+    if (P2_is_waking_up or P2_is_fast_waking_up) and (P2_previous_standing_state == 0x00 and P2.standing_state ~= 0x00) then
+      print(frame_number.." "..to_bit(P2_is_waking_up).." "..to_bit(P2_is_fast_waking_up).." wake_up_time: "..(frame_number - P2_waking_up_start_frame) + 1)
+      P2_is_waking_up = false
+      P2_is_fast_waking_up = false
+    end
+
+    if (P2_previous_animation ~= P2.animation) then
+      print(frame_number.." "..P2.animation)
+    end
+    P2_has_just_started_wake_up = not P2_previous_is_waking_up and P2_is_waking_up
+    P2_has_just_started_fast_wake_up = not P2_previous_is_fast_waking_up and P2_is_fast_waking_up
+  end
 
   -- debug history
   if P1_has_just_acted then
@@ -952,7 +990,7 @@ function before_frame()
   if is_in_match and not training_settings.swap_characters and not knockeddown and pending_input_sequence == nil then
     if training_settings.pose == 2 then
       input['P2 Down'] = true
-    elseif training_settings.pose == 3 and P2.standing_state == 0x01 or P2.standing_state == 0x02  then
+    elseif training_settings.pose == 3 and (P2.standing_state == 0x01 or P2.standing_state == 0x02) then
       input['P2 Up'] = true
     elseif training_settings.pose == 4 then
       local _on_ground = (P2.standing_state == 0x01 or P2.standing_state == 0x02)
@@ -1246,7 +1284,7 @@ function before_frame()
 
   -- fast recovery
   if is_in_match and training_settings.fast_recovery_mode == 2 then
-    if P2_previous_standing_state ~= nil and P2_previous_standing_state == 0x03 and P2.standing_state == 0x00 then
+    if P2_previous_standing_state ~= nil and P2_previous_standing_state ~= 0x00 and P2.standing_state == 0x00 then
       input['P2 Down'] = true
     end
   end
@@ -1255,7 +1293,7 @@ function before_frame()
   if is_in_match and (training_settings.counter_attack_stick ~= 1 or training_settings.counter_attack_button ~= 1) then
 
     if P1_has_just_been_parried then
-      --print(frame_number.." - setup ca")
+      --print(frame_number.." - init ca")
       counte_attack_frame = frame_number + 16
       counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
       P2_counter_ref_time = -1
@@ -1264,6 +1302,16 @@ function before_frame()
       P2_counter_ref_time = memory.readbyte(0x0206928B)
       clear_input_sequence()
       counterattack_sequence = nil
+    elseif P2_has_just_started_wake_up then
+      --print(frame_number.." - init ca")
+      counte_attack_frame = frame_number + P2_wake_up_time
+      counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
+      P2_counter_ref_time = -1
+    elseif P2_has_just_started_fast_wake_up then
+      --print(frame_number.." - init ca")
+      counte_attack_frame = frame_number + P2_wake_up_time
+      counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
+      P2_counter_ref_time = -1
     end
 
     if not counterattack_sequence then
@@ -1299,6 +1347,9 @@ function before_frame()
   P1_previous_standing_state = P1.standing_state
   P2_previous_standing_state = P2.standing_state
   P1_previous_animation = P1.animation
+  P2_previous_animation = P2.animation
+  P2_previous_is_waking_up = P2_is_waking_up
+  P2_previous_is_fast_waking_up = P2_is_fast_waking_up
 end
 
 is_menu_open = false
@@ -1576,6 +1627,53 @@ character_specific.urien.height = 121
 character_specific.yang.height = 89
 character_specific.yun.height = 89
 
+-- Characters wake ups
+character_specific.alex.wake_ups = {
+  { animation = "362c", length = 36 },
+  { animation = "389c", length = 68 },
+  { animation = "39bc", length = 68 },
+  { animation = "378c", length = 66 },
+  { animation = "3a8c", length = 53 },
+}
+character_specific.alex.fast_wake_ups = {
+  { animation = "1fb8", length = 30 },
+  { animation = "2098", length = 29 },
+}
+
+character_specific.ryu.wake_ups = {
+  { animation = "49ac", length = 47 },
+  { animation = "4aac", length = 78 },
+  { animation = "4dcc", length = 71 },
+}
+character_specific.ryu.fast_wake_ups = {
+  { animation = "c1dc", length = 29 },
+  { animation = "c12c", length = 29 },
+}
+
+character_specific.yun.wake_up_animation = "cbe4"
+character_specific.yun.wake_up_frames = 21
+character_specific.yun.fast_wake_up_animation = "d5dc"
+character_specific.yun.fast_wake_up_frames = 27
+
+character_specific.dudley.wake_up_animation = "d87c"
+character_specific.dudley.wake_up_frames = 21
+character_specific.dudley.fast_wake_up_animation = "df7c"
+character_specific.dudley.fast_wake_up_frames = 8
+
+character_specific.necro.wake_up_animation = "5484"
+character_specific.necro.wake_up_frames = 18
+character_specific.necro.fast_wake_up_animation = "5bb4"
+character_specific.necro.fast_wake_up_frames = 32
+
+character_specific.hugo.wake_up_animation = "be74"
+character_specific.hugo.wake_up_frames = 22
+character_specific.hugo.fast_wake_up_animation = "c60c"
+character_specific.hugo.fast_wake_up_frames = 30
+
+character_specific.ibuki.wake_up_animation = "73e0"
+character_specific.ibuki.wake_up_frames = 21
+character_specific.ibuki.fast_wake_up_animation = "7ec0"
+character_specific.ibuki.fast_wake_up_frames = 27
 
 -- Character Moves
 debug_framedata = true
