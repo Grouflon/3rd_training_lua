@@ -1640,6 +1640,7 @@ character_specific.alex.fast_wake_ups = {
   { animation = "2098", length = 29 },
 }
 
+
 character_specific.ryu.wake_ups = {
   { animation = "49ac", length = 47 },
   { animation = "4aac", length = 78 },
@@ -1650,15 +1651,29 @@ character_specific.ryu.fast_wake_ups = {
   { animation = "c12c", length = 29 },
 }
 
-character_specific.yun.wake_up_animation = "cbe4"
-character_specific.yun.wake_up_frames = 21
-character_specific.yun.fast_wake_up_animation = "d5dc"
-character_specific.yun.fast_wake_up_frames = 27
 
-character_specific.dudley.wake_up_animation = "d87c"
-character_specific.dudley.wake_up_frames = 21
-character_specific.dudley.fast_wake_up_animation = "df7c"
-character_specific.dudley.fast_wake_up_frames = 8
+character_specific.yun.wake_ups = {
+  { animation = "e980", length = 50 },
+  { animation = "ebd0", length = 61 },
+  { animation = "eb00", length = 61 },
+}
+character_specific.yun.fast_wake_ups = {
+  { animation = "d5dc", length = 27 },
+  { animation = "d3bc", length = 33 },
+}
+
+
+character_specific.dudley.wake_ups = {
+  { animation = "8ffc", length = 43 },
+  { animation = "948c", length = 56 },
+  { animation = "915c", length = 56 },
+  { animation = "923c", length = 59 },
+  { animation = "93ec", length = 53 },
+}
+character_specific.dudley.fast_wake_ups = {
+  { animation = "e0bc", length = 28 },
+  { animation = "df7c", length = 31 },
+}
 
 character_specific.necro.wake_up_animation = "5484"
 character_specific.necro.wake_up_frames = 18
