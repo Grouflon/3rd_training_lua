@@ -1675,17 +1675,30 @@ character_specific.dudley.fast_wake_ups = {
   { animation = "df7c", length = 31 },
 }
 
+
 character_specific.gouki.wake_ups = {
   { animation = "5cec", length = 78 },
   { animation = "5bec", length = 47 },
   { animation = "600c", length = 71 },
   { animation = "61dc", length = 68 },
 }
-
 character_specific.gouki.fast_wake_ups = {
   { animation = "b66c", length = 29 },
   { animation = "b5bc", length = 29 },
 }
+
+
+character_specific.urien.wake_ups = {
+  { animation = "32b8", length = 43 },
+  { animation = "3b40", length = 63 },
+  { animation = "3408", length = 77 },
+  { animation = "3378", length = 51 },
+}
+character_specific.urien.fast_wake_ups = {
+  { animation = "86b8", length = 34 },
+  { animation = "8618", length = 36 },
+}
+
 
 character_specific.necro.wake_up_animation = "5484"
 character_specific.necro.wake_up_frames = 18
