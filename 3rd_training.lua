@@ -1675,6 +1675,18 @@ character_specific.dudley.fast_wake_ups = {
   { animation = "df7c", length = 31 },
 }
 
+character_specific.gouki.wake_ups = {
+  { animation = "5cec", length = 78 },
+  { animation = "5bec", length = 47 },
+  { animation = "600c", length = 71 },
+  { animation = "61dc", length = 68 },
+}
+
+character_specific.gouki.fast_wake_ups = {
+  { animation = "b66c", length = 29 },
+  { animation = "b5bc", length = 29 },
+}
+
 character_specific.necro.wake_up_animation = "5484"
 character_specific.necro.wake_up_frames = 18
 character_specific.necro.fast_wake_up_animation = "5bb4"
