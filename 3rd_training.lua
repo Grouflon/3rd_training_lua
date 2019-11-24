@@ -912,6 +912,7 @@ function before_frame()
           P2_is_waking_up = true
           P2_wake_up_time = character_specific[characters[P2.character]].wake_ups[i].length
           P2_waking_up_start_frame = frame_number
+          P2_wake_up_animation = P2.animation
           break
         end
       end
@@ -923,13 +924,14 @@ function before_frame()
           P2_is_fast_waking_up = true
           P2_wake_up_time = character_specific[characters[P2.character]].fast_wake_ups[i].length
           P2_waking_up_start_frame = frame_number
+          P2_wake_up_animation = P2.animation
           break
         end
       end
     end
 
     if (P2_is_waking_up or P2_is_fast_waking_up) and (P2_previous_standing_state == 0x00 and P2.standing_state ~= 0x00) then
-      print(frame_number.." "..to_bit(P2_is_waking_up).." "..to_bit(P2_is_fast_waking_up).." wake_up_time: "..(frame_number - P2_waking_up_start_frame) + 1)
+      print(frame_number.." "..to_bit(P2_is_waking_up).." "..to_bit(P2_is_fast_waking_up).." "..P2_wake_up_animation.." wake_up_time: "..(frame_number - P2_waking_up_start_frame))
       P2_is_waking_up = false
       P2_is_fast_waking_up = false
     end
@@ -1628,75 +1630,99 @@ character_specific.yang.height = 89
 character_specific.yun.height = 89
 
 -- Characters wake ups
+
+-- wake ups to test :
+--  Cr HK
+--  Throw
+--  Close HK
+--  Jmp HK
+--  Raida
+--  Neck breaker
+
 character_specific.alex.wake_ups = {
-  { animation = "362c", length = 36 },
-  { animation = "389c", length = 68 },
-  { animation = "39bc", length = 68 },
-  { animation = "378c", length = 66 },
-  { animation = "3a8c", length = 53 },
+  { animation = "362c", length = 35 },
+  { animation = "389c", length = 67 },
+  { animation = "39bc", length = 67 },
+  { animation = "378c", length = 65 },
+  { animation = "3a8c", length = 52 },
 }
 character_specific.alex.fast_wake_ups = {
-  { animation = "1fb8", length = 30 },
-  { animation = "2098", length = 29 },
+  { animation = "1fb8", length = 29 },
+  { animation = "2098", length = 28 },
 }
 
 
 character_specific.ryu.wake_ups = {
-  { animation = "49ac", length = 47 },
-  { animation = "4aac", length = 78 },
-  { animation = "4dcc", length = 71 },
+  { animation = "49ac", length = 46 },
+  { animation = "4aac", length = 77 },
+  { animation = "4dcc", length = 70 },
+  { animation = "4f9c", length = 67 },
 }
 character_specific.ryu.fast_wake_ups = {
-  { animation = "c1dc", length = 29 },
-  { animation = "c12c", length = 29 },
+  { animation = "c1dc", length = 28 },
+  { animation = "c12c", length = 28 },
 }
 
 
 character_specific.yun.wake_ups = {
-  { animation = "e980", length = 50 },
-  { animation = "ebd0", length = 61 },
-  { animation = "eb00", length = 61 },
+  { animation = "e980", length = 49 },
+  { animation = "ebd0", length = 60 },
+  { animation = "eb00", length = 60 },
+  { animation = "eca0", length = 49 },
 }
 character_specific.yun.fast_wake_ups = {
-  { animation = "d5dc", length = 27 },
-  { animation = "d3bc", length = 33 },
+  { animation = "d5dc", length = 26 },
+  { animation = "d3bc", length = 32 },
 }
 
 
 character_specific.dudley.wake_ups = {
-  { animation = "8ffc", length = 43 },
-  { animation = "948c", length = 56 },
-  { animation = "915c", length = 56 },
-  { animation = "923c", length = 59 },
-  { animation = "93ec", length = 53 },
+  { animation = "8ffc", length = 42 },
+  { animation = "948c", length = 55 },
+  { animation = "915c", length = 55 },
+  { animation = "923c", length = 58 },
+  { animation = "93ec", length = 52 },
 }
 character_specific.dudley.fast_wake_ups = {
-  { animation = "e0bc", length = 28 },
-  { animation = "df7c", length = 31 },
+  { animation = "e0bc", length = 27 },
+  { animation = "df7c", length = 30 },
 }
 
 
 character_specific.gouki.wake_ups = {
-  { animation = "5cec", length = 78 },
-  { animation = "5bec", length = 47 },
-  { animation = "600c", length = 71 },
-  { animation = "61dc", length = 68 },
+  { animation = "5cec", length = 77 },
+  { animation = "5bec", length = 46 },
+  { animation = "600c", length = 70 },
+  { animation = "61dc", length = 67 },
 }
 character_specific.gouki.fast_wake_ups = {
-  { animation = "b66c", length = 29 },
-  { animation = "b5bc", length = 29 },
+  { animation = "b66c", length = 28 },
+  { animation = "b5bc", length = 28 },
 }
 
 
 character_specific.urien.wake_ups = {
-  { animation = "32b8", length = 43 },
-  { animation = "3b40", length = 63 },
-  { animation = "3408", length = 77 },
-  { animation = "3378", length = 51 },
+  { animation = "32b8", length = 45 },
+  { animation = "3b40", length = 76 },
+  { animation = "3408", length = 76 },
+  { animation = "3378", length = 50 },
 }
 character_specific.urien.fast_wake_ups = {
-  { animation = "86b8", length = 34 },
-  { animation = "8618", length = 36 },
+  { animation = "86b8", length = 33 },
+  { animation = "8618", length = 35 },
+}
+
+
+character_specific.remy.wake_ups = {
+  { animation = "56c8", length = 60 },
+  { animation = "cf4c", length = 65 },
+  { animation = "d25c", length = 56 },
+  { animation = "d17c", length = 69 },
+  { animation = "48c4", length = 34 },
+}
+character_specific.remy.fast_wake_ups = {
+  { animation = "4e34", length = 27 },
+  { animation = "4d84", length = 27 },
 }
 
 
