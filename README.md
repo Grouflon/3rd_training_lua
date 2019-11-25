@@ -11,7 +11,6 @@ Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR emulator
 - Record: crop recording up to first input
 - Counter-Attack: Kara cancels
 - Counter-Attack: On Landing
-- Counter-Attack: On wake up
 - Detect self cancelled moves
 
 ## Frame data database
