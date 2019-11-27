@@ -1366,6 +1366,8 @@ function before_frame()
   P2_previous_animation = P2.animation
   P2_previous_is_waking_up = P2_is_waking_up
   P2_previous_is_fast_waking_up = P2_is_fast_waking_up
+
+  update_hitboxes()
 end
 
 is_menu_open = false
@@ -1374,6 +1376,8 @@ is_main_menu_selected = true
 sub_menu_selected_index = 1
 
 function on_gui()
+
+  draw_hitboxes()
 
   if is_in_match and training_settings.display_input then
     local i = joypad.get()
@@ -1580,6 +1584,123 @@ function string:split(sep)
    local pattern = string.format("([^%s]+)", sep)
    self:gsub(pattern, function(c) fields[#fields+1] = c end)
    return fields
+end
+
+
+screen_x = 0
+screen_y = 0
+scale = 1
+
+players = {
+  { base = 0x02068C6C },
+  { base = 0x2069104 },
+}
+
+function define_box(f, obj, ptr, type)
+  if obj.friends > 1 then --Yang SA3
+    if type ~= "attack" then
+      return
+    end
+  elseif obj.projectile then
+    type = projectile_type[type] or type
+  end
+
+  local box = {
+    left   = memory.readwordsigned(ptr + 0x0),
+    width  = memory.readwordsigned(ptr + 0x2),
+    bottom = memory.readwordsigned(ptr + 0x4),
+    height = memory.readwordsigned(ptr + 0x6),
+    type   = type,
+  }
+
+  if box.left == 0 and box.width == 0 and box.height == 0 and box.bottom == 0 then
+    return
+  elseif obj.flip_x == 0 then
+    box.left  = -box.left
+    box.width = -box.width
+  end
+
+  table.insert(obj.boxes, box)
+end
+
+function update_game_object(_obj)
+  if memory.readdword(_obj.base + 0x2A0) == 0 then --invalid objects
+    return
+  end
+
+  _obj.friends = memory.readbyte(_obj.base + 0x1)
+  _obj.flip_x = memory.readbytesigned(_obj.base + 0x0A)
+  _obj.pos_x = memory.readwordsigned(_obj.base + 0x64)
+  _obj.pos_y = memory.readwordsigned(_obj.base + 0x68)
+  --obj.pos_x =  obj.pos_x - f.screen_x + emu.screenwidth()/2
+  --obj.pos_y = -obj.pos_y + f.screen_y + emu.screenheight() + GROUND_OFFSET
+  _obj.char_id = memory.readword(_obj.base + 0x3C0)
+
+  _obj.boxes = {}
+  local _boxes = {
+    {initial = 1, offset = 0x2D4, type = "push", number = 1},
+    {initial = 1, offset = 0x2C0, type = "throwable", number = 1},
+    {initial = 1, offset = 0x2A0, type = "vulnerability", number = 4},
+    {initial = 1, offset = 0x2A8, type = "ext. vulnerability", number = 4},
+    {initial = 1, offset = 0x2C8, type = "attack", number = 4},
+    {initial = 1, offset = 0x2B8, type = "throw", number = 1}
+  }
+
+  for _, _box in ipairs(_boxes) do
+    for i = _box.initial, _box.number do
+      define_box(_frame, _obj, memory.readdword(_obj.base + _box.offset) + (i-1)*8, _box.type)
+    end
+  end
+end
+
+function update_hitboxes()
+  screen_x = memory.readwordsigned(0x02026CB0)
+  screen_y = memory.readwordsigned(0x02026CB4)
+  scale = memory.readwordsigned(0x0200DCBA) --FBA can't read from 04xxxxxx
+	scale = 0x40/(scale > 0 and scale or 1)
+
+  update_game_object(players[1])
+  update_game_object(players[2])
+
+  if (frame_input.P1.pressed.LP) then
+    local _player = players[1]
+
+    print("scale:"..scale)
+    print("sw:"..emu.screenwidth().." sh"..emu.screenheight())
+    print("fx:"..screen_x.." fy:"..screen_y)
+    print("x:".._player.pos_x.." y:".._player.pos_y)
+    print("rx:"..(_player.pos_x - screen_x + emu.screenwidth()/2).." ry:"..(_player.pos_y - screen_y))
+    for _, _box in ipairs(_player.boxes) do
+      print(_box)
+    end
+    print(".")
+  end
+end
+
+function draw_hitboxes()
+  local _ground_offset = 23
+  for i = 1, 1 do
+    local _player = players[i]
+    local _px = _player.pos_x - screen_x + emu.screenwidth()/2
+    local _py = emu.screenheight() - (_player.pos_y - screen_y) - _ground_offset
+
+    for __, _box in ipairs(_player.boxes) do
+
+      local _c = 0x0000FFFF
+      if (_box.type == "attack") then
+        _c = 0xFF0000FF
+      end
+
+      local _l = _px - _box.left
+      local _r = _l - _box.width
+      local _b = _py - _box.bottom
+      local _t = _b - _box.height
+
+      --gui.box(_px - _box.left, _py - _box.top, _px - _box.right, _py - _box.bottom, 0x00000000, _c)
+      gui.box(_l, _b, _r, _t, 0x00000000, _c)
+
+    end
+  end
 end
 
 -- registers
