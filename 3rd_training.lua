@@ -576,7 +576,6 @@ function button_menu_item(_name, _validate_function)
   if _default_value == nil then _default_value = _min end
   local o = {}
   o.name = _name
-  o.validate_function = _validate_function
   o.last_frame_validated = 0
 
   function o:draw(_x, _y, _selected)
@@ -602,7 +601,7 @@ function button_menu_item(_name, _validate_function)
 
   function o:validate()
     self.last_frame_validated = frame_number
-    self.validate_function()
+    _validate_function()
   end
 
   function o:cancel()
@@ -996,8 +995,6 @@ function update_game_object(_obj)
   _obj.flip_x = memory.readbytesigned(_obj.base + 0x0A)
   _obj.pos_x = memory.readwordsigned(_obj.base + 0x64)
   _obj.pos_y = memory.readwordsigned(_obj.base + 0x68)
-  --obj.pos_x =  obj.pos_x - f.screen_x + emu.screenwidth()/2
-  --obj.pos_y = -obj.pos_y + f.screen_y + emu.screenheight() + GROUND_OFFSET
   _obj.char_id = memory.readword(_obj.base + 0x3C0)
 
   _obj.boxes = {}
@@ -1067,18 +1064,119 @@ function draw_hitboxes(_object)
     local _l, _r
     if _object.flip_x == 0 then
       _l = _px + _box.left
-      _r = _l + _box.width
     else
-      _l = _px - _box.left
-      _r = _l - _box.width
+      _l = _px - _box.left - _box.width
     end
+    local _r = _l + _box.width
     local _b = _py - _box.bottom
     local _t = _b - _box.height
 
-    --gui.box(_px - _box.left, _py - _box.top, _px - _box.right, _py - _box.bottom, 0x00000000, _c)
     gui.box(_l, _b, _r, _t, 0x00000000, _c)
   end
 end
+
+function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _defender_hitbox_dilation)
+
+  if (_defender_hitbox_dilation == nil) then _defender_hitbox_dilation = 0 end
+
+  for i = 1, #_defender_boxes do
+    local _d_box = _defender_boxes[i]
+    if _d_box.type == "vulnerability" or _d_box.type == "ext. vulnerability" then
+      -- compute defender box bounds
+      local _d_l
+      if _defender_flip_x == 0 then
+        _d_l = _defender_x + _d_box.left - _defender_hitbox_dilation
+      else
+        _d_l = _defender_x - _d_box.left - _d_box.width - _defender_hitbox_dilation
+      end
+      local _d_r = _d_l + _d_box.width + _defender_hitbox_dilation
+      local _d_b = _defender_y + _d_box.bottom - _defender_hitbox_dilation
+      local _d_t = _d_b + _d_box.height + _defender_hitbox_dilation
+
+      for j = 1, #_attacker_boxes do
+        local _a_box = _attacker_boxes[j]
+        if _a_box.type == "attack" then
+          -- compute attacker box bounds
+          local _a_l
+          if _attacker_flip_x == 0 then
+            _a_l = _attacker_x + _a_box.left
+          else
+            _a_l = _attacker_x - _a_box.left - _a_box.width
+          end
+          local _a_r = _a_l + _a_box.width
+          local _a_b = _attacker_y + _a_box.bottom
+          local _a_t = _a_b + _a_box.height
+
+          -- check collision
+          if (
+            (_a_l >= _d_r) or
+            (_a_r <= _d_l) or
+            (_a_b >= _d_t) or
+            (_a_t <= _d_b)
+          ) then
+            return false
+          end
+          return true
+        end
+      end
+    end
+  end
+
+  return false
+end
+
+-- BLOCKING
+
+P1_current_animation_start_frame = 0
+P1_current_animation_start_pos = {0, 0}
+listening_for_attack_animation = false
+
+function update_blocking(_input)
+  local _character = characters[P1.character]
+  local _debug = true
+  if (P1_has_animation_just_changed) then
+    if (frame_data[_character] and frame_data[_character][P1.animation]) then
+      listening_for_attack_animation = true
+      P1_current_animation_start_frame = frame_number
+      P1_current_animation_start_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
+      if _debug then
+        print(P1_current_animation_start_frame..": Animation \""..P1.animation.."\" started at pos {"..P1_current_animation_start_pos[1]..","..P1_current_animation_start_pos[2].."}")
+      end
+    else
+      listening_for_attack_animation = false
+    end
+  end
+
+  if listening_for_attack_animation then
+    local _frame = frame_number - P1_current_animation_start_frame
+    local _frame_to_check = 2
+    if (_frame < #frame_data[_character][P1.animation].frames - _frame_to_check) then
+
+      local _next_frame = frame_data[_character][P1.animation].frames[_frame + 1 + _frame_to_check]
+      local _sign = 1
+      if player_objects[1].flip_x then _sign = -1 end
+      local _next_pos = {P1_current_animation_start_pos[1] + _next_frame.movement[1] * _sign, P1_current_animation_start_pos[2] + _next_frame.movement[2]}
+
+      if test_collision(
+        player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes, -- defender
+        _next_pos[1], _next_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
+        1 -- defender hitbox dilation
+      ) then
+        if player_objects[2].flip_x then
+          print("will be hit")
+          _input['P2 Right'] = false
+          _input['P2 Left'] = true
+        else
+
+          _input['P2 Left'] = false
+          _input['P2 Right'] = true
+
+        end
+      end
+    end
+  end
+end
+
 
 -- PROGRAM
 
@@ -1112,9 +1210,9 @@ function before_frame()
     local P1_disable_input_address = 0x02068C74
     if training_settings.swap_characters then
       swap_inputs(joypad.get(), input)
-      --memory.writebyte(P1_disable_input_address, 0x01)
+      memory.writebyte(P1_disable_input_address, 0x01)
     else
-      --memory.writebyte(P1_disable_input_address, 0x00)
+      memory.writebyte(P1_disable_input_address, 0x00)
     end
   end
 
@@ -1468,7 +1566,8 @@ function before_frame()
     end
   end
 
-  if is_in_match
+  update_blocking(input)
+  if false and is_in_match
   and not training_settings.swap_characters
   and training_settings.blocking_mode ~= 1
   and pending_input_sequence == nil
