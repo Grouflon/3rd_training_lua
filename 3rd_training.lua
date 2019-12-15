@@ -9,6 +9,8 @@
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
 -- https://github.com/TASVideos/mame-rr/wiki/Lua-scripting-functions
 
+json = require ("dkjson")
+
 -- input
 function make_input_set()
   return {
@@ -462,6 +464,9 @@ function checkbox_menu_item(_name, _property_name, _default_value)
     training_settings[self.property_name] = not training_settings[self.property_name]
   end
 
+  function o:validate()
+  end
+
   function o:cancel()
     training_settings[self.property_name] = self.default_value
   end
@@ -501,6 +506,9 @@ function list_menu_item(_name, _property_name, _list, _default_value)
     if training_settings[self.property_name] > #self.list then
       training_settings[self.property_name] = 1
     end
+  end
+
+  function o:validate()
   end
 
   function o:cancel()
@@ -554,8 +562,50 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_va
     end
   end
 
+  function o:validate()
+  end
+
   function o:cancel()
     training_settings[self.property_name] = self.default_value
+  end
+
+  return o
+end
+
+function button_menu_item(_name, _validate_function)
+  if _default_value == nil then _default_value = _min end
+  local o = {}
+  o.name = _name
+  o.validate_function = _validate_function
+  o.last_frame_validated = 0
+
+  function o:draw(_x, _y, _selected)
+    local c = text_default_color
+    local prefix = ""
+    local suffix = ""
+    if _selected then
+      c = text_selected_color
+
+      if (frame_number - self.last_frame_validated < 5 ) then
+        c = 0xFFFF00FF
+      end
+    end
+
+    gui.text(_x, _y,self.name, c, text_default_border_color)
+  end
+
+  function o:left()
+  end
+
+  function o:right()
+  end
+
+  function o:validate()
+    self.last_frame_validated = frame_number
+    self.validate_function()
+  end
+
+  function o:cancel()
   end
 
   return o
@@ -576,6 +626,8 @@ training_settings = {
   no_stun = true,
   display_input = true,
   display_debug_history = false,
+  display_hitboxes = false,
+  record_framedata = false,
 }
 
 menu = {
@@ -606,6 +658,9 @@ menu = {
     entries = {
       checkbox_menu_item("Moves History", "display_debug_history"),
       checkbox_menu_item("Swap Characters", "swap_characters"),
+      checkbox_menu_item("Display Hitboxes", "display_hitboxes"),
+      checkbox_menu_item("Record Frame Data", "record_framedata"),
+      button_menu_item("Save Frame Data", save_frame_data)
     }
   },
 }
@@ -650,6 +705,8 @@ function load_training_data()
     end
   end
   f:close()
+
+  training_settings.record_framedata = false -- this never gets saved
 end
 
 -- swap inputs
@@ -816,18 +873,227 @@ function debug_animation_end(_animation_id)
   --print(frame_number.." - ".._animation_id.." - end")
 end
 
--- program
+-- HITBOXES
+
+player_objects = {
+  { base = 0x02068C6C },
+  { base = 0x2069104 },
+}
+
+frame_data = {}
+frame_data_file = "frame_data.json"
+
+function save_frame_data()
+  local _f = io.open(frame_data_file, "w")
+  local _str = json.encode(frame_data, { indent = true })
+  _f:write(_str)
+  _f:close()
+  print("Saved frame data to \""..frame_data_file.."\"")
+end
+
+function load_frame_data()
+  local _f = io.open(frame_data_file, "r")
+  if _f == nil then
+    return
+  end
+
+  local pos, err
+  frame_data, pos, err = json.decode(_f:read("*all"))
+  _f:close()
+
+  if (err) then
+    print("Failed to read frame data file: "..err)
+  end
+end
+
+function reset_current_recording_animation()
+  current_recording_animation_id = nil
+  current_recording_animation_start_frame = 0
+  current_recording_animation_start_pos = {0, 0}
+  current_recording_animation = nil
+end
+reset_current_recording_animation()
+
+function record_framedata(_object)
+  -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss
+  if (P1_has_just_hit or P1_has_just_been_blocked or P1_has_just_been_parried) then
+    reset_current_recording_animation()
+  end
+
+  if (P1_has_animation_just_changed) then
+    if current_recording_animation and current_recording_animation.attack_box_count > 0 then
+      current_recording_animation.attack_box_count = nil -- don't save that
+      local _character = characters[P1.character]
+      if (frame_data[_character] == nil) then
+        frame_data[_character] = {}
+      end
+      frame_data[_character][current_recording_animation_id] = current_recording_animation
+    end
+
+    current_recording_animation_id = P1.animation
+    current_recording_animation_start_frame = frame_number
+    current_recording_animation_start_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
+    current_recording_animation = { frames = {}, hit_frames = {}, attack_box_count = 0 }
+  end
+
+  if (current_recording_animation) then
+    local _frame = frame_number - current_recording_animation_start_frame
+
+    if (P1_has_just_acted) then
+      table.insert(current_recording_animation.hit_frames, _frame)
+    end
+
+    current_recording_animation.frames[_frame + 1] = {
+      boxes = {},
+      movement = {
+        player_objects[1].pos_x - current_recording_animation_start_pos[1],
+        player_objects[1].pos_y - current_recording_animation_start_pos[2],
+      }
+    }
+    if player_objects[1].flip_x then
+      current_recording_animation.frames[_frame + 1].movement[1] = -current_recording_animation.frames[_frame + 1].movement[1]
+    end
+
+    for __, _box in ipairs(player_objects[1].boxes) do
+      if (_box.type == "attack") then
+        table.insert(current_recording_animation.frames[_frame + 1].boxes, copytable(_box))
+        current_recording_animation.attack_box_count = current_recording_animation.attack_box_count + 1
+      end
+    end
+  end
+end
+
+function define_box(f, obj, ptr, type)
+  if obj.friends > 1 then --Yang SA3
+    if type ~= "attack" then
+      return
+    end
+  elseif obj.projectile then
+    type = projectile_type[type] or type
+  end
+
+  local box = {
+    left   = memory.readwordsigned(ptr + 0x0),
+    width  = memory.readwordsigned(ptr + 0x2),
+    bottom = memory.readwordsigned(ptr + 0x4),
+    height = memory.readwordsigned(ptr + 0x6),
+    type   = type,
+  }
+
+  if box.left == 0 and box.width == 0 and box.height == 0 and box.bottom == 0 then
+    return
+  end
+
+  table.insert(obj.boxes, box)
+end
+
+function update_game_object(_obj)
+  if memory.readdword(_obj.base + 0x2A0) == 0 then --invalid objects
+    return
+  end
+
+  _obj.friends = memory.readbyte(_obj.base + 0x1)
+  _obj.flip_x = memory.readbytesigned(_obj.base + 0x0A)
+  _obj.pos_x = memory.readwordsigned(_obj.base + 0x64)
+  _obj.pos_y = memory.readwordsigned(_obj.base + 0x68)
+  --obj.pos_x =  obj.pos_x - f.screen_x + emu.screenwidth()/2
+  --obj.pos_y = -obj.pos_y + f.screen_y + emu.screenheight() + GROUND_OFFSET
+  _obj.char_id = memory.readword(_obj.base + 0x3C0)
+
+  _obj.boxes = {}
+  local _boxes = {
+    {initial = 1, offset = 0x2D4, type = "push", number = 1},
+    {initial = 1, offset = 0x2C0, type = "throwable", number = 1},
+    {initial = 1, offset = 0x2A0, type = "vulnerability", number = 4},
+    {initial = 1, offset = 0x2A8, type = "ext. vulnerability", number = 4},
+    {initial = 1, offset = 0x2C8, type = "attack", number = 4},
+    {initial = 1, offset = 0x2B8, type = "throw", number = 1}
+  }
+
+  for _, _box in ipairs(_boxes) do
+    for i = _box.initial, _box.number do
+      define_box(_frame, _obj, memory.readdword(_obj.base + _box.offset) + (i-1)*8, _box.type)
+    end
+  end
+end
+
+function update_hitboxes()
+  update_game_object(player_objects[1])
+  update_game_object(player_objects[2])
+end
+
+function update_framedata_recording()
+  if training_settings.record_framedata and is_in_match then
+    record_framedata()
+  else
+    reset_current_recording_animation()
+  end
+end
+
+function update_draw_hitboxes()
+  if (not training_settings.display_hitboxes) then
+    return
+  end
+
+  screen_x = memory.readwordsigned(0x02026CB0)
+  screen_y = memory.readwordsigned(0x02026CB4)
+  scale = memory.readwordsigned(0x0200DCBA) --FBA can't read from 04xxxxxx
+  scale = 0x40/(scale > 0 and scale or 1)
+  ground_offset = 23
+
+  draw_hitboxes(player_objects[1])
+  draw_hitboxes(player_objects[2])
+end
+
+function draw_hitboxes(_object)
+  local _px = _object.pos_x - screen_x + emu.screenwidth()/2
+  local _py = emu.screenheight() - (_object.pos_y - screen_y) - ground_offset
+
+  for __, _box in ipairs(_object.boxes) do
+
+    local _c = 0x0000FFFF
+    if (_box.type == "attack") then
+      _c = 0xFF0000FF
+    elseif (_box.type == "throwable") then
+      _c = 0x00FF00FF
+    elseif (_box.type == "throw") then
+      _c = 0x77FF00FF
+    elseif (_box.type == "push") then
+      _c = 0xFF00FFFF
+    elseif (_box.type == "ext. vulnerability") then
+      _c = 0x00FFFFFF
+    end
+
+    local _l, _r
+    if _object.flip_x == 0 then
+      _l = _px + _box.left
+      _r = _l + _box.width
+    else
+      _l = _px - _box.left
+      _r = _l - _box.width
+    end
+    local _b = _py - _box.bottom
+    local _t = _b - _box.height
+
+    --gui.box(_px - _box.left, _py - _box.top, _px - _box.right, _py - _box.bottom, 0x00000000, _c)
+    gui.box(_l, _b, _r, _t, 0x00000000, _c)
+  end
+end
+
+-- PROGRAM
 
 debug_current_animation = false
 debug_state_variables = false
 
 function on_start()
   load_training_data()
+  load_frame_data()
 end
 
 function before_frame()
 
   update_input()
+  update_hitboxes()
 
   local input = {}
 
@@ -846,9 +1112,9 @@ function before_frame()
     local P1_disable_input_address = 0x02068C74
     if training_settings.swap_characters then
       swap_inputs(joypad.get(), input)
-      memory.writebyte(P1_disable_input_address, 0x01)
+      --memory.writebyte(P1_disable_input_address, 0x01)
     else
-      memory.writebyte(P1_disable_input_address, 0x00)
+      --memory.writebyte(P1_disable_input_address, 0x00)
     end
   end
 
@@ -1355,6 +1621,8 @@ function before_frame()
   joypad.set(input)
   process_pending_input_sequence()
 
+  update_framedata_recording()
+
   -- previous frame stuff
   P1_previous_is_attacking = P1.is_attacking
   P1_previous_action_count = P1.action_count
@@ -1366,8 +1634,6 @@ function before_frame()
   P2_previous_animation = P2.animation
   P2_previous_is_waking_up = P2_is_waking_up
   P2_previous_is_fast_waking_up = P2_is_fast_waking_up
-
-  update_hitboxes()
 end
 
 is_menu_open = false
@@ -1377,7 +1643,9 @@ sub_menu_selected_index = 1
 
 function on_gui()
 
-  draw_hitboxes()
+  if is_in_match then
+    update_draw_hitboxes()
+  end
 
   if is_in_match and training_settings.display_input then
     local i = joypad.get()
@@ -1479,6 +1747,14 @@ function on_gui()
         end
       else
         menu[main_menu_selected_index].entries[sub_menu_selected_index]:right()
+        save_training_data()
+      end
+    end
+
+    if frame_input.P1.pressed.LP then
+      if is_main_menu_selected then
+      else
+        menu[main_menu_selected_index].entries[sub_menu_selected_index]:validate()
         save_training_data()
       end
     end
@@ -1590,118 +1866,6 @@ end
 screen_x = 0
 screen_y = 0
 scale = 1
-
-players = {
-  { base = 0x02068C6C },
-  { base = 0x2069104 },
-}
-
-function define_box(f, obj, ptr, type)
-  if obj.friends > 1 then --Yang SA3
-    if type ~= "attack" then
-      return
-    end
-  elseif obj.projectile then
-    type = projectile_type[type] or type
-  end
-
-  local box = {
-    left   = memory.readwordsigned(ptr + 0x0),
-    width  = memory.readwordsigned(ptr + 0x2),
-    bottom = memory.readwordsigned(ptr + 0x4),
-    height = memory.readwordsigned(ptr + 0x6),
-    type   = type,
-  }
-
-  if box.left == 0 and box.width == 0 and box.height == 0 and box.bottom == 0 then
-    return
-  elseif obj.flip_x == 0 then
-    box.left  = -box.left
-    box.width = -box.width
-  end
-
-  table.insert(obj.boxes, box)
-end
-
-function update_game_object(_obj)
-  if memory.readdword(_obj.base + 0x2A0) == 0 then --invalid objects
-    return
-  end
-
-  _obj.friends = memory.readbyte(_obj.base + 0x1)
-  _obj.flip_x = memory.readbytesigned(_obj.base + 0x0A)
-  _obj.pos_x = memory.readwordsigned(_obj.base + 0x64)
-  _obj.pos_y = memory.readwordsigned(_obj.base + 0x68)
-  --obj.pos_x =  obj.pos_x - f.screen_x + emu.screenwidth()/2
-  --obj.pos_y = -obj.pos_y + f.screen_y + emu.screenheight() + GROUND_OFFSET
-  _obj.char_id = memory.readword(_obj.base + 0x3C0)
-
-  _obj.boxes = {}
-  local _boxes = {
-    {initial = 1, offset = 0x2D4, type = "push", number = 1},
-    {initial = 1, offset = 0x2C0, type = "throwable", number = 1},
-    {initial = 1, offset = 0x2A0, type = "vulnerability", number = 4},
-    {initial = 1, offset = 0x2A8, type = "ext. vulnerability", number = 4},
-    {initial = 1, offset = 0x2C8, type = "attack", number = 4},
-    {initial = 1, offset = 0x2B8, type = "throw", number = 1}
-  }
-
-  for _, _box in ipairs(_boxes) do
-    for i = _box.initial, _box.number do
-      define_box(_frame, _obj, memory.readdword(_obj.base + _box.offset) + (i-1)*8, _box.type)
-    end
-  end
-end
-
-function update_hitboxes()
-  screen_x = memory.readwordsigned(0x02026CB0)
-  screen_y = memory.readwordsigned(0x02026CB4)
-  scale = memory.readwordsigned(0x0200DCBA) --FBA can't read from 04xxxxxx
-	scale = 0x40/(scale > 0 and scale or 1)
-
-  update_game_object(players[1])
-  update_game_object(players[2])
-
-  if (frame_input.P1.pressed.LP) then
-    local _player = players[1]
-
-    print("scale:"..scale)
-    print("sw:"..emu.screenwidth().." sh"..emu.screenheight())
-    print("fx:"..screen_x.." fy:"..screen_y)
-    print("x:".._player.pos_x.." y:".._player.pos_y)
-    print("rx:"..(_player.pos_x - screen_x + emu.screenwidth()/2).." ry:"..(_player.pos_y - screen_y))
-    for _, _box in ipairs(_player.boxes) do
-      print(_box)
-    end
-    print(".")
-  end
-end
-
-function draw_hitboxes()
-  local _ground_offset = 23
-  for i = 1, 1 do
-    local _player = players[i]
-    local _px = _player.pos_x - screen_x + emu.screenwidth()/2
-    local _py = emu.screenheight() - (_player.pos_y - screen_y) - _ground_offset
-
-    for __, _box in ipairs(_player.boxes) do
-
-      local _c = 0x0000FFFF
-      if (_box.type == "attack") then
-        _c = 0xFF0000FF
-      end
-
-      local _l = _px - _box.left
-      local _r = _l - _box.width
-      local _b = _py - _box.bottom
-      local _t = _b - _box.height
-
-      --gui.box(_px - _box.left, _py - _box.top, _px - _box.right, _py - _box.bottom, 0x00000000, _c)
-      gui.box(_l, _b, _r, _t, 0x00000000, _c)
-
-    end
-  end
-end
 
 -- registers
 emu.registerstart(on_start)
