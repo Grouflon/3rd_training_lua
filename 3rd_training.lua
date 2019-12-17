@@ -573,9 +573,9 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_va
 end
 
 function button_menu_item(_name, _validate_function)
-  if _default_value == nil then _default_value = _min end
   local o = {}
   o.name = _name
+  o.validate_function = _validate_function
   o.last_frame_validated = 0
 
   function o:draw(_x, _y, _selected)
@@ -601,7 +601,7 @@ function button_menu_item(_name, _validate_function)
 
   function o:validate()
     self.last_frame_validated = frame_number
-    _validate_function()
+    self.validate_function()
   end
 
   function o:cancel()
@@ -609,60 +609,6 @@ function button_menu_item(_name, _validate_function)
 
   return o
 end
-
-training_settings = {
-  swap_characters = false,
-  pose = 1,
-  blocking_style = 1,
-  blocking_mode = 1,
-  red_parry_hit_count = 1,
-  counter_attack_stick = 1,
-  counter_attack_button = 1,
-  fast_recovery_mode = 1,
-  infinite_time = true,
-  infinite_life = true,
-  infinite_meter = true,
-  no_stun = true,
-  display_input = true,
-  display_debug_history = false,
-  display_hitboxes = false,
-  record_framedata = false,
-}
-
-menu = {
-  {
-    name = "Dummy Settings",
-    entries = {
-      list_menu_item("Pose", "pose", pose),
-      list_menu_item("Blocking Style", "blocking_style", blocking_style),
-      list_menu_item("Blocking", "blocking_mode", blocking_mode),
-      integer_menu_item("Hits before Red Parry", "red_parry_hit_count", 1, 20, true),
-      list_menu_item("Counter-Attack Move", "counter_attack_stick", stick_gesture),
-      list_menu_item("Counter-Attack Button", "counter_attack_button", button_gesture),
-      list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
-    }
-  },
-  {
-    name = "Training Settings",
-    entries = {
-      checkbox_menu_item("Infinite Time", "infinite_time"),
-      checkbox_menu_item("Infinite Life", "infinite_life"),
-      checkbox_menu_item("Infinite Meter", "infinite_meter"),
-      checkbox_menu_item("No Stun", "no_stun"),
-      checkbox_menu_item("Display Input", "display_input"),
-    }
-  },
-  {
-    name = "Debug Settings",
-    entries = {
-      checkbox_menu_item("Moves History", "display_debug_history"),
-      checkbox_menu_item("Swap Characters", "swap_characters"),
-      checkbox_menu_item("Display Hitboxes", "display_hitboxes"),
-      checkbox_menu_item("Record Frame Data", "record_framedata"),
-      button_menu_item("Save Frame Data", save_frame_data)
-    }
-  },
-}
 
 -- save/load
 training_data_file = "3rd_training_data.txt"
@@ -880,6 +826,12 @@ player_objects = {
 }
 
 frame_data = {}
+frame_data_meta = {}
+for i = 1, #characters do
+  frame_data_meta[characters[i]] = {
+    moves = {}
+  }
+end
 frame_data_file = "frame_data.json"
 
 function save_frame_data()
@@ -908,7 +860,7 @@ end
 function reset_current_recording_animation()
   current_recording_animation_id = nil
   current_recording_animation_start_frame = 0
-  current_recording_animation_start_pos = {0, 0}
+  current_recording_animation_previous_pos = {0, 0}
   current_recording_animation = nil
 end
 reset_current_recording_animation()
@@ -931,7 +883,7 @@ function record_framedata(_object)
 
     current_recording_animation_id = P1.animation
     current_recording_animation_start_frame = frame_number
-    current_recording_animation_start_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
+    current_recording_animation_previous_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
     current_recording_animation = { frames = {}, hit_frames = {}, attack_box_count = 0 }
   end
 
@@ -942,13 +894,18 @@ function record_framedata(_object)
       table.insert(current_recording_animation.hit_frames, _frame)
     end
 
+    local _sign = 1
+    if player_objects[1].flip_x then _sign = -1 end
+
     current_recording_animation.frames[_frame + 1] = {
       boxes = {},
       movement = {
-        player_objects[1].pos_x - current_recording_animation_start_pos[1],
-        player_objects[1].pos_y - current_recording_animation_start_pos[2],
+        (player_objects[1].pos_x - current_recording_animation_previous_pos[1]) * _sign,
+        (player_objects[1].pos_y - current_recording_animation_previous_pos[2]) * _sign,
       }
     }
+    current_recording_animation_previous_pos = { player_objects[1].pos_x, player_objects[1].pos_y }
+
     if player_objects[1].flip_x then
       current_recording_animation.frames[_frame + 1].movement[1] = -current_recording_animation.frames[_frame + 1].movement[1]
     end
@@ -1077,7 +1034,10 @@ end
 
 function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _defender_hitbox_dilation)
 
+  local _debug = false
   if (_defender_hitbox_dilation == nil) then _defender_hitbox_dilation = 0 end
+
+  if _debug then print(string.format("   %d defender boxes, %d attacker boxes", #_defender_boxes, #_attacker_boxes)) end
 
   for i = 1, #_defender_boxes do
     local _d_box = _defender_boxes[i]
@@ -1107,16 +1067,17 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
           local _a_b = _attacker_y + _a_box.bottom
           local _a_t = _a_b + _a_box.height
 
+          if _debug then print(string.format("   testing (%d,%d,%d,%d) against (%d,%d,%d,%d)", _d_t, _d_r, _d_b, _d_l, _a_t, _a_r, _a_b, _a_l)) end
+
           -- check collision
-          if (
+          if not (
             (_a_l >= _d_r) or
             (_a_r <= _d_l) or
             (_a_b >= _d_t) or
             (_a_t <= _d_b)
           ) then
-            return false
+            return true
           end
-          return true
         end
       end
     end
@@ -1128,19 +1089,22 @@ end
 -- BLOCKING
 
 P1_current_animation_start_frame = 0
-P1_current_animation_start_pos = {0, 0}
 listening_for_attack_animation = false
+
+
+frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} }
+frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} }
+frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} }
 
 function update_blocking(_input)
   local _character = characters[P1.character]
   local _debug = true
-  if (P1_has_animation_just_changed) then
+  if (P1_has_animation_just_changed or P1_has_just_attacked) then
     if (frame_data[_character] and frame_data[_character][P1.animation]) then
       listening_for_attack_animation = true
       P1_current_animation_start_frame = frame_number
-      P1_current_animation_start_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
       if _debug then
-        print(P1_current_animation_start_frame..": Animation \""..P1.animation.."\" started at pos {"..P1_current_animation_start_pos[1]..","..P1_current_animation_start_pos[2].."}")
+        print(P1_current_animation_start_frame..": listening for attack animation \""..P1.animation.."\"")
       end
     else
       listening_for_attack_animation = false
@@ -1149,34 +1113,103 @@ function update_blocking(_input)
 
   if listening_for_attack_animation then
     local _frame = frame_number - P1_current_animation_start_frame
-    local _frame_to_check = 2
-    if (_frame < #frame_data[_character][P1.animation].frames - _frame_to_check) then
+    local _frame_to_check = _frame + 1
+    local _current_animation_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
 
-      local _next_frame = frame_data[_character][P1.animation].frames[_frame + 1 + _frame_to_check]
+    if (_frame_to_check < #frame_data[_character][P1.animation].frames) then
+
+      --print(" comparing frame ".._frame.." with frame "..(_frame_to_check) )
+      local _next_frame = frame_data[_character][P1.animation].frames[_frame_to_check + 1]
       local _sign = 1
       if player_objects[1].flip_x then _sign = -1 end
-      local _next_pos = {P1_current_animation_start_pos[1] + _next_frame.movement[1] * _sign, P1_current_animation_start_pos[2] + _next_frame.movement[2]}
+      local _next_pos = copytable(_current_animation_pos)
+      for i = _frame + 1, _frame_to_check do
+        _next_pos[1] = _next_pos[1] + frame_data[_character][P1.animation].frames[i+1].movement[1] * _sign
+        _next_pos[2] = _next_pos[2] + frame_data[_character][P1.animation].frames[i+1].movement[2] * _sign
+      end
 
       if test_collision(
         player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes, -- defender
         _next_pos[1], _next_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
         1 -- defender hitbox dilation
       ) then
-        if player_objects[2].flip_x then
-          print("will be hit")
-          _input['P2 Right'] = false
-          _input['P2 Left'] = true
+
+        local _hit_type = 1
+        if frame_data_meta[_character].moves[P1.animation] and frame_data_meta[_character].moves[P1.animation].hits and frame_data_meta[_character].moves[P1.animation].hits[1] then
+          _hit_type = frame_data_meta[_character].moves[P1.animation].hits[1].type
+        end
+
+        if _hit_type == 2 then
+          _input['P2 Down'] = true
         else
-
-          _input['P2 Left'] = false
-          _input['P2 Right'] = true
-
+          if player_objects[2].flip_x then
+            _input['P2 Right'] = false
+            _input['P2 Left'] = true
+          else
+            _input['P2 Left'] = false
+            _input['P2 Right'] = true
+          end
         end
       end
     end
   end
 end
 
+-- GUI DECLARATION
+
+training_settings = {
+  swap_characters = false,
+  pose = 1,
+  blocking_style = 1,
+  blocking_mode = 1,
+  red_parry_hit_count = 1,
+  counter_attack_stick = 1,
+  counter_attack_button = 1,
+  fast_recovery_mode = 1,
+  infinite_time = true,
+  infinite_life = true,
+  infinite_meter = true,
+  no_stun = true,
+  display_input = true,
+  display_debug_history = false,
+  display_hitboxes = false,
+  record_framedata = false,
+}
+
+menu = {
+  {
+    name = "Dummy Settings",
+    entries = {
+      list_menu_item("Pose", "pose", pose),
+      list_menu_item("Blocking Style", "blocking_style", blocking_style),
+      list_menu_item("Blocking", "blocking_mode", blocking_mode),
+      integer_menu_item("Hits before Red Parry", "red_parry_hit_count", 1, 20, true),
+      list_menu_item("Counter-Attack Move", "counter_attack_stick", stick_gesture),
+      list_menu_item("Counter-Attack Button", "counter_attack_button", button_gesture),
+      list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
+    }
+  },
+  {
+    name = "Training Settings",
+    entries = {
+      checkbox_menu_item("Infinite Time", "infinite_time"),
+      checkbox_menu_item("Infinite Life", "infinite_life"),
+      checkbox_menu_item("Infinite Meter", "infinite_meter"),
+      checkbox_menu_item("No Stun", "no_stun"),
+      checkbox_menu_item("Display Input", "display_input"),
+    }
+  },
+  {
+    name = "Debug Settings",
+    entries = {
+      checkbox_menu_item("Moves History", "display_debug_history"),
+      checkbox_menu_item("Swap Characters", "swap_characters"),
+      checkbox_menu_item("Display Hitboxes", "display_hitboxes"),
+      checkbox_menu_item("Record Frame Data", "record_framedata"),
+      button_menu_item("Save Frame Data", save_frame_data)
+    }
+  },
+}
 
 -- PROGRAM
 
