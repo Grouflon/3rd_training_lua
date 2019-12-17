@@ -9,7 +9,7 @@
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
 -- https://github.com/TASVideos/mame-rr/wiki/Lua-scripting-functions
 
-json = require ("dkjson")
+json = require ("lua_libs/dkjson")
 
 -- input
 function make_input_set()
@@ -1091,10 +1091,22 @@ end
 P1_current_animation_start_frame = 0
 listening_for_attack_animation = false
 
+movement_type = {
+  "animation",
+  "velocity"
+}
 
-frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} }
-frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} }
-frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} }
+frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["alex"].moves["bc0c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["alex"].moves["bd6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["alex"].moves["be7c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+
+-- alex QCF+P slashes are not blocked, need to check why
+-- also true for Air LK, Air HK and Cr HP (except from point blank)
 
 function update_blocking(_input)
   local _character = characters[P1.character]
@@ -1112,9 +1124,11 @@ function update_blocking(_input)
   end
 
   if listening_for_attack_animation then
+    local _frame_data_meta = frame_data_meta[_character].moves[P1.animation]
     local _frame = frame_number - P1_current_animation_start_frame
-    local _frame_to_check = _frame + 1
+    local _frame_to_check = _frame + 2
     local _current_animation_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
+    local _frame_delta = _frame_to_check - _frame
 
     if (_frame_to_check < #frame_data[_character][P1.animation].frames) then
 
@@ -1122,21 +1136,48 @@ function update_blocking(_input)
       local _next_frame = frame_data[_character][P1.animation].frames[_frame_to_check + 1]
       local _sign = 1
       if player_objects[1].flip_x then _sign = -1 end
-      local _next_pos = copytable(_current_animation_pos)
-      for i = _frame + 1, _frame_to_check do
-        _next_pos[1] = _next_pos[1] + frame_data[_character][P1.animation].frames[i+1].movement[1] * _sign
-        _next_pos[2] = _next_pos[2] + frame_data[_character][P1.animation].frames[i+1].movement[2] * _sign
+      local _next_attacker_pos = copytable(_current_animation_pos)
+      local _movement_type = 1
+      if _frame_data_meta and _frame_data_meta.movement_type then
+        _movement_type = _frame_data_meta.movement_type
+      end
+      if _movement_type == 1 then -- animation base movement
+        for i = _frame + 1, _frame_to_check do
+          _next_attacker_pos[1] = _next_attacker_pos[1] + frame_data[_character][P1.animation].frames[i+1].movement[1] * _sign
+          _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_character][P1.animation].frames[i+1].movement[2] * _sign
+        end
+      else -- velocity based movement
+        local _velocity_x = P1.velocity_x
+        local _velocity_y = P1.velocity_y
+        for i = 1, _frame_delta do
+          _velocity_x = _velocity_x + P1.acc_x
+          _velocity_y = _velocity_y + P1.acc_y
+          _next_attacker_pos[1] = _next_attacker_pos[1] + _velocity_x
+          _next_attacker_pos[2] = _next_attacker_pos[2] + _velocity_y
+        end
+      end
+
+      local _next_defender_pos = { player_objects[2].pos_x, player_objects[2].pos_y }
+      if true then
+        local _velocity_x = P2.velocity_x
+        local _velocity_y = P2.velocity_y
+        for i = 1, _frame_delta do
+          _velocity_x = _velocity_x + P2.acc_x
+          _velocity_y = _velocity_y + P2.acc_y
+          _next_defender_pos[1] = _next_defender_pos[1] + _velocity_x
+          _next_defender_pos[2] = _next_defender_pos[2] + _velocity_y
+        end
       end
 
       if test_collision(
-        player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes, -- defender
-        _next_pos[1], _next_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
-        1 -- defender hitbox dilation
+        _next_defender_pos[1], _next_defender_pos[2], player_objects[2].flip_x, player_objects[2].boxes, -- defender
+        _next_attacker_pos[1], _next_attacker_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
+        3 -- defender hitbox dilation
       ) then
 
         local _hit_type = 1
-        if frame_data_meta[_character].moves[P1.animation] and frame_data_meta[_character].moves[P1.animation].hits and frame_data_meta[_character].moves[P1.animation].hits[1] then
-          _hit_type = frame_data_meta[_character].moves[P1.animation].hits[1].type
+        if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[1] then
+          _hit_type = _frame_data_meta.hits[1].type
         end
 
         if _hit_type == 2 then
@@ -1268,8 +1309,16 @@ function before_frame()
   P1.is_attacking_ext = memory.readbyte(0x02069095) > 0
   P1.input_capacity = memory_read(0x020690D8, 2)
   P1.standing_state = memory.readbyte(0x02068F03)
+  local _P1_prev_pos_x = P1.pos_x or 0
+  local _P1_prev_pos_y = P1.pos_y or 0
+  local _P1_prev_velocity_x = P1.velocity_x or 0
+  local _P1_prev_velocity_y = P1.velocity_y or 0
   P1.pos_x = memory_read(0x02068CD0, 2)
   P1.pos_y = memory_read(0x02068CD4, 2)
+  P1.velocity_x = P1.pos_x - _P1_prev_pos_x
+  P1.velocity_y = P1.pos_y - _P1_prev_pos_y
+  P1.acc_x = P1.velocity_x - _P1_prev_velocity_x
+  P1.acc_y = P1.velocity_y - _P1_prev_velocity_y
   P1.action = memory_read(0x02068D19, 3)
   P1.action_ext = memory_read(0x02068D99, 3)
   P1.action_count = memory.readbyte(0x020690C5)
@@ -1283,8 +1332,16 @@ function before_frame()
   P2.facing_right = memory.readbyte(0x0206910F) > 0
   P2.input_capacity = memory_read(0x02069570, 2)
   P2.standing_state = memory.readbyte(0x0206939B)
+  local _P2_prev_pos_x = P2.pos_x or 0
+  local _P2_prev_pos_y = P2.pos_y or 0
+  local _P2_prev_velocity_x = P2.velocity_x or 0
+  local _P2_prev_velocity_y = P2.velocity_y or 0
   P2.pos_x = memory_read(0x02069168, 2)
   P2.pos_y = memory_read(0x0206916C, 2)
+  P2.velocity_x = P2.pos_x - _P2_prev_pos_x
+  P2.velocity_y = P2.pos_y - _P2_prev_pos_y
+  P2.acc_x = P2.velocity_x - _P2_prev_velocity_x
+  P2.acc_y = P2.velocity_y - _P2_prev_velocity_y
   P2.is_blocking = memory.readbyte(0x020694D7) > 0
   P2.action = memory_read(0x020691B1, 3)
   P2.animation = bit.tohex(memory_read(0x2069306, 2),4)
