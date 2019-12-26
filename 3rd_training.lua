@@ -945,6 +945,7 @@ end
 reset_current_recording_animation()
 
 function record_framedata(_object)
+  local _debug = true
   -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss
   if (P1_has_just_hit or P1_has_just_been_blocked or P1_has_just_been_parried) then
     reset_current_recording_animation()
@@ -958,6 +959,14 @@ function record_framedata(_object)
         frame_data[_character] = {}
       end
       frame_data[_character][current_recording_animation_id] = current_recording_animation
+
+      if _debug then
+        print(string.format("recorded animation: %s", current_recording_animation_id))
+      end
+    elseif current_recording_animation then
+      if _debug then
+        print(string.format("dropped animation recording: %s", current_recording_animation_id))
+      end
     end
 
     current_recording_animation_id = P1.animation
@@ -1134,7 +1143,7 @@ end
 
 function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _defender_hitbox_dilation)
 
-  local _debug = true
+  local _debug = false
   if (_defender_hitbox_dilation == nil) then _defender_hitbox_dilation = 0 end
 
   if _debug then print(string.format("   %d defender boxes, %d attacker boxes", #_defender_boxes, #_attacker_boxes)) end
@@ -1188,6 +1197,7 @@ end
 
 -- BLOCKING
 
+P1_current_animation_id = nil
 P1_current_animation_start_frame = 0
 P1_current_animation_freeze_frames = 0
 next_attack_animation_hit_frame = 0
@@ -1216,24 +1226,68 @@ frame_data_meta["alex"].moves["bf94"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["alex"].moves["c0e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
 frame_data_meta["alex"].moves["c1c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
 
+frame_data_meta["alex"].moves["6d24"] = { intro = { length = 23, next = "7044" } } -- VCharge LK
+frame_data_meta["alex"].moves["7044"] = { hits = {{ type = 3 }} } -- VCharge LK
 
--- alex QCF+P slashes are not blocked, need to check why
--- also true for Air LK, Air HK and Cr HP (except from point blank)
+frame_data_meta["alex"].moves["6df4"] = { intro = { length = 25, next = "7094" } } -- VCharge MK
+frame_data_meta["alex"].moves["7094"] = { hits = {{ type = 3 }} } -- VCharge MK
+
+frame_data_meta["alex"].moves["6ec4"] = { intro = { length = 26, next = "70e4" } } -- VCharge HK
+frame_data_meta["alex"].moves["70e4"] = { hits = {{ type = 3 }} } -- VCharge HK
+
+frame_data_meta["alex"].moves["6f94"] = { intro = { length = 26, next = "70e4" } } -- VCharge EXK
 
 function update_blocking(_input)
+
   local _character = characters[P1.character]
-  local _debug = true
-  if (P1_has_animation_just_changed or P1_has_just_attacked) then
-    if (frame_data[_character] and frame_data[_character][P1.animation]) then
+
+  local _frame = frame_number - P1_current_animation_start_frame - P1_current_animation_freeze_frames
+  local _all_hits_done = true
+
+  if (frame_data[_character] and frame_data[_character][P1.animation]) then
+    for __, _hit_frame in ipairs(frame_data[_character][P1.animation].hit_frames) do
+      if _frame < _hit_frame then
+        _all_hits_done = false
+        break
+      end
+    end
+  end
+
+  -- P1_has_just_attacked can change in the middle of an attack (see Alex's QCF Ps) so we need to ensure all hits are past us in order to allow transition to the same animation
+
+  local _debug = false
+  if (P1_has_animation_just_changed or (P1_has_just_attacked and _all_hits_done)) then
+    if (
+      (
+        frame_data[_character] and
+        frame_data[_character][P1.animation]
+      )
+      or
+      (
+        frame_data_meta[_character] and
+        frame_data_meta[_character].moves[P1.animation] and
+        frame_data_meta[_character].moves[P1.animation].intro and
+        frame_data[_character] and
+        frame_data[_character][frame_data_meta[_character].moves[P1.animation].intro.next]
+      )
+    ) then
       listening_for_attack_animation = true
+      P1_current_animation_id = P1.animation
       P1_current_animation_start_frame = frame_number
       P1_current_animation_freeze_frames = 0
       next_attack_animation_hit_frame = 0
       next_attack_hit_id = 0
       last_attack_hit_id = 0
 
+      -- special case for animations that introduce animations that hit at frame 0
+      if frame_data_meta[_character] and frame_data_meta[_character].moves[P1.animation] and frame_data_meta[_character].moves[P1.animation].intro then
+        print("intro")
+        P1_current_animation_id = frame_data_meta[_character].moves[P1.animation].intro.next
+        P1_current_animation_start_frame = P1_current_animation_start_frame + frame_data_meta[_character].moves[P1.animation].intro.length
+      end
+
       if _debug then
-        print(P1_current_animation_start_frame..": listening for attack animation \""..P1.animation.."\"")
+        print(P1_current_animation_start_frame..": listening for attack animation \""..P1_current_animation_id.."\"")
       end
     else
       if _debug and listening_for_attack_animation then
@@ -1252,23 +1306,24 @@ function update_blocking(_input)
       P1_current_animation_freeze_frames = P1_current_animation_freeze_frames + 1
     end
 
-    local _frame_data_meta = frame_data_meta[_character].moves[P1.animation]
-    local _frame = frame_number - P1_current_animation_start_frame - P1_current_animation_freeze_frames
+    local _frame_data_meta = frame_data_meta[_character].moves[P1_current_animation_id]
     local _frame_to_check = _frame + 2
     local _current_animation_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
     local _frame_delta = _frame_to_check - _frame
 
     local _next_hit_id = 1
-    for i = 1, #frame_data[_character][P1.animation].hit_frames do
-      if _frame >= frame_data[_character][P1.animation].hit_frames[i] then
+    for i = 1, #frame_data[_character][P1_current_animation_id].hit_frames do
+      if _frame >= frame_data[_character][P1_current_animation_id].hit_frames[i] then
         _next_hit_id = i
       end
     end
 
-    if (next_attack_animation_hit_frame < frame_number and _frame_to_check < #frame_data[_character][P1.animation].frames) then
+    if (next_attack_animation_hit_frame < frame_number and _frame_to_check < #frame_data[_character][P1_current_animation_id].frames) then
 
-      print(" comparing frame ".._frame.." with frame "..(_frame_to_check) )
-      local _next_frame = frame_data[_character][P1.animation].frames[_frame_to_check + 1]
+      if _debug then
+        print(string.format(" comparing frame %d with frame %d (%d freeze frames)", _frame, _frame_to_check, P1_current_animation_freeze_frames ))
+      end
+      local _next_frame = frame_data[_character][P1_current_animation_id].frames[_frame_to_check + 1]
       local _sign = 1
       if player_objects[1].flip_x ~= 0 then _sign = -1 end
       local _next_attacker_pos = copytable(_current_animation_pos)
@@ -1278,8 +1333,10 @@ function update_blocking(_input)
       end
       if _movement_type == 1 then -- animation base movement
         for i = _frame + 1, _frame_to_check do
-          _next_attacker_pos[1] = _next_attacker_pos[1] + frame_data[_character][P1.animation].frames[i+1].movement[1] * _sign
-          _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_character][P1.animation].frames[i+1].movement[2]
+          if i >= 0 then
+            _next_attacker_pos[1] = _next_attacker_pos[1] + frame_data[_character][P1_current_animation_id].frames[i+1].movement[1] * _sign
+            _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_character][P1_current_animation_id].frames[i+1].movement[2]
+          end
         end
       else -- velocity based movement
         local _velocity_x = P1.velocity_x
@@ -1304,7 +1361,7 @@ function update_blocking(_input)
         end
       end
 
-      if test_collision(
+      if _next_frame and test_collision(
         _next_defender_pos[1], _next_defender_pos[2], player_objects[2].flip_x, player_objects[2].boxes, -- defender
         _next_attacker_pos[1], _next_attacker_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
         3 -- defender hitbox dilation
@@ -1411,7 +1468,7 @@ menu = {
 -- PROGRAM
 
 debug_current_animation = false
-debug_state_variables = false
+debug_state_variables = true
 
 function on_start()
   load_training_data()
