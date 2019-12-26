@@ -572,6 +572,83 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_va
   return o
 end
 
+function map_menu_item(_name, _object, _property_name, _map_object, _map_property)
+  local o = {}
+  o.name = _name
+  o.object = _object
+  o.property_name = _property_name
+  o.map_object = _map_object
+  o.map_property = _map_property
+
+  function o:draw(_x, _y, _selected)
+    local c = text_default_color
+    local prefix = ""
+    local suffix = ""
+    if _selected then
+      c = text_selected_color
+      prefix = "< "
+      suffix = " >"
+    end
+
+    local _str = string.format("%s%s : %s%s", prefix, self.name, self.object[self.property_name], suffix)
+    gui.text(_x, _y, _str, c, text_default_border_color)
+  end
+
+  function o:left()
+    if self.map_property == nil or self.map_object == nil or self.map_object[self.map_property] == nil then
+      return
+    end
+
+    if self.object[self.property_name] == "" then
+      for _key, _value in pairs(self.map_object[self.map_property]) do
+        self.object[self.property_name] = _key
+      end
+    else
+      local _previous_key = ""
+      for _key, _value in pairs(self.map_object[self.map_property]) do
+        if _key == self.object[self.property_name] then
+          self.object[self.property_name] = _previous_key
+          return
+        end
+        _previous_key = _key
+      end
+      self.object[self.property_name] = ""
+    end
+  end
+
+  function o:right()
+    if self.map_property == nil or self.map_object == nil or self.map_object[self.map_property] == nil then
+      return
+    end
+
+    if self.object[self.property_name] == "" then
+      for _key, _value in pairs(self.map_object[self.map_property]) do
+        self.object[self.property_name] = _key
+        return
+      end
+    else
+      local _previous_key = ""
+      for _key, _value in pairs(self.map_object[self.map_property]) do
+        if _previous_key == self.object[self.property_name] then
+          self.object[self.property_name] = _key
+          return
+        end
+        _previous_key = _key
+      end
+      self.object[self.property_name] = ""
+    end
+  end
+
+  function o:validate()
+  end
+
+  function o:cancel()
+    training_settings[self.property_name] = ""
+  end
+
+  return o
+end
+
 function button_menu_item(_name, _validate_function)
   local o = {}
   o.name = _name
@@ -839,7 +916,9 @@ function save_frame_data()
   local _str = json.encode(frame_data, { indent = true })
   _f:write(_str)
   _f:close()
+
   print("Saved frame data to \""..frame_data_file.."\"")
+
 end
 
 function load_frame_data()
@@ -895,18 +974,18 @@ function record_framedata(_object)
     end
 
     local _sign = 1
-    if player_objects[1].flip_x then _sign = -1 end
+    if player_objects[1].flip_x == 0 then _sign = -1 end
 
     current_recording_animation.frames[_frame + 1] = {
       boxes = {},
       movement = {
         (player_objects[1].pos_x - current_recording_animation_previous_pos[1]) * _sign,
-        (player_objects[1].pos_y - current_recording_animation_previous_pos[2]) * _sign,
+        (player_objects[1].pos_y - current_recording_animation_previous_pos[2]),
       }
     }
     current_recording_animation_previous_pos = { player_objects[1].pos_x, player_objects[1].pos_y }
 
-    if player_objects[1].flip_x then
+    if player_objects[1].flip_x ~= 0 then
       current_recording_animation.frames[_frame + 1].movement[1] = -current_recording_animation.frames[_frame + 1].movement[1]
     end
 
@@ -995,15 +1074,36 @@ function update_draw_hitboxes()
   scale = 0x40/(scale > 0 and scale or 1)
   ground_offset = 23
 
-  draw_hitboxes(player_objects[1])
-  draw_hitboxes(player_objects[2])
+  draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
+  draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
+
+  local _debug_frame_data = frame_data[training_settings.debug_character]
+  if _debug_frame_data then
+    local _debug_move = _debug_frame_data[training_settings.debug_move]
+    if _debug_move then
+      local _move_frame = frame_number % #_debug_move.frames
+
+      local _debug_pos_x = player_objects[1].pos_x
+      local _debug_pos_y = player_objects[1].pos_y
+      local _debug_flip_x = player_objects[1].flip_x
+
+      local _sign = 1
+      if _debug_flip_x ~= 0 then _sign = -1 end
+      for i = 1, _move_frame + 1 do
+        _debug_pos_x = _debug_pos_x + _debug_move.frames[i].movement[1] * _sign
+        _debug_pos_y = _debug_pos_y + _debug_move.frames[i].movement[2]
+      end
+
+      draw_hitboxes(_debug_pos_x, _debug_pos_y, _debug_flip_x, _debug_move.frames[_move_frame + 1].boxes)
+    end
+  end
 end
 
-function draw_hitboxes(_object)
-  local _px = _object.pos_x - screen_x + emu.screenwidth()/2
-  local _py = emu.screenheight() - (_object.pos_y - screen_y) - ground_offset
+function draw_hitboxes(_pos_x, _pos_y, _flip_x, _boxes)
+  local _px = _pos_x - screen_x + emu.screenwidth()/2
+  local _py = emu.screenheight() - (_pos_y - screen_y) - ground_offset
 
-  for __, _box in ipairs(_object.boxes) do
+  for __, _box in ipairs(_boxes) do
 
     local _c = 0x0000FFFF
     if (_box.type == "attack") then
@@ -1019,7 +1119,7 @@ function draw_hitboxes(_object)
     end
 
     local _l, _r
-    if _object.flip_x == 0 then
+    if _flip_x == 0 then
       _l = _px + _box.left
     else
       _l = _px - _box.left - _box.width
@@ -1034,7 +1134,7 @@ end
 
 function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _defender_hitbox_dilation)
 
-  local _debug = false
+  local _debug = true
   if (_defender_hitbox_dilation == nil) then _defender_hitbox_dilation = 0 end
 
   if _debug then print(string.format("   %d defender boxes, %d attacker boxes", #_defender_boxes, #_attacker_boxes)) end
@@ -1089,6 +1189,10 @@ end
 -- BLOCKING
 
 P1_current_animation_start_frame = 0
+P1_current_animation_freeze_frames = 0
+next_attack_animation_hit_frame = 0
+next_attack_hit_id = 0
+last_attack_hit_id = 0
 listening_for_attack_animation = false
 
 movement_type = {
@@ -1100,9 +1204,17 @@ frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
 frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} } -- Cr HK
 
+frame_data_meta["alex"].moves["a7dc"] = { hits = {{ type = 3 }} } -- HP
+
+frame_data_meta["alex"].moves["72d4"] = { hits = {{ type = 3 }} } -- UOH
+
 frame_data_meta["alex"].moves["bc0c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
 frame_data_meta["alex"].moves["bd6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
 frame_data_meta["alex"].moves["be7c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["alex"].moves["bf94"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["alex"].moves["c0e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["alex"].moves["c1c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
 
 
 -- alex QCF+P slashes are not blocked, need to check why
@@ -1115,27 +1227,50 @@ function update_blocking(_input)
     if (frame_data[_character] and frame_data[_character][P1.animation]) then
       listening_for_attack_animation = true
       P1_current_animation_start_frame = frame_number
+      P1_current_animation_freeze_frames = 0
+      next_attack_animation_hit_frame = 0
+      next_attack_hit_id = 0
+      last_attack_hit_id = 0
+
       if _debug then
         print(P1_current_animation_start_frame..": listening for attack animation \""..P1.animation.."\"")
       end
     else
+      if _debug and listening_for_attack_animation then
+        print(string.format("%d: Stopped listening for attack animation", frame_number))
+      end
       listening_for_attack_animation = false
     end
   end
 
+  if training_settings.blocking_mode == 1 then
+    listening_for_attack_animation = false
+  end
+
   if listening_for_attack_animation then
+    if P1.remaining_freeze_frames > 0 then
+      P1_current_animation_freeze_frames = P1_current_animation_freeze_frames + 1
+    end
+
     local _frame_data_meta = frame_data_meta[_character].moves[P1.animation]
-    local _frame = frame_number - P1_current_animation_start_frame
+    local _frame = frame_number - P1_current_animation_start_frame - P1_current_animation_freeze_frames
     local _frame_to_check = _frame + 2
     local _current_animation_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
     local _frame_delta = _frame_to_check - _frame
 
-    if (_frame_to_check < #frame_data[_character][P1.animation].frames) then
+    local _next_hit_id = 1
+    for i = 1, #frame_data[_character][P1.animation].hit_frames do
+      if _frame >= frame_data[_character][P1.animation].hit_frames[i] then
+        _next_hit_id = i
+      end
+    end
 
-      --print(" comparing frame ".._frame.." with frame "..(_frame_to_check) )
+    if (next_attack_animation_hit_frame < frame_number and _frame_to_check < #frame_data[_character][P1.animation].frames) then
+
+      print(" comparing frame ".._frame.." with frame "..(_frame_to_check) )
       local _next_frame = frame_data[_character][P1.animation].frames[_frame_to_check + 1]
       local _sign = 1
-      if player_objects[1].flip_x then _sign = -1 end
+      if player_objects[1].flip_x ~= 0 then _sign = -1 end
       local _next_attacker_pos = copytable(_current_animation_pos)
       local _movement_type = 1
       if _frame_data_meta and _frame_data_meta.movement_type then
@@ -1144,7 +1279,7 @@ function update_blocking(_input)
       if _movement_type == 1 then -- animation base movement
         for i = _frame + 1, _frame_to_check do
           _next_attacker_pos[1] = _next_attacker_pos[1] + frame_data[_character][P1.animation].frames[i+1].movement[1] * _sign
-          _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_character][P1.animation].frames[i+1].movement[2] * _sign
+          _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_character][P1.animation].frames[i+1].movement[2]
         end
       else -- velocity based movement
         local _velocity_x = P1.velocity_x
@@ -1174,23 +1309,38 @@ function update_blocking(_input)
         _next_attacker_pos[1], _next_attacker_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
         3 -- defender hitbox dilation
       ) then
+        next_attack_animation_hit_frame = frame_number + P1.remaining_freeze_frames + 2
+        next_attack_hit_id = _next_hit_id
+        print(string.format(" %d: next hit %d at frame %d", frame_number, next_attack_hit_id, next_attack_animation_hit_frame))
+      end
+    end
 
-        local _hit_type = 1
-        if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[1] then
-          _hit_type = _frame_data_meta.hits[1].type
-        end
+    if frame_number <= next_attack_animation_hit_frame then
 
-        if _hit_type == 2 then
-          _input['P2 Down'] = true
-        else
-          if player_objects[2].flip_x then
+      local _hit_type = 1
+      local _blocking_style = training_settings.blocking_style
+      if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[next_attack_hit_id] then
+        _hit_type = _frame_data_meta.hits[next_attack_hit_id].type
+      end
+
+      if _blocking_style == 1 then
+        if frame_number >= next_attack_animation_hit_frame - 2 then
+          print(frame_number, "blocking", _hit_type)
+          if player_objects[2].flip_x == 0 then
+            _input['P2 Right'] = true
+            _input['P2 Left'] = false
+          else
             _input['P2 Right'] = false
             _input['P2 Left'] = true
-          else
-            _input['P2 Left'] = false
-            _input['P2 Right'] = true
+          end
+
+          if _hit_type == 2 then
+            _input['P2 Down'] = true
+          elseif _hit_type == 3 then
+            _input['P2 Down'] = false
           end
         end
+      elseif _blocking_style == 2 then
       end
     end
   end
@@ -1215,7 +1365,11 @@ training_settings = {
   display_debug_history = false,
   display_hitboxes = false,
   record_framedata = false,
+  debug_character = "",
+  debug_move = "",
 }
+
+debug_move_menu_item = map_menu_item("Debug Move", training_settings, "debug_move", frame_data, nil)
 
 menu = {
   {
@@ -1247,7 +1401,9 @@ menu = {
       checkbox_menu_item("Swap Characters", "swap_characters"),
       checkbox_menu_item("Display Hitboxes", "display_hitboxes"),
       checkbox_menu_item("Record Frame Data", "record_framedata"),
-      button_menu_item("Save Frame Data", save_frame_data)
+      button_menu_item("Save Frame Data", save_frame_data),
+      map_menu_item("Debug Character", training_settings, "debug_character", _G, "frame_data"),
+      debug_move_menu_item
     }
   },
 }
@@ -1263,6 +1419,13 @@ function on_start()
 end
 
 function before_frame()
+
+  -- update debug menu
+  if training_settings.debug_character ~= debug_move_menu_item.map_property then
+    debug_move_menu_item.map_object = frame_data
+    debug_move_menu_item.map_property = training_settings.debug_character
+    training_settings.debug_move = ""
+  end
 
   update_input()
   update_hitboxes()
