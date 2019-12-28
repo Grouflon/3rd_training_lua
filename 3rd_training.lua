@@ -1203,6 +1203,7 @@ P1_current_animation_freeze_frames = 0
 next_attack_animation_hit_frame = 0
 next_attack_hit_id = 0
 last_attack_hit_id = 0
+blocked_hit_count = 0
 listening_for_attack_animation = false
 
 movement_type = {
@@ -1241,7 +1242,14 @@ function update_blocking(_input)
 
   local _character = characters[P1.character]
 
-  local _frame = frame_number - P1_current_animation_start_frame - P1_current_animation_freeze_frames
+  if listening_for_attack_animation and P1.remaining_freeze_frames > 0 then
+    P1_current_animation_freeze_frames = P1_current_animation_freeze_frames + 1
+  end
+
+  local _frame = frame_number - P1_current_animation_start_frame - (P1_current_animation_freeze_frames - 1)
+  if listening_for_attack_animation then
+    --print(string.format("update blocking frame %d (freeze: %d)", _frame, P1_current_animation_freeze_frames - 1))
+  end
   local _all_hits_done = true
 
   if (frame_data[_character] and frame_data[_character][P1.animation]) then
@@ -1278,10 +1286,10 @@ function update_blocking(_input)
       next_attack_animation_hit_frame = 0
       next_attack_hit_id = 0
       last_attack_hit_id = 0
+      _frame = 0
 
       -- special case for animations that introduce animations that hit at frame 0
       if frame_data_meta[_character] and frame_data_meta[_character].moves[P1.animation] and frame_data_meta[_character].moves[P1.animation].intro then
-        print("intro")
         P1_current_animation_id = frame_data_meta[_character].moves[P1.animation].intro.next
         P1_current_animation_start_frame = P1_current_animation_start_frame + frame_data_meta[_character].moves[P1.animation].intro.length
       end
@@ -1294,26 +1302,24 @@ function update_blocking(_input)
         print(string.format("%d: Stopped listening for attack animation", frame_number))
       end
       listening_for_attack_animation = false
+      blocked_hit_count = 0
     end
   end
 
   if training_settings.blocking_mode == 1 then
     listening_for_attack_animation = false
+    blocked_hit_count = 0
   end
 
   if listening_for_attack_animation then
-    if P1.remaining_freeze_frames > 0 then
-      P1_current_animation_freeze_frames = P1_current_animation_freeze_frames + 1
-    end
-
     local _frame_data_meta = frame_data_meta[_character].moves[P1_current_animation_id]
-    local _frame_to_check = _frame + 2
+    local _frame_to_check = math.max(_frame + 1, _frame - P1.remaining_freeze_frames + 2)
     local _current_animation_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
     local _frame_delta = _frame_to_check - _frame
 
     local _next_hit_id = 1
     for i = 1, #frame_data[_character][P1_current_animation_id].hit_frames do
-      if _frame >= frame_data[_character][P1_current_animation_id].hit_frames[i] then
+      if _frame_to_check >= frame_data[_character][P1_current_animation_id].hit_frames[i] then
         _next_hit_id = i
       end
     end
@@ -1321,7 +1327,7 @@ function update_blocking(_input)
     if (next_attack_animation_hit_frame < frame_number and _frame_to_check < #frame_data[_character][P1_current_animation_id].frames) then
 
       if _debug then
-        print(string.format(" comparing frame %d with frame %d (%d freeze frames)", _frame, _frame_to_check, P1_current_animation_freeze_frames ))
+        print(string.format(" comparing frame %d with frame %d (%d freeze frames)(hit %d)", _frame, _frame_to_check, P1_current_animation_freeze_frames, _next_hit_id))
       end
       local _next_frame = frame_data[_character][P1_current_animation_id].frames[_frame_to_check + 1]
       local _sign = 1
@@ -1361,28 +1367,44 @@ function update_blocking(_input)
         end
       end
 
-      if _next_frame and test_collision(
+      if _next_frame and _next_hit_id > last_attack_hit_id and test_collision(
         _next_defender_pos[1], _next_defender_pos[2], player_objects[2].flip_x, player_objects[2].boxes, -- defender
         _next_attacker_pos[1], _next_attacker_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
         3 -- defender hitbox dilation
       ) then
-        next_attack_animation_hit_frame = frame_number + P1.remaining_freeze_frames + 2
+        next_attack_animation_hit_frame = frame_number + P1.remaining_freeze_frames + _frame_delta
         next_attack_hit_id = _next_hit_id
-        print(string.format(" %d: next hit %d at frame %d", frame_number, next_attack_hit_id, next_attack_animation_hit_frame))
+        if _debug then
+          print(string.format(" %d: next hit %d at frame %d", frame_number, next_attack_hit_id, next_attack_animation_hit_frame))
+        end
       end
     end
 
-    if frame_number <= next_attack_animation_hit_frame then
+
+    if frame_number <= next_attack_animation_hit_frame and last_attack_hit_id < next_attack_hit_id then
 
       local _hit_type = 1
       local _blocking_style = training_settings.blocking_style
+
+      if _blocking_style == 3 then -- red parry
+        if blocked_hit_count ~= training_settings.red_parry_hit_count then
+          _blocking_style = 1
+        else
+          _blocking_style = 2
+        end
+      end
+
       if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[next_attack_hit_id] then
         _hit_type = _frame_data_meta.hits[next_attack_hit_id].type
       end
 
+      if frame_number == next_attack_animation_hit_frame then
+        last_attack_hit_id = next_attack_hit_id
+        blocked_hit_count = blocked_hit_count + 1
+      end
+
       if _blocking_style == 1 then
         if frame_number >= next_attack_animation_hit_frame - 2 then
-          print(frame_number, "blocking", _hit_type)
           if player_objects[2].flip_x == 0 then
             _input['P2 Right'] = true
             _input['P2 Left'] = false
@@ -1398,6 +1420,20 @@ function update_blocking(_input)
           end
         end
       elseif _blocking_style == 2 then
+        _input['P2 Right'] = false
+        _input['P2 Left'] = false
+        _input['P2 Down'] = false
+
+        local _parry_low = _hit_type == 2 --or (_hit_type ~= 3 and training_settings.pose == 2)
+
+        if frame_number == next_attack_animation_hit_frame - 1 then
+          if _parry_low then
+            _input['P2 Down'] = true
+          else
+            _input['P2 Right'] = player_objects[2].flip_x ~= 0
+            _input['P2 Left'] = player_objects[2].flip_x == 0
+          end
+        end
       end
     end
   end
@@ -1468,7 +1504,7 @@ menu = {
 -- PROGRAM
 
 debug_current_animation = false
-debug_state_variables = true
+debug_state_variables = false
 
 function on_start()
   load_training_data()
