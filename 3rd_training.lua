@@ -939,6 +939,7 @@ end
 function reset_current_recording_animation()
   current_recording_animation_id = nil
   current_recording_animation_start_frame = 0
+  current_recording_animation_freeze_frames = 0
   current_recording_animation_previous_pos = {0, 0}
   current_recording_animation = nil
 end
@@ -946,9 +947,15 @@ reset_current_recording_animation()
 
 function record_framedata(_object)
   local _debug = true
-  -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss
+  local _character = characters[P1.character]
+  -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss (except for moves tagged as "cancel" that are difficult to record otherwise)
   if (P1_has_just_hit or P1_has_just_been_blocked or P1_has_just_been_parried) then
-    reset_current_recording_animation()
+    if not frame_data_meta[_character] or not frame_data_meta[_character].moves[current_recording_animation_id] or not frame_data_meta[_character].moves[current_recording_animation_id].cancel then
+      if current_recording_animation and _debug then
+        print(string.format("dropped animation because it connected: %s", current_recording_animation_id))
+      end
+      reset_current_recording_animation()
+    end
   end
 
   if (P1_has_animation_just_changed) then
@@ -971,37 +978,44 @@ function record_framedata(_object)
 
     current_recording_animation_id = P1.animation
     current_recording_animation_start_frame = frame_number
+    current_recording_animation_freeze_frames = 0
     current_recording_animation_previous_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
     current_recording_animation = { frames = {}, hit_frames = {}, attack_box_count = 0 }
   end
 
   if (current_recording_animation) then
-    local _frame = frame_number - current_recording_animation_start_frame
 
-    if (P1_has_just_acted) then
-      table.insert(current_recording_animation.hit_frames, _frame)
-    end
+    if P1.remaining_freeze_frames > 1 then
+      current_recording_animation_freeze_frames = current_recording_animation_freeze_frames + 1
+    else
+      local _frame = frame_number - current_recording_animation_freeze_frames - current_recording_animation_start_frame
+      --print(string.format("recording frame %d (%d - %d - %d)", _frame, frame_number, current_recording_animation_freeze_frames, current_recording_animation_start_frame))
 
-    local _sign = 1
-    if player_objects[1].flip_x == 0 then _sign = -1 end
+      if (P1_has_just_acted) or P1.remaining_freeze_frames == 1 then
+        table.insert(current_recording_animation.hit_frames, _frame - #current_recording_animation.hit_frames)
+      end
 
-    current_recording_animation.frames[_frame + 1] = {
-      boxes = {},
-      movement = {
-        (player_objects[1].pos_x - current_recording_animation_previous_pos[1]) * _sign,
-        (player_objects[1].pos_y - current_recording_animation_previous_pos[2]),
+      local _sign = 1
+      if player_objects[1].flip_x == 0 then _sign = -1 end
+
+      current_recording_animation.frames[_frame + 1] = {
+        boxes = {},
+        movement = {
+          (player_objects[1].pos_x - current_recording_animation_previous_pos[1]) * _sign,
+          (player_objects[1].pos_y - current_recording_animation_previous_pos[2]),
+        }
       }
-    }
-    current_recording_animation_previous_pos = { player_objects[1].pos_x, player_objects[1].pos_y }
+      current_recording_animation_previous_pos = { player_objects[1].pos_x, player_objects[1].pos_y }
 
-    if player_objects[1].flip_x ~= 0 then
-      current_recording_animation.frames[_frame + 1].movement[1] = -current_recording_animation.frames[_frame + 1].movement[1]
-    end
+      if player_objects[1].flip_x ~= 0 then
+        current_recording_animation.frames[_frame + 1].movement[1] = -current_recording_animation.frames[_frame + 1].movement[1]
+      end
 
-    for __, _box in ipairs(player_objects[1].boxes) do
-      if (_box.type == "attack") then
-        table.insert(current_recording_animation.frames[_frame + 1].boxes, copytable(_box))
-        current_recording_animation.attack_box_count = current_recording_animation.attack_box_count + 1
+      for __, _box in ipairs(player_objects[1].boxes) do
+        if (_box.type == "attack") then
+          table.insert(current_recording_animation.frames[_frame + 1].boxes, copytable(_box))
+          current_recording_animation.attack_box_count = current_recording_animation.attack_box_count + 1
+        end
       end
     end
   end
@@ -1211,6 +1225,7 @@ movement_type = {
   "velocity"
 }
 
+-- ALEX
 frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
 frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} } -- Cr HK
@@ -1237,6 +1252,9 @@ frame_data_meta["alex"].moves["6ec4"] = { intro = { length = 26, next = "70e4" }
 frame_data_meta["alex"].moves["70e4"] = { hits = {{ type = 3 }} } -- VCharge HK
 
 frame_data_meta["alex"].moves["6f94"] = { intro = { length = 26, next = "70e4" } } -- VCharge EXK
+
+-- IBUKI
+frame_data_meta["ibuki"].moves["3a48"] = { cancel = true } -- target MP
 
 function update_blocking(_input)
 
@@ -1504,7 +1522,7 @@ menu = {
 -- PROGRAM
 
 debug_current_animation = false
-debug_state_variables = false
+debug_state_variables = true
 
 function on_start()
   load_training_data()
