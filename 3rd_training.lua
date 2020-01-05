@@ -74,34 +74,34 @@ frame_input = {
 }
 
 function update_input()
-  local local_input = joypad.get()
-  local P1 = {
-    start = local_input["P1 Start"],
-    coin = local_input["P1 Coin"],
-    up = local_input["P1 Up"],
-    down = local_input["P1 Down"],
-    left = local_input["P1 Left"],
-    right = local_input["P1 Right"],
-    LP = local_input["P1 Weak Punch"],
-    MP = local_input["P1 Medium Punch"],
-    HP = local_input["P1 Strong Punch"],
-    LK = local_input["P1 Weak Kick"],
-    MK = local_input["P1 Medium Kick"],
-    HK = local_input["P1 Strong Kick"]
+  local _local_input = joypad.get()
+  local _P1 = {
+    start = _local_input["P1 Start"],
+    coin = _local_input["P1 Coin"],
+    up = _local_input["P1 Up"],
+    down = _local_input["P1 Down"],
+    left = _local_input["P1 Left"],
+    right = _local_input["P1 Right"],
+    LP = _local_input["P1 Weak Punch"],
+    MP = _local_input["P1 Medium Punch"],
+    HP = _local_input["P1 Strong Punch"],
+    LK = _local_input["P1 Weak Kick"],
+    MK = _local_input["P1 Medium Kick"],
+    HK = _local_input["P1 Strong Kick"]
   }
-  local P2 = {
-    start = local_input["P2 Start"],
-    coin = local_input["P2 Coin"],
-    up = local_input["P2 Up"],
-    down = local_input["P2 Down"],
-    left = local_input["P2 Left"],
-    right = local_input["P2 Right"],
-    LP = local_input["P2 Weak Punch"],
-    MP = local_input["P2 Medium Punch"],
-    HP = local_input["P2 Strong Punch"],
-    LK = local_input["P2 Weak Kick"],
-    MK = local_input["P2 Medium Kick"],
-    HK = local_input["P2 Strong Kick"]
+  local _P2 = {
+    start = _local_input["P2 Start"],
+    coin = _local_input["P2 Coin"],
+    up = _local_input["P2 Up"],
+    down = _local_input["P2 Down"],
+    left = _local_input["P2 Left"],
+    right = _local_input["P2 Right"],
+    LP = _local_input["P2 Weak Punch"],
+    MP = _local_input["P2 Medium Punch"],
+    HP = _local_input["P2 Strong Punch"],
+    LK = _local_input["P2 Weak Kick"],
+    MK = _local_input["P2 Medium Kick"],
+    HK = _local_input["P2 Strong Kick"]
   }
   function update_player_input(_player, _input_name, _input)
     _player.pressed[_input_name] = false
@@ -111,18 +111,18 @@ function update_input()
     _player.down[_input_name] = _input
   end
 
-  update_player_input(frame_input.P1, "start", P1.start)
-  update_player_input(frame_input.P1, "coin", P1.coin)
-  update_player_input(frame_input.P1, "up", P1.up)
-  update_player_input(frame_input.P1, "down", P1.down)
-  update_player_input(frame_input.P1, "left", P1.left)
-  update_player_input(frame_input.P1, "right", P1.right)
-  update_player_input(frame_input.P1, "LP", P1.LP)
-  update_player_input(frame_input.P1, "MP", P1.MP)
-  update_player_input(frame_input.P1, "HP", P1.HP)
-  update_player_input(frame_input.P1, "LK", P1.LK)
-  update_player_input(frame_input.P1, "MK", P1.MK)
-  update_player_input(frame_input.P1, "HK", P1.HK)
+  update_player_input(frame_input.P1, "start", _P1.start)
+  update_player_input(frame_input.P1, "coin", _P1.coin)
+  update_player_input(frame_input.P1, "up", _P1.up)
+  update_player_input(frame_input.P1, "down", _P1.down)
+  update_player_input(frame_input.P1, "left", _P1.left)
+  update_player_input(frame_input.P1, "right", _P1.right)
+  update_player_input(frame_input.P1, "LP", _P1.LP)
+  update_player_input(frame_input.P1, "MP", _P1.MP)
+  update_player_input(frame_input.P1, "HP", _P1.HP)
+  update_player_input(frame_input.P1, "LK", _P1.LK)
+  update_player_input(frame_input.P1, "MK", _P1.MK)
+  update_player_input(frame_input.P1, "HK", _P1.HK)
 
   update_player_input(frame_input.P2, "start", P2.start)
   update_player_input(frame_input.P2, "coin", P2.coin)
@@ -147,12 +147,12 @@ function queue_input_sequence(_player, _sequence)
     return
   end
 
-  local seq = {}
-  seq.player = _player
-  seq.sequence = copytable(_sequence)
-  seq.current_frame = 1
+  local _seq = {}
+  _seq.player = _player
+  _seq.sequence = copytable(_sequence)
+  _seq.current_frame = 1
 
-  pending_input_sequence = seq
+  pending_input_sequence = _seq
 end
 
 function process_pending_input_sequence()
@@ -160,14 +160,14 @@ function process_pending_input_sequence()
     return
   end
 
-  local prefix = ""
-  local player_data = nil
+  local _prefix = ""
+  local _player_data = nil
   if pending_input_sequence.player == 1 then
-    prefix = "P1 "
-    player_data = P1
+    _prefix = "P1 "
+    _player_data = P1
   elseif pending_input_sequence.player == 2 then
-    prefix = "P2 "
-    player_data = P2
+    _prefix = "P2 "
+    _player_data = P2
   end
 
   -- Charge moves memory locations
@@ -185,81 +185,80 @@ function process_pending_input_sequence()
   -- 0x0202604C
   -- 0x02026068
 
-  local charge_gauges = { { 0x020259D8, 0x020259F4, 0x02025A10, 0x02025A2C, 0x02025A48 }, { 0x02025FF8, 0x02026014, 0x02026030, 0x0202604C, 0x02026068 } }
-  local character = player_data.character
+  local _charge_gauges = { { 0x020259D8, 0x020259F4, 0x02025A10, 0x02025A2C, 0x02025A48 }, { 0x02025FF8, 0x02026014, 0x02026030, 0x0202604C, 0x02026068 } }
 
   local s = ""
-  local input = {}
-  local current_frame_input = pending_input_sequence.sequence[pending_input_sequence.current_frame]
-  for i = 1, #current_frame_input do
-    local input_name = ""..prefix
-    if current_frame_input[i] == "forward" then
-      if player_data.facing_right then input_name = input_name.."Right" else input_name = input_name.."Left" end
-    elseif current_frame_input[i] == "back" then
-      if player_data.facing_right then input_name = input_name.."Left" else input_name = input_name.."Right" end
-    elseif current_frame_input[i] == "up" then
-      input_name = input_name.."Up"
-    elseif current_frame_input[i] == "down" then
-      input_name = input_name.."Down"
-    elseif current_frame_input[i] == "LP" then
-      input_name = input_name.."Weak Punch"
-    elseif current_frame_input[i] == "MP" then
-      input_name = input_name.."Medium Punch"
-    elseif current_frame_input[i] == "HP" then
-      input_name = input_name.."Strong Punch"
-    elseif current_frame_input[i] == "LK" then
-      input_name = input_name.."Weak Kick"
-    elseif current_frame_input[i] == "MK" then
-      input_name = input_name.."Medium Kick"
-    elseif current_frame_input[i] == "HK" then
-      input_name = input_name.."Strong Kick"
-    elseif current_frame_input[i] == "h_charge" then
-      if characters[player_data.character] == "urien" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
-      elseif characters[player_data.character] == "oro" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][3], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][3]+1, 0xFF)
-      elseif characters[player_data.character] == "chunli" then
-      elseif characters[player_data.character] == "q" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][2], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
-      elseif characters[player_data.character] == "remy" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][2], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][3], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][3]+1, 0xFF)
-      elseif characters[player_data.character] == "alex" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][5], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][5]+1, 0xFF)
+  local _input = {}
+  local _current_frame_input = pending_input_sequence.sequence[pending_input_sequence.current_frame]
+  for i = 1, #_current_frame_input do
+    local _input_name = _prefix
+    if _current_frame_input[i] == "forward" then
+      if _player_data.facing_right then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
+    elseif _current_frame_input[i] == "back" then
+      if _player_data.facing_right then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
+    elseif _current_frame_input[i] == "up" then
+      _input_name = _input_name.."Up"
+    elseif _current_frame_input[i] == "down" then
+      _input_name = _input_name.."Down"
+    elseif _current_frame_input[i] == "LP" then
+      _input_name = _input_name.."Weak Punch"
+    elseif _current_frame_input[i] == "MP" then
+      _input_name = _input_name.."Medium Punch"
+    elseif _current_frame_input[i] == "HP" then
+      _input_name = _input_name.."Strong Punch"
+    elseif _current_frame_input[i] == "LK" then
+      _input_name = _input_name.."Weak Kick"
+    elseif _current_frame_input[i] == "MK" then
+      _input_name = _input_name.."Medium Kick"
+    elseif _current_frame_input[i] == "HK" then
+      _input_name = _input_name.."Strong Kick"
+    elseif _current_frame_input[i] == "h_charge" then
+      if characters[_player_data.character] == "urien" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[_player_data.character] == "oro" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][3], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][3]+1, 0xFF)
+      elseif characters[_player_data.character] == "chunli" then
+      elseif characters[_player_data.character] == "q" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][2], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
+      elseif characters[_player_data.character] == "remy" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][2], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][3], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][3]+1, 0xFF)
+      elseif characters[_player_data.character] == "alex" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][5], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][5]+1, 0xFF)
       end
-    elseif current_frame_input[i] == "v_charge" then
-      if characters[player_data.character] == "urien" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][2], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][4], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][4]+1, 0xFF)
-      elseif characters[player_data.character] == "oro" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
-      elseif characters[player_data.character] == "chunli" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
-      elseif characters[player_data.character] == "q" then
-      elseif characters[player_data.character] == "remy" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
-      elseif characters[player_data.character] == "alex" then
-        memory.writebyte(charge_gauges[pending_input_sequence.player][4], 0xFF)
-        memory.writebyte(charge_gauges[pending_input_sequence.player][4]+1, 0xFF)
+    elseif _current_frame_input[i] == "v_charge" then
+      if characters[_player_data.character] == "urien" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][2], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][2]+1, 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][4], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][4]+1, 0xFF)
+      elseif characters[_player_data.character] == "oro" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[_player_data.character] == "chunli" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[_player_data.character] == "q" then
+      elseif characters[_player_data.character] == "remy" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][1]+1, 0xFF)
+      elseif characters[_player_data.character] == "alex" then
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][4], 0xFF)
+        memory.writebyte(_charge_gauges[pending_input_sequence.player][4]+1, 0xFF)
       end
     end
-    input[input_name] = true
-    s = s..input_name
+    _input[_input_name] = true
+    s = s.._input_name
   end
-  joypad.set(input)
+  joypad.set(_input)
 
   --print(s)
 
@@ -321,55 +320,55 @@ button_gesture =
 }
 
 function make_input_sequence(_stick, _button)
-  local sequence = {}
-  if      _stick == "none"    then sequence = { { } }
-  elseif  _stick == "forward" then sequence = { { "forward" } }
-  elseif  _stick == "back"    then sequence = { { "back" } }
-  elseif  _stick == "down"    then sequence = { { "down" } }
-  elseif  _stick == "up"      then sequence = { { "up" } }
-  elseif  _stick == "QCF"     then sequence = { { "down" }, {"down", "forward"}, {"forward"} }
-  elseif  _stick == "QCB"     then sequence = { { "down" }, {"down", "back"}, {"back"} }
-  elseif  _stick == "HCF"     then sequence = { { "back" }, {"down", "back"}, {"down"}, {"down", "forward"}, {"forward"} }
-  elseif  _stick == "HCB"     then sequence = { { "forward" }, {"down", "forward"}, {"down"}, {"down", "back"}, {"back"} }
-  elseif  _stick == "DPF"     then sequence = { { "forward" }, {"down"}, {"down", "forward"} }
-  elseif  _stick == "DPB"     then sequence = { { "back" }, {"down"}, {"down", "back"} }
-  elseif  _stick == "HCharge" then sequence = { { "back", "h_charge" }, {"forward"} }
-  elseif  _stick == "VCharge" then sequence = { { "down", "v_charge" }, {"up"} }
-  elseif  _stick == "360"     then sequence = { { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" }, { "up" } }
-  elseif  _stick == "DQCF"    then sequence = { { "down" }, {"down", "forward"}, {"forward"}, { "down" }, {"down", "forward"}, {"forward"} }
-  elseif  _stick == "720"     then sequence = { { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" }, { "up" }, { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" } }
+  local _sequence = {}
+  if      _stick == "none"    then _sequence = { { } }
+  elseif  _stick == "forward" then _sequence = { { "forward" } }
+  elseif  _stick == "back"    then _sequence = { { "back" } }
+  elseif  _stick == "down"    then _sequence = { { "down" } }
+  elseif  _stick == "up"      then _sequence = { { "up" } }
+  elseif  _stick == "QCF"     then _sequence = { { "down" }, {"down", "forward"}, {"forward"} }
+  elseif  _stick == "QCB"     then _sequence = { { "down" }, {"down", "back"}, {"back"} }
+  elseif  _stick == "HCF"     then _sequence = { { "back" }, {"down", "back"}, {"down"}, {"down", "forward"}, {"forward"} }
+  elseif  _stick == "HCB"     then _sequence = { { "forward" }, {"down", "forward"}, {"down"}, {"down", "back"}, {"back"} }
+  elseif  _stick == "DPF"     then _sequence = { { "forward" }, {"down"}, {"down", "forward"} }
+  elseif  _stick == "DPB"     then _sequence = { { "back" }, {"down"}, {"down", "back"} }
+  elseif  _stick == "HCharge" then _sequence = { { "back", "h_charge" }, {"forward"} }
+  elseif  _stick == "VCharge" then _sequence = { { "down", "v_charge" }, {"up"} }
+  elseif  _stick == "360"     then _sequence = { { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" }, { "up" } }
+  elseif  _stick == "DQCF"    then _sequence = { { "down" }, {"down", "forward"}, {"forward"}, { "down" }, {"down", "forward"}, {"forward"} }
+  elseif  _stick == "720"     then _sequence = { { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" }, { "up" }, { "forward" }, { "forward", "down" }, {"down"}, { "back", "down" }, { "back" } }
   -- full moves special cases
-  elseif  _stick == "back dash" then sequence = { { "back" }, {}, { "back" } }
-    return sequence
-  elseif  _stick == "forward dash" then sequence = { { "forward" }, {}, { "forward" } }
-    return sequence
-  elseif  _stick == "Shun Goku Ratsu" then sequence = { { "LP" }, {}, {}, { "LP" }, { "forward" }, {"LK"}, {}, { "HP" } }
-    return sequence
-  elseif  _stick == "Kongou Kokuretsu Zan" then sequence = { { "down" }, {}, { "down" }, {}, { "down", "LP", "MP", "HP" } }
-    return sequence
+  elseif  _stick == "back dash" then _sequence = { { "back" }, {}, { "back" } }
+    return _sequence
+  elseif  _stick == "forward dash" then _sequence = { { "forward" }, {}, { "forward" } }
+    return _sequence
+  elseif  _stick == "Shun Goku Ratsu" then _sequence = { { "LP" }, {}, {}, { "LP" }, { "forward" }, {"LK"}, {}, { "HP" } }
+    return _sequence
+  elseif  _stick == "Kongou Kokuretsu Zan" then _sequence = { { "down" }, {}, { "down" }, {}, { "down", "LP", "MP", "HP" } }
+    return _sequence
   end
 
   if     _button == "none" then
   elseif _button == "EXP"  then
-    table.insert(sequence[#sequence], "MP")
-    table.insert(sequence[#sequence], "HP")
+    table.insert(_sequence[#_sequence], "MP")
+    table.insert(_sequence[#_sequence], "HP")
   elseif _button == "EXK"  then
-    table.insert(sequence[#sequence], "MK")
-    table.insert(sequence[#sequence], "HK")
+    table.insert(_sequence[#_sequence], "MK")
+    table.insert(_sequence[#_sequence], "HK")
   elseif _button == "LP+LK" then
-    table.insert(sequence[#sequence], "LP")
-    table.insert(sequence[#sequence], "LK")
+    table.insert(_sequence[#_sequence], "LP")
+    table.insert(_sequence[#_sequence], "LK")
   elseif _button == "MP+MK" then
-    table.insert(sequence[#sequence], "MP")
-    table.insert(sequence[#sequence], "MK")
+    table.insert(_sequence[#_sequence], "MP")
+    table.insert(_sequence[#_sequence], "MK")
   elseif _button == "HP+HK" then
-    table.insert(sequence[#sequence], "HP")
-    table.insert(sequence[#sequence], "HK")
+    table.insert(_sequence[#_sequence], "HP")
+    table.insert(_sequence[#_sequence], "HK")
   else
-    table.insert(sequence[#sequence], _button)
+    table.insert(_sequence[#_sequence], _button)
   end
 
-  return sequence
+  return _sequence
 end
 
 characters =
@@ -439,108 +438,108 @@ text_disabled_color = 0x999999FF
 
 function checkbox_menu_item(_name, _property_name, _default_value)
   if _default_value == nil then _default_value = false end
-  local o = {}
-  o.name = _name
-  o.property_name = _property_name
-  o.default_value = _default_value
+  local _o = {}
+  _o.name = _name
+  _o.property_name = _property_name
+  _o.default_value = _default_value
 
-  function o:draw(_x, _y, _selected)
-    local c = text_default_color
-    local prefix = ""
-    local suffix = ""
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix = ""
+    local _suffix = ""
     if _selected then
-      c = text_selected_color
-      prefix = "< "
-      suffix = " >"
+      _c = text_selected_color
+      _prefix = "< "
+      _suffix = " >"
     end
-    gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c, text_default_border_color)
+    gui.text(_x, _y, _prefix..self.name.." : "..tostring(training_settings[self.property_name]).._suffix, _c, text_default_border_color)
   end
 
-  function o:left()
+  function _o:left()
     training_settings[self.property_name] = not training_settings[self.property_name]
   end
 
-  function o:right()
+  function _o:right()
     training_settings[self.property_name] = not training_settings[self.property_name]
   end
 
-  function o:validate()
+  function _o:validate()
   end
 
-  function o:cancel()
+  function _o:cancel()
     training_settings[self.property_name] = self.default_value
   end
 
-  return o
+  return _o
 end
 
 function list_menu_item(_name, _property_name, _list, _default_value)
   if _default_value == nil then _default_value = 1 end
-  local o = {}
-  o.name = _name
-  o.property_name = _property_name
-  o.list = _list
-  o.default_value = _default_value
+  local _o = {}
+  _o.name = _name
+  _o.property_name = _property_name
+  _o.list = _list
+  _o.default_value = _default_value
 
-  function o:draw(_x, _y, _selected)
-    local c = text_default_color
-    local prefix = ""
-    local suffix = ""
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix = ""
+    local _suffix = ""
     if _selected then
-      c = text_selected_color
-      prefix = "< "
-      suffix = " >"
+      _c = text_selected_color
+      _prefix = "< "
+      _suffix = " >"
     end
-    gui.text(_x, _y, prefix..self.name.." : "..tostring(self.list[training_settings[self.property_name]])..suffix, c, text_default_border_color)
+    gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.list[training_settings[self.property_name]]).._suffix, _c, text_default_border_color)
   end
 
-  function o:left()
+  function _o:left()
     training_settings[self.property_name] = training_settings[self.property_name] - 1
     if training_settings[self.property_name] == 0 then
       training_settings[self.property_name] = #self.list
     end
   end
 
-  function o:right()
+  function _o:right()
     training_settings[self.property_name] = training_settings[self.property_name] + 1
     if training_settings[self.property_name] > #self.list then
       training_settings[self.property_name] = 1
     end
   end
 
-  function o:validate()
+  function _o:validate()
   end
 
-  function o:cancel()
+  function _o:cancel()
     training_settings[self.property_name] = self.default_value
   end
 
-  return o
+  return _o
 end
 
 function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_value)
   if _default_value == nil then _default_value = _min end
-  local o = {}
-  o.name = _name
-  o.property_name = _property_name
-  o.min = _min
-  o.max = _max
-  o.loop = _loop
-  o.default_value = _default_value
+  local _o = {}
+  _o.name = _name
+  _o.property_name = _property_name
+  _o.min = _min
+  _o.max = _max
+  _o.loop = _loop
+  _o.default_value = _default_value
 
-  function o:draw(_x, _y, _selected)
-    local c = text_default_color
-    local prefix = ""
-    local suffix = ""
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix = ""
+    local _suffix = ""
     if _selected then
-      c = text_selected_color
-      prefix = "< "
-      suffix = " >"
+      _c = text_selected_color
+      _prefix = "< "
+      _suffix = " >"
     end
-    gui.text(_x, _y, prefix..self.name.." : "..tostring(training_settings[self.property_name])..suffix, c, text_default_border_color)
+    gui.text(_x, _y, _prefix..self.name.." : "..tostring(training_settings[self.property_name]).._suffix, _c, text_default_border_color)
   end
 
-  function o:left()
+  function _o:left()
     training_settings[self.property_name] = training_settings[self.property_name] - 1
     if training_settings[self.property_name] < self.min then
       if self.loop then
@@ -551,7 +550,7 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_va
     end
   end
 
-  function o:right()
+  function _o:right()
     training_settings[self.property_name] = training_settings[self.property_name] + 1
     if training_settings[self.property_name] > self.max then
       if self.loop then
@@ -562,39 +561,39 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_va
     end
   end
 
-  function o:validate()
+  function _o:validate()
   end
 
-  function o:cancel()
+  function _o:cancel()
     training_settings[self.property_name] = self.default_value
   end
 
-  return o
+  return _o
 end
 
 function map_menu_item(_name, _object, _property_name, _map_object, _map_property)
-  local o = {}
-  o.name = _name
-  o.object = _object
-  o.property_name = _property_name
-  o.map_object = _map_object
-  o.map_property = _map_property
+  local _o = {}
+  _o.name = _name
+  _o.object = _object
+  _o.property_name = _property_name
+  _o.map_object = _map_object
+  _o.map_property = _map_property
 
-  function o:draw(_x, _y, _selected)
-    local c = text_default_color
-    local prefix = ""
-    local suffix = ""
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix = ""
+    local _suffix = ""
     if _selected then
-      c = text_selected_color
-      prefix = "< "
-      suffix = " >"
+      _c = text_selected_color
+      _prefix = "< "
+      _suffix = " >"
     end
 
-    local _str = string.format("%s%s : %s%s", prefix, self.name, self.object[self.property_name], suffix)
-    gui.text(_x, _y, _str, c, text_default_border_color)
+    local _str = string.format("%s%s : %s%s", _prefix, self.name, self.object[self.property_name], _suffix)
+    gui.text(_x, _y, _str, _c, text_default_border_color)
   end
 
-  function o:left()
+  function _o:left()
     if self.map_property == nil or self.map_object == nil or self.map_object[self.map_property] == nil then
       return
     end
@@ -616,7 +615,7 @@ function map_menu_item(_name, _object, _property_name, _map_object, _map_propert
     end
   end
 
-  function o:right()
+  function _o:right()
     if self.map_property == nil or self.map_object == nil or self.map_object[self.map_property] == nil then
       return
     end
@@ -639,52 +638,50 @@ function map_menu_item(_name, _object, _property_name, _map_object, _map_propert
     end
   end
 
-  function o:validate()
+  function _o:validate()
   end
 
-  function o:cancel()
+  function _o:cancel()
     training_settings[self.property_name] = ""
   end
 
-  return o
+  return _o
 end
 
 function button_menu_item(_name, _validate_function)
-  local o = {}
-  o.name = _name
-  o.validate_function = _validate_function
-  o.last_frame_validated = 0
+  local _o = {}
+  _o.name = _name
+  _o.validate_function = _validate_function
+  _o.last_frame_validated = 0
 
-  function o:draw(_x, _y, _selected)
-    local c = text_default_color
-    local prefix = ""
-    local suffix = ""
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
     if _selected then
-      c = text_selected_color
+      _c = text_selected_color
 
       if (frame_number - self.last_frame_validated < 5 ) then
-        c = 0xFFFF00FF
+        _c = 0xFFFF00FF
       end
     end
 
-    gui.text(_x, _y,self.name, c, text_default_border_color)
+    gui.text(_x, _y,self.name, _c, text_default_border_color)
   end
 
-  function o:left()
+  function _o:left()
   end
 
-  function o:right()
+  function _o:right()
   end
 
-  function o:validate()
+  function _o:validate()
     self.last_frame_validated = frame_number
     self.validate_function()
   end
 
-  function o:cancel()
+  function _o:cancel()
   end
 
-  return o
+  return _o
 end
 
 -- save/load
@@ -1021,28 +1018,28 @@ function record_framedata(_object)
   end
 end
 
-function define_box(f, obj, ptr, type)
-  if obj.friends > 1 then --Yang SA3
-    if type ~= "attack" then
+function define_box(_obj, _ptr, _type)
+  if _obj.friends > 1 then --Yang SA3
+    if _type ~= "attack" then
       return
     end
-  elseif obj.projectile then
-    type = projectile_type[type] or type
+  elseif _obj.projectile then
+    _type = projectile_type[_type] or _type
   end
 
-  local box = {
-    left   = memory.readwordsigned(ptr + 0x0),
-    width  = memory.readwordsigned(ptr + 0x2),
-    bottom = memory.readwordsigned(ptr + 0x4),
-    height = memory.readwordsigned(ptr + 0x6),
-    type   = type,
+  local _box = {
+    left   = memory.readwordsigned(_ptr + 0x0),
+    width  = memory.readwordsigned(_ptr + 0x2),
+    bottom = memory.readwordsigned(_ptr + 0x4),
+    height = memory.readwordsigned(_ptr + 0x6),
+    type   = _type,
   }
 
-  if box.left == 0 and box.width == 0 and box.height == 0 and box.bottom == 0 then
+  if _box.left == 0 and _box.width == 0 and _box.height == 0 and _box.bottom == 0 then
     return
   end
 
-  table.insert(obj.boxes, box)
+  table.insert(_obj.boxes, _box)
 end
 
 function update_game_object(_obj)
@@ -1068,7 +1065,7 @@ function update_game_object(_obj)
 
   for _, _box in ipairs(_boxes) do
     for i = _box.initial, _box.number do
-      define_box(_frame, _obj, memory.readdword(_obj.base + _box.offset) + (i-1)*8, _box.type)
+      define_box(_obj, memory.readdword(_obj.base + _box.offset) + (i-1)*8, _box.type)
     end
   end
 end
