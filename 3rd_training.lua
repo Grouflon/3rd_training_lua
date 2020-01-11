@@ -29,27 +29,24 @@ function make_input_set()
   }
 end
 
+function make_player_object(_id, _base, _prefix)
+  return {
+    id = _id,
+    base = _base,
+    prefix = _prefix,
+    input = {
+      pressed = make_input_set(),
+      released = make_input_set(),
+      down = make_input_set()
+    },
+    blocking = {},
+    counter = {},
+  }
+end
+
 player_objects = {
-  {
-    id = 1,
-    base = 0x02068C6C,
-    prefix = "P1",
-    input = {
-      pressed = make_input_set(),
-      released = make_input_set(),
-      down = make_input_set()
-    },
-  },
-  {
-    id = 2,
-    base = 0x02069104,
-    prefix = "P2",
-    input = {
-      pressed = make_input_set(),
-      released = make_input_set(),
-      down = make_input_set()
-    },
-  },
+  make_player_object(1, 0x02068C6C, "P1"),
+  make_player_object(2, 0x02069104, "P2")
 }
 
 P1 = player_objects[1]
@@ -357,6 +354,11 @@ standing_state =
 players = {
   "Player 1",
   "Player 2",
+}
+
+frame_data_movement_type = {
+  "animation",
+  "velocity"
 }
 
 -- menu
@@ -681,12 +683,7 @@ end
 
 -- game data
 frame_number = 0
-pending_input_sequence = nil
-counterattack_sequence = nil
 is_in_match = false
-flying_after_knockdown = false
-onground_after_knockdown = false
-fastrecovery_countdown = -1
 
 -- HITBOXES
 frame_data = {}
@@ -724,81 +721,73 @@ function load_frame_data()
 end
 
 function reset_current_recording_animation()
-  current_recording_animation_id = nil
-  current_recording_animation_start_frame = 0
-  current_recording_animation_freeze_frames = 0
   current_recording_animation_previous_pos = {0, 0}
   current_recording_animation = nil
 end
 reset_current_recording_animation()
 
-function record_framedata(_object)
+function record_framedata(_player_obj)
   local _debug = true
-  local _character = characters[P1.character]
   -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss (except for moves tagged as "cancel" that are difficult to record otherwise)
-  if (P1_has_just_hit or P1_has_just_been_blocked or P1_has_just_been_parried) then
-    if not frame_data_meta[_character] or not frame_data_meta[_character].moves[current_recording_animation_id] or not frame_data_meta[_character].moves[current_recording_animation_id].cancel then
+  if (_player_obj.has_just_hit or _player_obj.has_just_been_blocked or _player_obj.has_just_been_parried) then
+    if not frame_data_meta[_player_obj.char_str] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].cancel then
       if current_recording_animation and _debug then
-        print(string.format("dropped animation because it connected: %s", current_recording_animation_id))
+        print(string.format("dropped animation because it connected: %s", _player_obj.animation))
       end
       reset_current_recording_animation()
     end
   end
 
-  if (P1_has_animation_just_changed) then
+  if (_player_obj.has_animation_just_changed) then
+    local _id
+    if current_recording_animation then _id = current_recording_animation.id end
+
     if current_recording_animation and current_recording_animation.attack_box_count > 0 then
       current_recording_animation.attack_box_count = nil -- don't save that
-      local _character = characters[P1.character]
-      if (frame_data[_character] == nil) then
-        frame_data[_character] = {}
+      current_recording_animation.id = nil -- don't save that
+      if (frame_data[_player_obj.char_str] == nil) then
+        frame_data[_player_obj.char_str] = {}
       end
-      frame_data[_character][current_recording_animation_id] = current_recording_animation
+      frame_data[_player_obj.char_str][_id] = current_recording_animation
 
       if _debug then
-        print(string.format("recorded animation: %s", current_recording_animation_id))
+        print(string.format("recorded animation: %s", _id))
       end
     elseif current_recording_animation then
       if _debug then
-        print(string.format("dropped animation recording: %s", current_recording_animation_id))
+        print(string.format("dropped animation recording: %s", _id))
       end
     end
 
-    current_recording_animation_id = P1.animation
-    current_recording_animation_start_frame = frame_number
-    current_recording_animation_freeze_frames = 0
-    current_recording_animation_previous_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
-    current_recording_animation = { frames = {}, hit_frames = {}, attack_box_count = 0 }
+    current_recording_animation_previous_pos = {_player_obj.pos_x, _player_obj.pos_y}
+    current_recording_animation = { frames = {}, hit_frames = {}, attack_box_count = 0, id = _player_obj.animation }
   end
 
   if (current_recording_animation) then
 
-    if P1.remaining_freeze_frames > 1 then
-      current_recording_animation_freeze_frames = current_recording_animation_freeze_frames + 1
+    if _player_obj.remaining_freeze_frames > 1 then
+      _player_obj.current_animation_freeze_frames = _player_obj.current_animation_freeze_frames + 1
     else
-      local _frame = frame_number - current_recording_animation_freeze_frames - current_recording_animation_start_frame
-      --print(string.format("recording frame %d (%d - %d - %d)", _frame, frame_number, current_recording_animation_freeze_frames, current_recording_animation_start_frame))
+      local _frame = frame_number - _player_obj.current_animation_freeze_frames - _player_obj.current_animation_start_frame
+      --print(string.format("recording frame %d (%d - %d - %d)", _frame, frame_number, _player_obj.current_animation_freeze_frames, _player_obj.current_animation_start_frame))
 
-      if (P1_has_just_acted) or P1.remaining_freeze_frames == 1 then
+      if (_player_obj.has_just_acted) or _player_obj.remaining_freeze_frames == 1 then
         table.insert(current_recording_animation.hit_frames, _frame - #current_recording_animation.hit_frames)
       end
 
       local _sign = 1
-      if player_objects[1].flip_x == 0 then _sign = -1 end
+      if _player_obj.flip_x ~= 0 then _sign = -1 end
 
       current_recording_animation.frames[_frame + 1] = {
         boxes = {},
         movement = {
-          (player_objects[1].pos_x - current_recording_animation_previous_pos[1]) * _sign,
-          (player_objects[1].pos_y - current_recording_animation_previous_pos[2]),
+          (_player_obj.pos_x - current_recording_animation_previous_pos[1]) * _sign,
+          (_player_obj.pos_y - current_recording_animation_previous_pos[2]),
         }
       }
-      current_recording_animation_previous_pos = { player_objects[1].pos_x, player_objects[1].pos_y }
+      current_recording_animation_previous_pos = { _player_obj.pos_x, _player_obj.pos_y }
 
-      if player_objects[1].flip_x ~= 0 then
-        current_recording_animation.frames[_frame + 1].movement[1] = -current_recording_animation.frames[_frame + 1].movement[1]
-      end
-
-      for __, _box in ipairs(player_objects[1].boxes) do
+      for __, _box in ipairs(_player_obj.boxes) do
         if (_box.type == "attack") then
           table.insert(current_recording_animation.frames[_frame + 1].boxes, copytable(_box))
           current_recording_animation.attack_box_count = current_recording_animation.attack_box_count + 1
@@ -865,9 +854,9 @@ function update_hitboxes()
   update_game_object(player_objects[2])
 end
 
-function update_framedata_recording()
+function update_framedata_recording(_player_obj)
   if training_settings.record_framedata and is_in_match then
-    record_framedata()
+    record_framedata(_player_obj)
   else
     reset_current_recording_animation()
   end
@@ -893,9 +882,9 @@ function update_draw_hitboxes()
     if _debug_move then
       local _move_frame = frame_number % #_debug_move.frames
 
-      local _debug_pos_x = player_objects[1].pos_x
-      local _debug_pos_y = player_objects[1].pos_y
-      local _debug_flip_x = player_objects[1].flip_x
+      local _debug_pos_x = player.pos_x
+      local _debug_pos_y = player.pos_y
+      local _debug_flip_x = player.flip_x
 
       local _sign = 1
       if _debug_flip_x ~= 0 then _sign = -1 end
@@ -997,14 +986,14 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
 end
 
 -- POSE
-function update_pose(_input, _player_obj)
+function update_pose(_input, _player_obj, _pose)
   -- pose
 if is_in_match and not is_menu_open and _player_obj.pending_input_sequence == nil then
-  if training_settings.pose == 2 then -- crouch
+  if _pose == 2 and (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02) then -- crouch
     _input[_player_obj.prefix..' Down'] = true
-  elseif training_settings.pose == 3 and (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02) then -- jump
+  elseif _pose == 3 and (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02) then -- jump
     _input[_player_obj.prefix..' Up'] = true
-  elseif training_settings.pose == 4 then -- high jump
+  elseif _pose == 4 then -- high jump
     local _on_ground = (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02)
     if _on_ground and _player_obj.pending_input_sequence == nil then
       queue_input_sequence(_player_obj, {{"down"}, {"up"}})
@@ -1015,67 +1004,18 @@ end
 
 -- BLOCKING
 
-P1_current_animation_id = nil
-P1_current_animation_start_frame = 0
-P1_current_animation_freeze_frames = 0
-next_attack_animation_hit_frame = 0
-next_attack_hit_id = 0
-last_attack_hit_id = 0
-blocked_hit_count = 0
-listening_for_attack_animation = false
+function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
-movement_type = {
-  "animation",
-  "velocity"
-}
+  local _character = characters[_player.character]
 
--- ALEX
-frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
-frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} } -- Cr MK
-frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} } -- Cr HK
-
-frame_data_meta["alex"].moves["a7dc"] = { hits = {{ type = 3 }} } -- HP
-
-frame_data_meta["alex"].moves["72d4"] = { hits = {{ type = 3 }} } -- UOH
-
-frame_data_meta["alex"].moves["bc0c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
-frame_data_meta["alex"].moves["bd6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
-frame_data_meta["alex"].moves["be7c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
-
-frame_data_meta["alex"].moves["bf94"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
-frame_data_meta["alex"].moves["c0e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
-frame_data_meta["alex"].moves["c1c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
-
-frame_data_meta["alex"].moves["6d24"] = { intro = { length = 23, next = "7044" } } -- VCharge LK
-frame_data_meta["alex"].moves["7044"] = { hits = {{ type = 3 }} } -- VCharge LK
-
-frame_data_meta["alex"].moves["6df4"] = { intro = { length = 25, next = "7094" } } -- VCharge MK
-frame_data_meta["alex"].moves["7094"] = { hits = {{ type = 3 }} } -- VCharge MK
-
-frame_data_meta["alex"].moves["6ec4"] = { intro = { length = 26, next = "70e4" } } -- VCharge HK
-frame_data_meta["alex"].moves["70e4"] = { hits = {{ type = 3 }} } -- VCharge HK
-
-frame_data_meta["alex"].moves["6f94"] = { intro = { length = 26, next = "70e4" } } -- VCharge EXK
-
--- IBUKI
-frame_data_meta["ibuki"].moves["3a48"] = { cancel = true } -- target MP
-
-function update_blocking(_input)
-
-  local _character = characters[P1.character]
-
-  if listening_for_attack_animation and P1.remaining_freeze_frames > 0 then
-    P1_current_animation_freeze_frames = P1_current_animation_freeze_frames + 1
-  end
-
-  local _frame = frame_number - P1_current_animation_start_frame - (P1_current_animation_freeze_frames - 1)
-  if listening_for_attack_animation then
+  local _frame = frame_number - _player.current_animation_start_frame - (_player.current_animation_freeze_frames - 1)
+  if _player.blocking.listening then
     --print(string.format("update blocking frame %d (freeze: %d)", _frame, P1_current_animation_freeze_frames - 1))
   end
   local _all_hits_done = true
 
-  if (frame_data[_character] and frame_data[_character][P1.animation]) then
-    for __, _hit_frame in ipairs(frame_data[_character][P1.animation].hit_frames) do
+  if (frame_data[_character] and frame_data[_player.char_str][_player.animation]) then
+    for __, _hit_frame in ipairs(frame_data[_player.char_str][_player.animation].hit_frames) do
       if _frame < _hit_frame then
         _all_hits_done = false
         break
@@ -1083,77 +1023,76 @@ function update_blocking(_input)
     end
   end
 
-  -- P1_has_just_attacked can change in the middle of an attack (see Alex's QCF Ps) so we need to ensure all hits are past us in order to allow transition to the same animation
+  -- has_just_attacked can change in the middle of an attack (see Alex's QCF Ps) so we need to ensure all hits are past us in order to allow transition to the same animation
 
   local _debug = false
-  if (P1_has_animation_just_changed or (P1_has_just_attacked and _all_hits_done)) then
+  if (_player.has_animation_just_changed or (_player.has_just_attacked and _all_hits_done)) then
     if (
       (
-        frame_data[_character] and
-        frame_data[_character][P1.animation]
+        frame_data[_player.char_str] and
+        frame_data[_player.char_str][_player.animation]
       )
       or
       (
-        frame_data_meta[_character] and
-        frame_data_meta[_character].moves[P1.animation] and
-        frame_data_meta[_character].moves[P1.animation].intro and
-        frame_data[_character] and
-        frame_data[_character][frame_data_meta[_character].moves[P1.animation].intro.next]
+        frame_data_meta[_player.char_str] and
+        frame_data_meta[_player.char_str].moves[_player.animation] and
+        frame_data_meta[_player.char_str].moves[_player.animation].intro and
+        frame_data[_player.char_str] and
+        frame_data[_player.char_str][frame_data_meta[_player.char_str].moves[_player.animation].intro.next]
       )
     ) then
-      listening_for_attack_animation = true
-      P1_current_animation_id = P1.animation
-      P1_current_animation_start_frame = frame_number
-      P1_current_animation_freeze_frames = 0
-      next_attack_animation_hit_frame = 0
-      next_attack_hit_id = 0
-      last_attack_hit_id = 0
+      _player.blocking.listening = true
+      _player.blocking.current_animation_id = _player.animation
+      _player.blocking.current_animation_start_frame = _player.animation
+      _player.blocking.next_attack_animation_hit_frame = 0
+      _player.blocking.next_attack_hit_id = 0
+      _player.blocking.last_attack_hit_id = 0
       _frame = 0
 
       -- special case for animations that introduce animations that hit at frame 0
-      if frame_data_meta[_character] and frame_data_meta[_character].moves[P1.animation] and frame_data_meta[_character].moves[P1.animation].intro then
-        P1_current_animation_id = frame_data_meta[_character].moves[P1.animation].intro.next
-        P1_current_animation_start_frame = P1_current_animation_start_frame + frame_data_meta[_character].moves[P1.animation].intro.length
+      if frame_data_meta[_player.char_str] and frame_data_meta[_player.char_str].moves[_player.animation] and frame_data_meta[_player.char_str].moves[_player.animation].intro then
+        _player.blocking.current_animation_id = frame_data_meta[_player.char_str].moves[_player.animation].intro.next
+        _player.blocking.current_animation_start_frame = _player.current_animation_start_frame + frame_data_meta[_player.char_str].moves[_player.animation].intro.length
       end
 
       if _debug then
-        print(P1_current_animation_start_frame..": listening for attack animation \""..P1_current_animation_id.."\"")
+        print(_player.blocking.current_animation_start_frame..": listening for attack animation \"".._player.blocking.current_animation_id.."\"")
       end
     else
-      if _debug and listening_for_attack_animation then
+      if _debug and _player.blocking.listening then
         print(string.format("%d: Stopped listening for attack animation", frame_number))
       end
-      listening_for_attack_animation = false
-      blocked_hit_count = 0
+      _player.blocking.listening = false
+      _player.blocking.blocked_hit_count = 0
     end
   end
 
-  if training_settings.blocking_mode == 1 then
-    listening_for_attack_animation = false
-    blocked_hit_count = 0
+  if _mode == 1 then
+    _player.blocking.listening = false
+    _player.blocking.blocked_hit_count = 0
   end
 
-  if listening_for_attack_animation then
-    local _frame_data_meta = frame_data_meta[_character].moves[P1_current_animation_id]
-    local _frame_to_check = math.max(_frame + 1, _frame - P1.remaining_freeze_frames + 2)
-    local _current_animation_pos = {player_objects[1].pos_x, player_objects[1].pos_y}
+  if _player.blocking.listening then
+    local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.blocking.current_animation_id]
+    local _frame_to_check = math.max(_frame + 1, _frame - _player.remaining_freeze_frames + 2)
+    local _current_animation_pos = {_player.pos_x, _player.pos_y}
     local _frame_delta = _frame_to_check - _frame
 
     local _next_hit_id = 1
-    for i = 1, #frame_data[_character][P1_current_animation_id].hit_frames do
-      if _frame_to_check >= frame_data[_character][P1_current_animation_id].hit_frames[i] then
+    for i = 1, #frame_data[_player.char_str][_player.blocking.current_animation_id].hit_frames do
+      if _frame_to_check >= frame_data[_player.char_str][_player.blocking.current_animation_id].hit_frames[i] then
         _next_hit_id = i
       end
     end
 
-    if (next_attack_animation_hit_frame < frame_number and _frame_to_check < #frame_data[_character][P1_current_animation_id].frames) then
+    if (_player.blocking.next_attack_animation_hit_frame < frame_number and _frame_to_check < #frame_data[_player.char_str][_player.blocking.current_animation_id].frames) then
 
       if _debug then
-        print(string.format(" comparing frame %d with frame %d (%d freeze frames)(hit %d)", _frame, _frame_to_check, P1_current_animation_freeze_frames, _next_hit_id))
+        print(string.format(" comparing frame %d with frame %d (%d freeze frames)(hit %d)", _frame, _frame_to_check, _player.current_animation_freeze_frames, _next_hit_id))
       end
-      local _next_frame = frame_data[_character][P1_current_animation_id].frames[_frame_to_check + 1]
+      local _next_frame = frame_data[_player.char_str][_player.blocking.current_animation_id].frames[_frame_to_check + 1]
       local _sign = 1
-      if player_objects[1].flip_x ~= 0 then _sign = -1 end
+      if _player.flip_x ~= 0 then _sign = -1 end
       local _next_attacker_pos = copytable(_current_animation_pos)
       local _movement_type = 1
       if _frame_data_meta and _frame_data_meta.movement_type then
@@ -1162,101 +1101,156 @@ function update_blocking(_input)
       if _movement_type == 1 then -- animation base movement
         for i = _frame + 1, _frame_to_check do
           if i >= 0 then
-            _next_attacker_pos[1] = _next_attacker_pos[1] + frame_data[_character][P1_current_animation_id].frames[i+1].movement[1] * _sign
-            _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_character][P1_current_animation_id].frames[i+1].movement[2]
+            _next_attacker_pos[1] = _next_attacker_pos[1] + frame_data[_player.char_str][_player.blocking.current_animation_id].frames[i+1].movement[1] * _sign
+            _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_player.char_str][_player.blocking.current_animation_id].frames[i+1].movement[2]
           end
         end
       else -- velocity based movement
-        local _velocity_x = P1.velocity_x
-        local _velocity_y = P1.velocity_y
+        local _velocity_x = _player.velocity_x
+        local _velocity_y = _player.velocity_y
         for i = 1, _frame_delta do
-          _velocity_x = _velocity_x + P1.acc_x
-          _velocity_y = _velocity_y + P1.acc_y
+          _velocity_x = _velocity_x + _player.acc_x
+          _velocity_y = _velocity_y + _player.acc_y
           _next_attacker_pos[1] = _next_attacker_pos[1] + _velocity_x
           _next_attacker_pos[2] = _next_attacker_pos[2] + _velocity_y
         end
       end
 
-      local _next_defender_pos = { player_objects[2].pos_x, player_objects[2].pos_y }
-      if true then
-        local _velocity_x = P2.velocity_x
-        local _velocity_y = P2.velocity_y
-        for i = 1, _frame_delta do
-          _velocity_x = _velocity_x + P2.acc_x
-          _velocity_y = _velocity_y + P2.acc_y
-          _next_defender_pos[1] = _next_defender_pos[1] + _velocity_x
-          _next_defender_pos[2] = _next_defender_pos[2] + _velocity_y
-        end
+      local _next_defender_pos = { _dummy.pos_x, _dummy.pos_y }
+      local _velocity_x = _dummy.velocity_x
+      local _velocity_y = _dummy.velocity_y
+      for i = 1, _frame_delta do
+        _velocity_x = _velocity_x + _dummy.acc_x
+        _velocity_y = _velocity_y + _dummy.acc_y
+        _next_defender_pos[1] = _next_defender_pos[1] + _velocity_x
+        _next_defender_pos[2] = _next_defender_pos[2] + _velocity_y
       end
 
-      if _next_frame and _next_hit_id > last_attack_hit_id and test_collision(
-        _next_defender_pos[1], _next_defender_pos[2], player_objects[2].flip_x, player_objects[2].boxes, -- defender
-        _next_attacker_pos[1], _next_attacker_pos[2], player_objects[1].flip_x, _next_frame.boxes, -- attacker
+      if _next_frame and _next_hit_id > _player.blocking.last_attack_hit_id and test_collision(
+        _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
+        _next_attacker_pos[1], _next_attacker_pos[2], _player.flip_x, _next_frame.boxes, -- attacker
         3 -- defender hitbox dilation
       ) then
-        next_attack_animation_hit_frame = frame_number + P1.remaining_freeze_frames + _frame_delta
-        next_attack_hit_id = _next_hit_id
+        _player.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
+        _player.blocking.next_attack_hit_id = _next_hit_id
         if _debug then
-          print(string.format(" %d: next hit %d at frame %d", frame_number, next_attack_hit_id, next_attack_animation_hit_frame))
+          print(string.format(" %d: next hit %d at frame %d", frame_number, _player.blocking.next_attack_hit_id, _player.blocking.next_attack_animation_hit_frame))
         end
       end
     end
 
 
-    if frame_number <= next_attack_animation_hit_frame and last_attack_hit_id < next_attack_hit_id then
+    if frame_number <= _player.blocking.next_attack_animation_hit_frame and _player.blocking.last_attack_hit_id < _player.blocking.next_attack_hit_id then
 
       local _hit_type = 1
-      local _blocking_style = training_settings.blocking_style
+      local _blocking_style = _style
 
       if _blocking_style == 3 then -- red parry
-        if blocked_hit_count ~= training_settings.red_parry_hit_count then
+        if _player.blocking.blocked_hit_count ~= _red_parry_hit_count then
           _blocking_style = 1
         else
           _blocking_style = 2
         end
       end
 
-      if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[next_attack_hit_id] then
-        _hit_type = _frame_data_meta.hits[next_attack_hit_id].type
+      if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_player.blocking.next_attack_hit_id] then
+        _hit_type = _frame_data_meta.hits[_player.blocking.next_attack_hit_id].type
       end
 
-      if frame_number == next_attack_animation_hit_frame then
-        last_attack_hit_id = next_attack_hit_id
-        blocked_hit_count = blocked_hit_count + 1
+      if frame_number == _player.blocking.next_attack_animation_hit_frame then
+        _player.blocking.last_attack_hit_id = _player.blocking.next_attack_hit_id
+        _player.blocking.blocked_hit_count = _player.blocking.blocked_hit_count + 1
       end
 
       if _blocking_style == 1 then
-        if frame_number >= next_attack_animation_hit_frame - 2 then
-          if player_objects[2].flip_x == 0 then
-            _input['P2 Right'] = true
-            _input['P2 Left'] = false
+        if frame_number >= _player.blocking.next_attack_animation_hit_frame - 2 then
+          if _dummy.flip_x == 0 then
+            _input[_dummy.prefix..' Right'] = true
+            _input[_dummy.prefix..' Left'] = false
           else
-            _input['P2 Right'] = false
-            _input['P2 Left'] = true
+            _input[_dummy.prefix..' Right'] = false
+            _input[_dummy.prefix..' Left'] = true
           end
 
           if _hit_type == 2 then
-            _input['P2 Down'] = true
+            _input[_dummy.prefix..' Down'] = true
           elseif _hit_type == 3 then
-            _input['P2 Down'] = false
+            _input[_dummy.prefix..' Down'] = false
           end
         end
       elseif _blocking_style == 2 then
-        _input['P2 Right'] = false
-        _input['P2 Left'] = false
-        _input['P2 Down'] = false
+        _input[_dummy.prefix..' Right'] = false
+        _input[_dummy.prefix..' Left'] = false
+        _input[_dummy.prefix..' Down'] = false
 
         local _parry_low = _hit_type == 2 --or (_hit_type ~= 3 and training_settings.pose == 2)
 
-        if frame_number == next_attack_animation_hit_frame - 1 then
+        if frame_number == _player.blocking.next_attack_animation_hit_frame - 1 then
           if _parry_low then
-            _input['P2 Down'] = true
+            _input[_dummy.prefix..' Down'] = true
           else
-            _input['P2 Right'] = player_objects[2].flip_x ~= 0
-            _input['P2 Left'] = player_objects[2].flip_x == 0
+            _input[_dummy.prefix..' Right'] = _dummy.flip_x ~= 0
+            _input[_dummy.prefix..' Left'] = _dummy.flip_x == 0
           end
         end
       end
+    end
+  end
+end
+
+function update_counter_attack(_input, _attacker, _defender, _stick, _button)
+
+  local _debug = false
+
+  if not is_in_match then return end
+  if _stick == 1 and _button == 1 then return end
+
+  if _defender.has_just_parried then
+    if _debug then
+      print(frame_number.." - init ca")
+    end
+    _defender.counter.attack_frame = frame_number + 16
+    _defender.counter.sequence = make_input_sequence(_dummy, stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.ref_time = -1
+  elseif _attacker.has_just_hit or _attacker.has_just_been_blocked then
+    if _debug then
+      print(frame_number.." - init ca")
+    end
+    _defender.counter.ref_time = _defender.recovery_time
+    clear_input_sequence(_defender)
+    _defender.counter.sequence = nil
+  elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
+    if _debug then
+      print(frame_number.." - init ca")
+    end
+    _defender.counter.attack_frame = frame_number + _defender.wake_up_time
+    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.ref_time = -1
+  end
+
+  if not _defender.counter.sequence then
+    if _defender.counter.ref_time ~= -1 and _defender.recovery_time ~= _defender.counter.ref_time then
+      if _debug then
+        print(frame_number.." - setup ca")
+      end
+      _defender.counter.attack_frame = frame_number + _defender.recovery_time + 2
+      _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+      _defender.counter.ref_time = -1
+    end
+  end
+
+
+  if _defender.counter.sequence then
+    local _frames_remaining = _defender.counter.attack_frame - frame_number
+    if _debug then
+      print(_frames_remaining)
+    end
+    if _frames_remaining <= (#_defender.counter.sequence + 1) then
+      if _debug then
+        print(frame_number.." - queue ca")
+      end
+      queue_input_sequence(_defender, _defender.counter.sequence)
+      _defender.counter.sequence = nil
     end
   end
 end
@@ -1278,7 +1272,6 @@ training_settings = {
   infinite_meter = true,
   no_stun = true,
   display_input = true,
-  display_debug_history = false,
   display_hitboxes = false,
   record_framedata = false,
   debug_character = "",
@@ -1314,7 +1307,6 @@ menu = {
   {
     name = "Debug Settings",
     entries = {
-      checkbox_menu_item("Moves History", "display_debug_history"),
       --checkbox_menu_item("Swap Characters", "swap_characters"),
       checkbox_menu_item("Display Hitboxes", "display_hitboxes"),
       checkbox_menu_item("Record Frame Data", "record_framedata"),
@@ -1365,9 +1357,13 @@ function write_game_vars()
 end
 
 debug_current_animation = false
-P1.debug_state_variables = true
-P2.debug_state_variables = true
+
+P1.debug_state_variables = false
+P1.debug_standing_state = false
 P1.debug_wake_up = false
+
+P2.debug_state_variables = true
+P2.debug_standing_state = true
 P2.debug_wake_up = false
 
 function read_player_vars(_player_obj)
@@ -1389,6 +1385,7 @@ function read_player_vars(_player_obj)
   _player_obj.action_ext = memory.readdword(_player_obj.base + 0x12C)
   _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
+  _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
 
   local _prev_pos_x = _player_obj.pos_x or 0
   local _prev_pos_y = _player_obj.pos_y or 0
@@ -1426,16 +1423,26 @@ function read_player_vars(_player_obj)
   if _player_obj.debug_state_variables and _player_obj.has_just_been_blocked then print(string.format("%d - %s blocked (%d > %d)", frame_number, _player_obj.prefix, _previous_blocked_count, _blocked_count)) end
 
   -- LANDING
-  local _previous_standing_state = _player_obj.standing_state or 0
+  _player_obj.previous_standing_state = _player_obj.standing_state or 0
   _player_obj.standing_state = memory.readbyte(_player_obj.base + 0x297)
-  _player_obj.has_just_landed = _previous_standing_state >= 3 and _player_obj.standing_state < 3
-  if _player_obj.debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _previous_standing_state, _player_obj.standing_state)) end
+  _player_obj.has_just_landed = _player_obj.previous_standing_state >= 3 and _player_obj.standing_state < 3
+  if _player_obj.debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
+  if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
 
   -- ANIMATION
   local _previous_animation = _player_obj.animation or ""
   _player_obj.animation = bit.tohex(memory.readword(_player_obj.base + 0x202), 4)
   _player_obj.has_animation_just_changed = _previous_animation ~= _player_obj.animation
   if _player_obj.debug_state_variables and _player_obj.has_animation_just_changed then print(string.format("%d - %s animation changed (%s -> %s)", frame_number, _player_obj.prefix, _previous_animation, _player_obj.animation)) end
+
+  if _player_obj.has_animation_just_changed then
+    _player_obj.current_animation_start_frame = frame_number
+    _player_obj.current_animation_freeze_frames = 0
+  end
+
+  if _player_obj.remaining_freeze_frames > 0 then
+    _player_obj.current_animation_freeze_frames = _player_obj.current_animation_freeze_frames + 1
+  end
 
   if is_in_match then
 
@@ -1564,64 +1571,20 @@ function before_frame()
 
   local _input = {}
   -- pose
-  update_pose(_input, dummy)
+  update_pose(_input, dummy, training_settings.pose)
 
   -- blocking
-  update_blocking(_input)
+  update_blocking(_input, player, dummy, training_settings.blocking_mode, training_settings.blocking_style, training_settings.red_parry_hit_count)
 
   -- fast recovery
   if is_in_match and training_settings.fast_recovery_mode == 2 then
-    if P2_previous_standing_state ~= nil and P2_previous_standing_state ~= 0x00 and P2.standing_state == 0x00 then
-      _input['P2 Down'] = true
+    if dummy.previous_standing_state ~= 0x00 and dummy.standing_state == 0x00 then
+      _input[dummy.prefix..' Down'] = true
     end
   end
 
   -- counter attack
-  if is_in_match and (training_settings.counter_attack_stick ~= 1 or training_settings.counter_attack_button ~= 1) then
-
-    if P1_has_just_been_parried then
-      --print(frame_number.." - init ca")
-      counte_attack_frame = frame_number + 16
-      counterattack_sequence = make_input_sequence(_dummy, stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
-      P2_counter_ref_time = -1
-    elseif P1_has_just_hit or P1_has_just_been_blocked then
-      --print(frame_number.." - init ca")
-      P2_counter_ref_time = memory.readbyte(0x0206928B)
-      clear_input_sequence(_dummy)
-      counterattack_sequence = nil
-    elseif P2_has_just_started_wake_up then
-      --print(frame_number.." - init ca")
-      counte_attack_frame = frame_number + P2_wake_up_time
-      counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
-      P2_counter_ref_time = -1
-    elseif P2_has_just_started_fast_wake_up then
-      --print(frame_number.." - init ca")
-      counte_attack_frame = frame_number + P2_wake_up_time
-      counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
-      P2_counter_ref_time = -1
-    end
-
-    if not counterattack_sequence then
-      local _recovery_time = memory.readbyte(0x0206928B)
-      if P2_counter_ref_time ~= -1 and _recovery_time ~= P2_counter_ref_time then
-        --print(frame_number.." - setup ca")
-        counte_attack_frame = frame_number + _recovery_time + 2
-        counterattack_sequence = make_input_sequence(stick_gesture[training_settings.counter_attack_stick], button_gesture[training_settings.counter_attack_button])
-        P2_counter_ref_time = -1
-      end
-    end
-
-
-    if counterattack_sequence then
-      local _frames_remaining = counte_attack_frame - frame_number
-      --print(_frames_remaining)
-      if _frames_remaining <= (#counterattack_sequence + 1) then
-        --print(frame_number.." - queue ca")
-        queue_input_sequence(_dummy, counterattack_sequence)
-        counterattack_sequence = nil
-      end
-    end
-  end
+  update_counter_attack(_input, player, dummy, training_settings.counter_attack_stick, training_settings.counter_attack_button)
 
   joypad.set(_input)
 
@@ -1648,23 +1611,6 @@ function on_gui()
     draw_input(280, 190, i, "P2 ")
   end
 
-  if is_in_match and training_settings.display_debug_history then
-    local _debug_history_x = 45
-    local _debug_history_y = 36
-    local _line_height = 10
-    for i = 1, #debug_history do
-      local _a = debug_history[i]
-      local _t = _a.id..": "
-      if _a.length then _t = _t.."".._a.length.." " end
-      if _a.acts then
-        for j = 1, #_a.acts do
-          _t = _t.."{".._a.acts[j].startup..",".._a.acts[j].active.." (".._a.acts[j].dist_x..",".._a.acts[j].dist_y..")} "
-        end
-      end
-      gui.text(_debug_history_x, _debug_history_y + (i - 1) * _line_height, _t, text_disabled_color, text_default_border_color);
-    end
-  end
-
   if current_animation then
     last_valid_current_animation = current_animation
   end
@@ -1689,7 +1635,7 @@ function on_gui()
   end
 
   if is_in_match then
-    if player.input.pressed.start then
+    if P1.input.pressed.start or P2.input.pressed.start then
       is_menu_open = (not is_menu_open)
     end
   else
@@ -1698,7 +1644,7 @@ function on_gui()
 
   if is_menu_open then
 
-    if player.input.pressed.down then
+    if P1.input.pressed.down or P2.input.pressed.down then
       if is_main_menu_selected then
         is_main_menu_selected = false
         sub_menu_selected_index = 1
@@ -1710,7 +1656,7 @@ function on_gui()
       end
     end
 
-    if player.input.pressed.up then
+    if P1.input.pressed.up or P2.input.pressed.up then
       if is_main_menu_selected then
         is_main_menu_selected = false
         sub_menu_selected_index = #menu[main_menu_selected_index].entries
@@ -1722,7 +1668,7 @@ function on_gui()
       end
     end
 
-    if player.input.pressed.left then
+    if P1.input.pressed.left or P2.input.pressed.left then
       if is_main_menu_selected then
         main_menu_selected_index = main_menu_selected_index - 1
         if main_menu_selected_index == 0 then
@@ -1734,7 +1680,7 @@ function on_gui()
       end
     end
 
-    if player.input.pressed.right then
+    if P1.input.pressed.right or P2.input.pressed.right then
       if is_main_menu_selected then
         main_menu_selected_index = main_menu_selected_index + 1
         if main_menu_selected_index > #menu then
@@ -1746,7 +1692,7 @@ function on_gui()
       end
     end
 
-    if player.input.pressed.LP then
+    if P1.input.pressed.LP or P2.input.pressed.LP then
       if is_main_menu_selected then
       else
         menu[main_menu_selected_index].entries[sub_menu_selected_index]:validate()
@@ -1754,7 +1700,7 @@ function on_gui()
       end
     end
 
-    if player.input.pressed.LK then
+    if P1.input.pressed.LK or P2.input.pressed.LK then
       if is_main_menu_selected then
       else
         menu[main_menu_selected_index].entries[sub_menu_selected_index]:cancel()
@@ -2109,3 +2055,36 @@ character_specific.ken.fast_wake_ups = {
   { animation = "3e7c", length = 29 },
   { animation = "3dcc", length = 29 },
 }
+
+
+
+-- ALEX
+frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["alex"].moves["a7dc"] = { hits = {{ type = 3 }} } -- HP
+
+frame_data_meta["alex"].moves["72d4"] = { hits = {{ type = 3 }} } -- UOH
+
+frame_data_meta["alex"].moves["bc0c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["alex"].moves["bd6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["alex"].moves["be7c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["alex"].moves["bf94"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["alex"].moves["c0e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["alex"].moves["c1c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+
+frame_data_meta["alex"].moves["6d24"] = { intro = { length = 23, next = "7044" } } -- VCharge LK
+frame_data_meta["alex"].moves["7044"] = { hits = {{ type = 3 }} } -- VCharge LK
+
+frame_data_meta["alex"].moves["6df4"] = { intro = { length = 25, next = "7094" } } -- VCharge MK
+frame_data_meta["alex"].moves["7094"] = { hits = {{ type = 3 }} } -- VCharge MK
+
+frame_data_meta["alex"].moves["6ec4"] = { intro = { length = 26, next = "70e4" } } -- VCharge HK
+frame_data_meta["alex"].moves["70e4"] = { hits = {{ type = 3 }} } -- VCharge HK
+
+frame_data_meta["alex"].moves["6f94"] = { intro = { length = 26, next = "70e4" } } -- VCharge EXK
+
+-- IBUKI
+frame_data_meta["ibuki"].moves["3a48"] = { cancel = true } -- target MP
