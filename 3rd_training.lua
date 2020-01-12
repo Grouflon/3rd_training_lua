@@ -367,10 +367,11 @@ text_default_border_color = 0x101008FF
 text_selected_color = 0xFF0000FF
 text_disabled_color = 0x999999FF
 
-function checkbox_menu_item(_name, _property_name, _default_value)
+function checkbox_menu_item(_name, _object, _property_name, _default_value)
   if _default_value == nil then _default_value = false end
   local _o = {}
   _o.name = _name
+  _o.object = _object
   _o.property_name = _property_name
   _o.default_value = _default_value
 
@@ -383,31 +384,32 @@ function checkbox_menu_item(_name, _property_name, _default_value)
       _prefix = "< "
       _suffix = " >"
     end
-    gui.text(_x, _y, _prefix..self.name.." : "..tostring(training_settings[self.property_name]).._suffix, _c, text_default_border_color)
+    gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.object[self.property_name]).._suffix, _c, text_default_border_color)
   end
 
   function _o:left()
-    training_settings[self.property_name] = not training_settings[self.property_name]
+    self.object[self.property_name] = not self.object[self.property_name]
   end
 
   function _o:right()
-    training_settings[self.property_name] = not training_settings[self.property_name]
+    self.object[self.property_name] = not self.object[self.property_name]
   end
 
   function _o:validate()
   end
 
   function _o:cancel()
-    training_settings[self.property_name] = self.default_value
+    self.object[self.property_name] = self.default_value
   end
 
   return _o
 end
 
-function list_menu_item(_name, _property_name, _list, _default_value)
+function list_menu_item(_name, _object, _property_name, _list, _default_value)
   if _default_value == nil then _default_value = 1 end
   local _o = {}
   _o.name = _name
+  _o.object = _object
   _o.property_name = _property_name
   _o.list = _list
   _o.default_value = _default_value
@@ -421,20 +423,20 @@ function list_menu_item(_name, _property_name, _list, _default_value)
       _prefix = "< "
       _suffix = " >"
     end
-    gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.list[training_settings[self.property_name]]).._suffix, _c, text_default_border_color)
+    gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.list[self.object[self.property_name]]).._suffix, _c, text_default_border_color)
   end
 
   function _o:left()
-    training_settings[self.property_name] = training_settings[self.property_name] - 1
-    if training_settings[self.property_name] == 0 then
-      training_settings[self.property_name] = #self.list
+    self.object[self.property_name] = self.object[self.property_name] - 1
+    if self.object[self.property_name] == 0 then
+      self.object[self.property_name] = #self.list
     end
   end
 
   function _o:right()
-    training_settings[self.property_name] = training_settings[self.property_name] + 1
-    if training_settings[self.property_name] > #self.list then
-      training_settings[self.property_name] = 1
+    self.object[self.property_name] = self.object[self.property_name] + 1
+    if self.object[self.property_name] > #self.list then
+      self.object[self.property_name] = 1
     end
   end
 
@@ -442,16 +444,17 @@ function list_menu_item(_name, _property_name, _list, _default_value)
   end
 
   function _o:cancel()
-    training_settings[self.property_name] = self.default_value
+    self.object[self.property_name] = self.default_value
   end
 
   return _o
 end
 
-function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_value)
+function integer_menu_item(_name, _object, _property_name, _min, _max, _loop, _default_value)
   if _default_value == nil then _default_value = _min end
   local _o = {}
   _o.name = _name
+  _o.object = _object
   _o.property_name = _property_name
   _o.min = _min
   _o.max = _max
@@ -467,27 +470,27 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_va
       _prefix = "< "
       _suffix = " >"
     end
-    gui.text(_x, _y, _prefix..self.name.." : "..tostring(training_settings[self.property_name]).._suffix, _c, text_default_border_color)
+    gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.object[self.property_name]).._suffix, _c, text_default_border_color)
   end
 
   function _o:left()
-    training_settings[self.property_name] = training_settings[self.property_name] - 1
-    if training_settings[self.property_name] < self.min then
+    self.object[self.property_name] = self.object[self.property_name] - 1
+    if self.object[self.property_name] < self.min then
       if self.loop then
-        training_settings[self.property_name] = self.max
+        self.object[self.property_name] = self.max
       else
-        training_settings[self.property_name] = self.min
+        self.object[self.property_name] = self.min
       end
     end
   end
 
   function _o:right()
-    training_settings[self.property_name] = training_settings[self.property_name] + 1
-    if training_settings[self.property_name] > self.max then
+    self.object[self.property_name] = self.object[self.property_name] + 1
+    if self.object[self.property_name] > self.max then
       if self.loop then
-        training_settings[self.property_name] = self.min
+        self.object[self.property_name] = self.min
       else
-        training_settings[self.property_name] = self.max
+        self.object[self.property_name] = self.max
       end
     end
   end
@@ -496,7 +499,7 @@ function integer_menu_item(_name, _property_name, _min, _max, _loop, _default_va
   end
 
   function _o:cancel()
-    training_settings[self.property_name] = self.default_value
+    self.object[self.property_name] = self.default_value
   end
 
   return _o
@@ -655,8 +658,6 @@ function load_training_data()
     end
   end
   f:close()
-
-  training_settings.record_framedata = false -- this never gets saved
 end
 
 -- swap inputs
@@ -855,7 +856,7 @@ function update_hitboxes()
 end
 
 function update_framedata_recording(_player_obj)
-  if training_settings.record_framedata and is_in_match then
+  if debug_settings.record_framedata and is_in_match then
     record_framedata(_player_obj)
   else
     reset_current_recording_animation()
@@ -876,9 +877,9 @@ function update_draw_hitboxes()
   draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
   draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
 
-  local _debug_frame_data = frame_data[training_settings.debug_character]
+  local _debug_frame_data = frame_data[debug_settings.debug_character]
   if _debug_frame_data then
-    local _debug_move = _debug_frame_data[training_settings.debug_move]
+    local _debug_move = _debug_frame_data[debug_settings.debug_move]
     if _debug_move then
       local _move_frame = frame_number % #_debug_move.frames
 
@@ -1258,7 +1259,6 @@ end
 -- GUI DECLARATION
 
 training_settings = {
-  swap_characters = false,
   pose = 1,
   blocking_style = 1,
   blocking_mode = 1,
@@ -1273,45 +1273,49 @@ training_settings = {
   no_stun = true,
   display_input = true,
   display_hitboxes = false,
+}
+
+debug_settings = {
+  swap_characters = false,
   record_framedata = false,
   debug_character = "",
   debug_move = "",
 }
 
-debug_move_menu_item = map_menu_item("Debug Move", training_settings, "debug_move", frame_data, nil)
+debug_move_menu_item = map_menu_item("Debug Move", debug_settings, "debug_move", frame_data, nil)
 
 menu = {
   {
     name = "Dummy Settings",
     entries = {
-      list_menu_item("Pose", "pose", pose),
-      list_menu_item("Blocking Style", "blocking_style", blocking_style),
-      list_menu_item("Blocking", "blocking_mode", blocking_mode),
-      integer_menu_item("Hits before Red Parry", "red_parry_hit_count", 1, 20, true),
-      list_menu_item("Counter-Attack Move", "counter_attack_stick", stick_gesture),
-      list_menu_item("Counter-Attack Button", "counter_attack_button", button_gesture),
-      list_menu_item("Fast Recovery", "fast_recovery_mode", fast_recovery_mode),
+      list_menu_item("Pose", training_settings, "pose", pose),
+      list_menu_item("Blocking Style", training_settings, "blocking_style", blocking_style),
+      list_menu_item("Blocking", training_settings, "blocking_mode", blocking_mode),
+      integer_menu_item("Hits before Red Parry", training_settings, "red_parry_hit_count", 1, 20, true),
+      list_menu_item("Counter-Attack Move", training_settings, "counter_attack_stick", stick_gesture),
+      list_menu_item("Counter-Attack Button", training_settings, "counter_attack_button", button_gesture),
+      list_menu_item("Fast Recovery", training_settings, "fast_recovery_mode", fast_recovery_mode),
     }
   },
   {
     name = "Training Settings",
     entries = {
-      checkbox_menu_item("Infinite Time", "infinite_time"),
-      checkbox_menu_item("Infinite Life", "infinite_life"),
-      checkbox_menu_item("Infinite Meter", "infinite_meter"),
-      checkbox_menu_item("No Stun", "no_stun"),
-      checkbox_menu_item("Display Input", "display_input"),
-      list_menu_item("Dummy Player", "dummy_player", players),
+      checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
+      checkbox_menu_item("Infinite Life", training_settings, "infinite_life"),
+      checkbox_menu_item("Infinite Meter", training_settings, "infinite_meter"),
+      checkbox_menu_item("No Stun", training_settings, "no_stun"),
+      checkbox_menu_item("Display Input", training_settings, "display_input"),
+      checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
+      list_menu_item("Dummy Player", training_settings, "dummy_player", players),
     }
   },
   {
     name = "Debug Settings",
     entries = {
-      --checkbox_menu_item("Swap Characters", "swap_characters"),
-      checkbox_menu_item("Display Hitboxes", "display_hitboxes"),
-      checkbox_menu_item("Record Frame Data", "record_framedata"),
+      checkbox_menu_item("Swap Characters", debug_settings, "swap_characters"),
+      checkbox_menu_item("Record Frame Data", debug_settings, "record_framedata"),
       button_menu_item("Save Frame Data", save_frame_data),
-      map_menu_item("Debug Character", training_settings, "debug_character", _G, "frame_data"),
+      map_menu_item("Debug Character", debug_settings, "debug_character", _G, "frame_data"),
       debug_move_menu_item
     }
   },
@@ -1335,7 +1339,7 @@ function write_game_vars()
   -- character swap
   if is_in_match then
     local P1_disable_input_address = 0x02068C74
-    if training_settings.swap_characters then
+    if debug_settings.swap_characters then
       swap_inputs(joypad.get(), input)
       memory.writebyte(P1_disable_input_address, 0x01)
     else
@@ -1362,8 +1366,8 @@ P1.debug_state_variables = false
 P1.debug_standing_state = false
 P1.debug_wake_up = false
 
-P2.debug_state_variables = true
-P2.debug_standing_state = true
+P2.debug_state_variables = false
+P2.debug_standing_state = false
 P2.debug_wake_up = false
 
 function read_player_vars(_player_obj)
@@ -1537,17 +1541,15 @@ end
 function on_start()
   load_training_data()
   load_frame_data()
-
-  training_settings.swap_characters = false
 end
 
 function before_frame()
 
   -- update debug menu
-  if training_settings.debug_character ~= debug_move_menu_item.map_property then
+  if debug_settings.debug_character ~= debug_move_menu_item.map_property then
     debug_move_menu_item.map_object = frame_data
-    debug_move_menu_item.map_property = training_settings.debug_character
-    training_settings.debug_move = ""
+    debug_move_menu_item.map_property = debug_settings.debug_character
+    debug_settings.debug_move = ""
   end
 
   -- game
