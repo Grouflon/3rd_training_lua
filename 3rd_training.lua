@@ -864,18 +864,17 @@ function update_framedata_recording(_player_obj)
 end
 
 function update_draw_hitboxes()
-  if (not training_settings.display_hitboxes) then
-    return
+  if training_settings.display_hitboxes then
+    draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
+    draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
   end
 
-  screen_x = memory.readwordsigned(0x02026CB0)
-  screen_y = memory.readwordsigned(0x02026CB4)
-  scale = memory.readwordsigned(0x0200DCBA) --FBA can't read from 04xxxxxx
-  scale = 0x40/(scale > 0 and scale or 1)
-  ground_offset = 23
-
-  draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
-  draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
+  if debug_settings.show_predicted_hitbox then
+    local _predicted_hit = predict_hitboxes(player, 2)
+    if _predicted_hit.frame_data then
+      draw_hitboxes(_predicted_hit.pos_x, _predicted_hit.pos_y, player.flip_x, _predicted_hit.frame_data.boxes)
+    end
+  end
 
   local _debug_frame_data = frame_data[debug_settings.debug_character]
   if _debug_frame_data then
@@ -1031,6 +1030,8 @@ function predict_hitboxes(_player_obj, _frames_prediction)
     pos_y = 0,
   }
 
+  if not frame_data[_player_obj.char_str] then return _result end
+
   local _frame_data = frame_data[_player_obj.char_str][_player_obj.relevant_animation]
   if not _frame_data then return _result end
 
@@ -1091,57 +1092,59 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       frame_data[_player.char_str] and
       frame_data[_player.char_str][_player.relevant_animation]
     ) then
-      _player.blocking.listening = true
-      _player.blocking.next_attack_animation_hit_frame = 0
-      _player.blocking.next_attack_hit_id = 0
-      _player.blocking.last_attack_hit_id = 0
+      _dummy.blocking.listening = true
+      _dummy.blocking.next_attack_animation_hit_frame = 0
+      _dummy.blocking.next_attack_hit_id = 0
+      _dummy.blocking.last_attack_hit_id = 0
 
       if _debug then
         print(string.format("%d - %s listening for attack animation \"%s\" (starts at frame %d)", frame_number, _dummy.prefix, _player.relevant_animation, _player.relevant_animation_start_frame))
       end
     else
-      if _debug and _player.blocking.listening then
+      if _debug and _dummy.blocking.listening then
         print(string.format("%d - %s stopped listening for attack animation", frame_number, _dummy.prefix))
       end
-      _player.blocking.listening = false
-      _player.blocking.blocked_hit_count = 0
+      _dummy.blocking.listening = false
+      _dummy.blocking.blocked_hit_count = 0
     end
   end
 
   if _mode == 1 then
-    _player.blocking.listening = false
-    _player.blocking.blocked_hit_count = 0
+    _dummy.blocking.listening = false
+    _dummy.blocking.blocked_hit_count = 0
   end
 
-  if _player.blocking.listening then
+  if _dummy.blocking.listening then
 
-    if (_player.blocking.next_attack_animation_hit_frame < frame_number) then
+    print(string.format("%d - %d %d", frame_number, _player.animation_frame, _player.remaining_freeze_frames))
+
+    if (_dummy.blocking.next_attack_animation_hit_frame < frame_number) then
       local _predicted_hit = predict_hitboxes(_player, 2)
       if _predicted_hit.frame_data then
         local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
         local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
 
-        if _predicted_hit.hit_id > _player.blocking.last_attack_hit_id and test_collision(
+        if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
           _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
           _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
-          3 -- defender hitbox dilation
+          4 -- defender hitbox dilation
         ) then
-          _player.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
-          _player.blocking.next_attack_hit_id = _predicted_hit.hit_id
+          _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
+          _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
           if _debug then
-            print(string.format(" %d: next hit %d at frame %d", frame_number, _player.blocking.next_attack_hit_id, _player.blocking.next_attack_animation_hit_frame))
+            print(string.format(" %d: next hit %d at frame %d (%d)", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame))
           end
         end
       end
     end
 
-    if frame_number <= _player.blocking.next_attack_animation_hit_frame and _player.blocking.last_attack_hit_id < _player.blocking.next_attack_hit_id then
+    if frame_number <= _dummy.blocking.next_attack_animation_hit_frame and _dummy.blocking.last_attack_hit_id < _dummy.blocking.next_attack_hit_id then
 
       local _hit_type = 1
       local _blocking_style = _style
 
       if _blocking_style == 3 then -- red parry
-        if _player.blocking.blocked_hit_count ~= _red_parry_hit_count then
+        if _dummy.blocking.blocked_hit_count ~= _red_parry_hit_count then
           _blocking_style = 1
         else
           _blocking_style = 2
@@ -1149,17 +1152,22 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
 
       local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.relevant_animation]
-      if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_player.blocking.next_attack_hit_id] then
-        _hit_type = _frame_data_meta.hits[_player.blocking.next_attack_hit_id].type
+      if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_dummy.blocking.next_attack_hit_id] then
+        _hit_type = _frame_data_meta.hits[_dummy.blocking.next_attack_hit_id].type
       end
 
-      if frame_number == _player.blocking.next_attack_animation_hit_frame then
-        _player.blocking.last_attack_hit_id = _player.blocking.next_attack_hit_id
-        _player.blocking.blocked_hit_count = _player.blocking.blocked_hit_count + 1
+      if frame_number == _dummy.blocking.next_attack_animation_hit_frame then
+        _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
+        _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
       end
 
       if _blocking_style == 1 then
-        if frame_number >= _player.blocking.next_attack_animation_hit_frame - 2 then
+        if frame_number >= _dummy.blocking.next_attack_animation_hit_frame - 2 then
+
+          if _debug then
+            print(string.format("%d - %s blocking", frame_number, _dummy.prefix))
+          end
+
           if _dummy.flip_x == 0 then
             _input[_dummy.prefix..' Right'] = true
             _input[_dummy.prefix..' Left'] = false
@@ -1181,7 +1189,12 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
         local _parry_low = _hit_type == 2 --or (_hit_type ~= 3 and training_settings.pose == 2)
 
-        if frame_number == _player.blocking.next_attack_animation_hit_frame - 1 then
+        if frame_number == _dummy.blocking.next_attack_animation_hit_frame - 1 then
+
+          if _debug then
+            print(string.format("%d - %s parrying", frame_number, _dummy.prefix))
+          end
+
           if _parry_low then
             _input[_dummy.prefix..' Down'] = true
           else
@@ -1272,6 +1285,7 @@ training_settings = {
 
 debug_settings = {
   swap_characters = false,
+  show_predicted_hitbox = false,
   record_framedata = false,
   debug_character = "",
   debug_move = "",
@@ -1301,13 +1315,14 @@ menu = {
       checkbox_menu_item("No Stun", training_settings, "no_stun"),
       checkbox_menu_item("Display Input", training_settings, "display_input"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
-      list_menu_item("Dummy Player", training_settings, "dummy_player", players),
+      --list_menu_item("Dummy Player", training_settings, "dummy_player", players),
     }
   },
   {
     name = "Debug Settings",
     entries = {
       checkbox_menu_item("Swap Characters", debug_settings, "swap_characters"),
+      checkbox_menu_item("Show Predicted Hitboxes", debug_settings, "show_predicted_hitbox"),
       checkbox_menu_item("Record Frame Data", debug_settings, "record_framedata"),
       button_menu_item("Save Frame Data", save_frame_data),
       map_menu_item("Debug Character", debug_settings, "debug_character", _G, "frame_data"),
@@ -1328,6 +1343,13 @@ function read_game_vars()
   local p2_locked = memory.readbyte(0x020154C8);
   local match_state = memory.readbyte(0x020154A7);
   is_in_match = ((p1_locked == 0xFF or p2_locked == 0xFF) and match_state == 0x02);
+
+  -- screen stuff
+  screen_x = memory.readwordsigned(0x02026CB0)
+  screen_y = memory.readwordsigned(0x02026CB4)
+  scale = memory.readwordsigned(0x0200DCBA) --FBA can't read from 04xxxxxx
+  scale = 0x40/(scale > 0 and scale or 1)
+  ground_offset = 23
 end
 
 function write_game_vars()
@@ -1357,7 +1379,7 @@ end
 
 debug_current_animation = false
 
-P1.debug_state_variables = false
+P1.debug_state_variables = true
 P1.debug_standing_state = false
 P1.debug_wake_up = false
 
@@ -1375,6 +1397,10 @@ function read_player_vars(_player_obj)
   end
 
   update_input(_player_obj)
+
+  local _prev_pos_x = _player_obj.pos_x or 0
+  local _prev_pos_y = _player_obj.pos_y or 0
+
   update_game_object(_player_obj)
 
   _player_obj.char_str = characters[_player_obj.char_id]
@@ -1386,14 +1412,13 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
 
-  local _prev_pos_x = _player_obj.pos_x or 0
-  local _prev_pos_y = _player_obj.pos_y or 0
   local _prev_velocity_x = _player_obj.velocity_x or 0
   local _prev_velocity_y = _player_obj.velocity_y or 0
   _player_obj.velocity_x = _player_obj.pos_x - _prev_pos_x
   _player_obj.velocity_y = _player_obj.pos_y - _prev_pos_y
   _player_obj.acc_x = _player_obj.velocity_x - _prev_velocity_x
   _player_obj.acc_y = _player_obj.velocity_y - _prev_velocity_y
+  --if _player_obj.id == 1 then print(string.format("%.2f:%.2f, %.2f:%.2f, %.2f:%.2f", _player_obj.pos_x, _player_obj.pos_y, _player_obj.velocity_x, _player_obj.velocity_y, _player_obj.acc_x, _player_obj.acc_y)) end
 
   -- ATTACKING
   local _previous_is_attacking = _player_obj.is_attacking or false
