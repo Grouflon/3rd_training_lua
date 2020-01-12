@@ -1005,43 +1005,103 @@ end
 
 -- BLOCKING
 
+function predict_player_position(_player_obj, _frames_prediction)
+  local _result = {
+    _player_obj.pos_x,
+    _player_obj.pos_y,
+  }
+  local _velocity_x = _player_obj.velocity_x
+  local _velocity_y = _player_obj.velocity_y
+  for i = 1, _frames_prediction do
+    _velocity_x = _velocity_x + _player_obj.acc_x
+    _velocity_y = _velocity_y + _player_obj.acc_y
+    _result[1] = _result[1] + _velocity_x
+    _result[2] = _result[2] + _velocity_y
+  end
+  return _result
+end
+
+function predict_hitboxes(_player_obj, _frames_prediction)
+  local _debug = false
+  local _result = {
+    frame = 0,
+    frame_data = nil,
+    hit_id = 0,
+    pos_x = 0,
+    pos_y = 0,
+  }
+
+  local _frame_data = frame_data[_player_obj.char_str][_player_obj.relevant_animation]
+  if not _frame_data then return _result end
+
+  local _frame_data_meta = frame_data_meta[_player_obj.char_str].moves[_player_obj.relevant_animation]
+
+  local _frame = _player_obj.relevant_animation_frame
+  local _frame_to_check = math.max(_frame + 1, _frame - _player_obj.remaining_freeze_frames + _frames_prediction)
+  local _current_animation_pos = {_player_obj.pos_x, _player_obj.pos_y}
+  local _frame_delta = _frame_to_check - _frame
+
+  --print(string.format("update blocking frame %d (freeze: %d)", _frame, _player_obj.current_animation_freeze_frames - 1))
+
+  local _next_hit_id = 1
+  for i = 1, #_frame_data.hit_frames do
+    if _frame_to_check >= _frame_data.hit_frames[i] then
+      _next_hit_id = i
+    end
+  end
+
+  if _frame_to_check < #_frame_data.frames then
+    local _next_frame = _frame_data.frames[_frame_to_check + 1]
+    local _sign = 1
+    if _player_obj.flip_x ~= 0 then _sign = -1 end
+    local _next_attacker_pos = copytable(_current_animation_pos)
+    local _movement_type = 1
+    if _frame_data_meta and _frame_data_meta.movement_type then
+      _movement_type = _frame_data_meta.movement_type
+    end
+    if _movement_type == 1 then -- animation base movement
+      for i = _frame + 1, _frame_to_check do
+        if i >= 0 then
+          _next_attacker_pos[1] = _next_attacker_pos[1] + _frame_data.frames[i+1].movement[1] * _sign
+          _next_attacker_pos[2] = _next_attacker_pos[2] + _frame_data.frames[i+1].movement[2]
+        end
+      end
+    else -- velocity based movement
+      _next_attacker_pos = predict_player_position(_player_obj, _frame_delta)
+    end
+
+    _result.frame = _frame_to_check
+    _result.frame_data = _next_frame
+    _result.hit_id = _next_hit_id
+    _result.pos_x = _next_attacker_pos[1]
+    _result.pos_y = _next_attacker_pos[2]
+
+    if _debug then
+      print(string.format(" predicted frame %d: %d hitboxes, hit %d, at %d:%d", _result.frame, #_result.frame_data.boxes, _result.hit_id, _result.pos_x, _result.pos_y))
+    end
+  end
+  return _result
+end
+
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
-  local _debug = false
-  if _player.has_animation_just_changed then
+  local _debug = true
+  if _player.has_relevant_animation_just_changed then
     if (
-      (
-        frame_data[_player.char_str] and
-        frame_data[_player.char_str][_player.animation]
-      )
-      or
-      (
-        frame_data_meta[_player.char_str] and
-        frame_data_meta[_player.char_str].moves[_player.animation] and
-        frame_data_meta[_player.char_str].moves[_player.animation].intro and
-        frame_data[_player.char_str] and
-        frame_data[_player.char_str][frame_data_meta[_player.char_str].moves[_player.animation].intro.next]
-      )
+      frame_data[_player.char_str] and
+      frame_data[_player.char_str][_player.relevant_animation]
     ) then
       _player.blocking.listening = true
-      _player.blocking.current_animation_id = _player.animation
-      _player.blocking.current_animation_start_frame = _player.animation
       _player.blocking.next_attack_animation_hit_frame = 0
       _player.blocking.next_attack_hit_id = 0
       _player.blocking.last_attack_hit_id = 0
 
-      -- special case for animations that introduce animations that hit at frame 0
-      if frame_data_meta[_player.char_str] and frame_data_meta[_player.char_str].moves[_player.animation] and frame_data_meta[_player.char_str].moves[_player.animation].intro then
-        _player.blocking.current_animation_id = frame_data_meta[_player.char_str].moves[_player.animation].intro.next
-        _player.blocking.current_animation_start_frame = _player.current_animation_start_frame + frame_data_meta[_player.char_str].moves[_player.animation].intro.length
-      end
-
       if _debug then
-        print(_player.blocking.current_animation_start_frame..": listening for attack animation \"".._player.blocking.current_animation_id.."\"")
+        print(string.format("%d - %s listening for attack animation \"%s\" (starts at frame %d)", frame_number, _dummy.prefix, _player.relevant_animation, _player.relevant_animation_start_frame))
       end
     else
       if _debug and _player.blocking.listening then
-        print(string.format("%d: Stopped listening for attack animation", frame_number))
+        print(string.format("%d - %s stopped listening for attack animation", frame_number, _dummy.prefix))
       end
       _player.blocking.listening = false
       _player.blocking.blocked_hit_count = 0
@@ -1054,75 +1114,26 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   end
 
   if _player.blocking.listening then
-    local _frame = frame_number - _player.current_animation_start_frame - (_player.current_animation_freeze_frames - 1)
-    local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.blocking.current_animation_id]
-    local _frame_to_check = math.max(_frame + 1, _frame - _player.remaining_freeze_frames + 2)
-    local _current_animation_pos = {_player.pos_x, _player.pos_y}
-    local _frame_delta = _frame_to_check - _frame
 
-    --print(string.format("update blocking frame %d (freeze: %d)", _frame, P1_current_animation_freeze_frames - 1))
+    if (_player.blocking.next_attack_animation_hit_frame < frame_number) then
+      local _predicted_hit = predict_hitboxes(_player, 2)
+      if _predicted_hit.frame_data then
+        local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
+        local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
 
-    local _next_hit_id = 1
-    for i = 1, #frame_data[_player.char_str][_player.blocking.current_animation_id].hit_frames do
-      if _frame_to_check >= frame_data[_player.char_str][_player.blocking.current_animation_id].hit_frames[i] then
-        _next_hit_id = i
-      end
-    end
-
-    if (_player.blocking.next_attack_animation_hit_frame < frame_number and _frame_to_check < #frame_data[_player.char_str][_player.blocking.current_animation_id].frames) then
-
-      if _debug then
-        print(string.format(" comparing frame %d with frame %d (%d freeze frames)(hit %d)", _frame, _frame_to_check, _player.current_animation_freeze_frames, _next_hit_id))
-      end
-      local _next_frame = frame_data[_player.char_str][_player.blocking.current_animation_id].frames[_frame_to_check + 1]
-      local _sign = 1
-      if _player.flip_x ~= 0 then _sign = -1 end
-      local _next_attacker_pos = copytable(_current_animation_pos)
-      local _movement_type = 1
-      if _frame_data_meta and _frame_data_meta.movement_type then
-        _movement_type = _frame_data_meta.movement_type
-      end
-      if _movement_type == 1 then -- animation base movement
-        for i = _frame + 1, _frame_to_check do
-          if i >= 0 then
-            _next_attacker_pos[1] = _next_attacker_pos[1] + frame_data[_player.char_str][_player.blocking.current_animation_id].frames[i+1].movement[1] * _sign
-            _next_attacker_pos[2] = _next_attacker_pos[2] + frame_data[_player.char_str][_player.blocking.current_animation_id].frames[i+1].movement[2]
+        if _predicted_hit.hit_id > _player.blocking.last_attack_hit_id and test_collision(
+          _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
+          _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
+          3 -- defender hitbox dilation
+        ) then
+          _player.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
+          _player.blocking.next_attack_hit_id = _predicted_hit.hit_id
+          if _debug then
+            print(string.format(" %d: next hit %d at frame %d", frame_number, _player.blocking.next_attack_hit_id, _player.blocking.next_attack_animation_hit_frame))
           end
         end
-      else -- velocity based movement
-        local _velocity_x = _player.velocity_x
-        local _velocity_y = _player.velocity_y
-        for i = 1, _frame_delta do
-          _velocity_x = _velocity_x + _player.acc_x
-          _velocity_y = _velocity_y + _player.acc_y
-          _next_attacker_pos[1] = _next_attacker_pos[1] + _velocity_x
-          _next_attacker_pos[2] = _next_attacker_pos[2] + _velocity_y
-        end
-      end
-
-      local _next_defender_pos = { _dummy.pos_x, _dummy.pos_y }
-      local _velocity_x = _dummy.velocity_x
-      local _velocity_y = _dummy.velocity_y
-      for i = 1, _frame_delta do
-        _velocity_x = _velocity_x + _dummy.acc_x
-        _velocity_y = _velocity_y + _dummy.acc_y
-        _next_defender_pos[1] = _next_defender_pos[1] + _velocity_x
-        _next_defender_pos[2] = _next_defender_pos[2] + _velocity_y
-      end
-
-      if _next_frame and _next_hit_id > _player.blocking.last_attack_hit_id and test_collision(
-        _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
-        _next_attacker_pos[1], _next_attacker_pos[2], _player.flip_x, _next_frame.boxes, -- attacker
-        3 -- defender hitbox dilation
-      ) then
-        _player.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
-        _player.blocking.next_attack_hit_id = _next_hit_id
-        if _debug then
-          print(string.format(" %d: next hit %d at frame %d", frame_number, _player.blocking.next_attack_hit_id, _player.blocking.next_attack_animation_hit_frame))
-        end
       end
     end
-
 
     if frame_number <= _player.blocking.next_attack_animation_hit_frame and _player.blocking.last_attack_hit_id < _player.blocking.next_attack_hit_id then
 
@@ -1137,6 +1148,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         end
       end
 
+      local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.relevant_animation]
       if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_player.blocking.next_attack_hit_id] then
         _hit_type = _frame_data_meta.hits[_player.blocking.next_attack_hit_id].type
       end
@@ -1447,6 +1459,24 @@ function read_player_vars(_player_obj)
   if _player_obj.remaining_freeze_frames > 0 then
     _player_obj.current_animation_freeze_frames = _player_obj.current_animation_freeze_frames + 1
   end
+
+  -- special case for animations that introduce animations that hit at frame 0 (Alex's VChargeK for instance)
+  -- Note: It's unlikely that intro animation will ever have freeze frames, so I don't think we need to handle that
+  local _previous_relevant_animation = _player_obj.relevant_animation or ""
+  if _player_obj.has_animation_just_changed then
+    _player_obj.relevant_animation = _player_obj.animation
+    _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame
+    if frame_data_meta[_player_obj.char_str] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].intro then
+      _player_obj.relevant_animation = frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].intro.next
+      _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame + frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].intro.length
+    end
+  end
+  _player_obj.has_relevant_animation_just_changed = _player_obj.relevant_animation ~= _previous_relevant_animation
+  --if _player_obj.debug_state_variables and _player_obj.has_relevant_animation_just_changed then print(string.format("%d - %s relevant animation changed (%s -> %s)", frame_number, _player_obj.prefix, _previous_relevant_animation, _player_obj.relevant_animation)) end
+
+  _player_obj.animation_frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
+  _player_obj.relevant_animation_frame = frame_number - _player_obj.relevant_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
+
 
   if is_in_match then
 
