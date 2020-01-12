@@ -1007,27 +1007,8 @@ end
 
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
-  local _character = characters[_player.character]
-
-  local _frame = frame_number - _player.current_animation_start_frame - (_player.current_animation_freeze_frames - 1)
-  if _player.blocking.listening then
-    --print(string.format("update blocking frame %d (freeze: %d)", _frame, P1_current_animation_freeze_frames - 1))
-  end
-  local _all_hits_done = true
-
-  if (frame_data[_character] and frame_data[_player.char_str][_player.animation]) then
-    for __, _hit_frame in ipairs(frame_data[_player.char_str][_player.animation].hit_frames) do
-      if _frame < _hit_frame then
-        _all_hits_done = false
-        break
-      end
-    end
-  end
-
-  -- has_just_attacked can change in the middle of an attack (see Alex's QCF Ps) so we need to ensure all hits are past us in order to allow transition to the same animation
-
   local _debug = false
-  if (_player.has_animation_just_changed or (_player.has_just_attacked and _all_hits_done)) then
+  if _player.has_animation_just_changed then
     if (
       (
         frame_data[_player.char_str] and
@@ -1048,7 +1029,6 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       _player.blocking.next_attack_animation_hit_frame = 0
       _player.blocking.next_attack_hit_id = 0
       _player.blocking.last_attack_hit_id = 0
-      _frame = 0
 
       -- special case for animations that introduce animations that hit at frame 0
       if frame_data_meta[_player.char_str] and frame_data_meta[_player.char_str].moves[_player.animation] and frame_data_meta[_player.char_str].moves[_player.animation].intro then
@@ -1074,10 +1054,13 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   end
 
   if _player.blocking.listening then
+    local _frame = frame_number - _player.current_animation_start_frame - (_player.current_animation_freeze_frames - 1)
     local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.blocking.current_animation_id]
     local _frame_to_check = math.max(_frame + 1, _frame - _player.remaining_freeze_frames + 2)
     local _current_animation_pos = {_player.pos_x, _player.pos_y}
     local _frame_delta = _frame_to_check - _frame
+
+    --print(string.format("update blocking frame %d (freeze: %d)", _frame, P1_current_animation_freeze_frames - 1))
 
     local _next_hit_id = 1
     for i = 1, #frame_data[_player.char_str][_player.blocking.current_animation_id].hit_frames do
@@ -1442,6 +1425,23 @@ function read_player_vars(_player_obj)
   if _player_obj.has_animation_just_changed then
     _player_obj.current_animation_start_frame = frame_number
     _player_obj.current_animation_freeze_frames = 0
+  else
+    -- has_just_attacked can change in the middle of an attack (see Alex's QCF Ps) so we need to ensure all hits are past us in order to allow transition to the same animation
+    local _all_hits_done = true
+    local _frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
+    if (frame_data[_player_obj.char_str] and frame_data[_player_obj.char_str][_player_obj.animation]) then
+      for __, _hit_frame in ipairs(frame_data[_player_obj.char_str][_player_obj.animation].hit_frames) do
+        if _frame < _hit_frame then
+          _all_hits_done = false
+          break
+        end
+      end
+    end
+    if _player_obj.has_just_attacked and _all_hits_done then
+      _player_obj.has_animation_just_changed = true
+      _player_obj.current_animation_start_frame = frame_number
+      _player_obj.current_animation_freeze_frames = 0
+    end
   end
 
   if _player_obj.remaining_freeze_frames > 0 then
