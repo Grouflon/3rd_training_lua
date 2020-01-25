@@ -11,6 +11,45 @@
 
 json = require ("lua_libs/dkjson")
 
+saved_path = "saved/"
+data_path = "data/"
+training_settings_file = "training_settings.json"
+frame_data_file_ext = "_framedata.json"
+
+
+
+-- json tools
+function read_object_from_json_file(_file_path)
+  local _f = io.open(_file_path, "r")
+  if _f == nil then
+    return nil
+  end
+
+  local _object
+  local _pos, _err
+  _object, _pos, _err = json.decode(_f:read("*all"))
+  _f:close()
+
+  if (err) then
+    print(string.format("Failed to json file \"%s\" : %s", _file_path, _err))
+  end
+
+  return _object
+end
+
+function write_object_to_json_file(_object, _file_path)
+  local _f = io.open(_file_path, "w")
+  if _f == nil then
+    return false
+  end
+
+  local _str = json.encode(_object, { indent = true })
+  _f:write(_str)
+  _f:close()
+
+  return true
+end
+
 -- players
 function make_input_set()
   return {
@@ -619,45 +658,21 @@ function button_menu_item(_name, _validate_function)
 end
 
 -- save/load
-training_data_file = "3rd_training_data.txt"
 function save_training_data()
-  f = io.open(training_data_file, "w")
-  for key, value in pairs(training_settings) do
-    f:write(key.."="..tostring(value).."\n")
+  if not write_object_to_json_file(training_settings, saved_path..training_settings_file) then
+    print(string.format("Error: Failed to save training settings to \"%s\"", training_settings_file))
   end
-  f:close()
 end
 
 function load_training_data()
-  f = io.open(training_data_file, "r")
-  if f == nil then
-    return
+  local _training_settings = read_object_from_json_file(saved_path..training_settings_file)
+  if _training_settings == nil then
+    print(string.format("Error: Failed to load training settings from \"%s\"", training_settings_file))
   end
 
-  for line in f:lines() do
-    local a1 = line:split("=")
-    local key = nil
-    local value = nil
-    if #a1 > 0 then
-      key = a1[1]
-      value = a1[2]
-    end
-
-    if key ~= nil and value ~= nil then
-      local type = type(training_settings[key])
-      local v = nil
-      if type == "boolean" then
-        if value == "true" then v = true else v = false end
-      elseif type == "number" then
-        v = tonumber(value)
-      end
-
-      if v ~= nil then
-        training_settings[key] = v
-      end
-    end
+  for _key, _value in pairs(_training_settings) do
+    training_settings[_key] = _value
   end
-  f:close()
 end
 
 -- swap inputs
@@ -697,27 +712,23 @@ end
 frame_data_file = "frame_data.json"
 
 function save_frame_data()
-  local _f = io.open(frame_data_file, "w")
-  local _str = json.encode(frame_data, { indent = true })
-  _f:write(_str)
-  _f:close()
-
-  print("Saved frame data to \""..frame_data_file.."\"")
-
+  for _key, _value in ipairs(characters) do
+    if frame_data[_value].dirty then
+      frame_data[_value].dirty = nil
+      local _file_path = data_path.._value..frame_data_file_ext
+      if not write_object_to_json_file(frame_data[_value], _file_path) then
+        print(string.format("Error: Failed to write frame data to \"%s\"", _file_path))
+      else
+        print(string.format("Saved frame data to \"%s\"", _file_path))
+      end
+    end
+  end
 end
 
 function load_frame_data()
-  local _f = io.open(frame_data_file, "r")
-  if _f == nil then
-    return
-  end
-
-  local pos, err
-  frame_data, pos, err = json.decode(_f:read("*all"))
-  _f:close()
-
-  if (err) then
-    print("Failed to read frame data file: "..err)
+  for _key, _value in ipairs(characters) do
+    local _file_path = data_path.._value..frame_data_file_ext
+    frame_data[_value] = read_object_from_json_file(_file_path) or {}
   end
 end
 
@@ -749,6 +760,7 @@ function record_framedata(_player_obj)
       if (frame_data[_player_obj.char_str] == nil) then
         frame_data[_player_obj.char_str] = {}
       end
+      frame_data[_player_obj.char_str].dirty = true
       frame_data[_player_obj.char_str][_id] = current_recording_animation
 
       if _debug then
