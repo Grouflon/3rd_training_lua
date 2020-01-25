@@ -12,7 +12,7 @@
 json = require ("lua_libs/dkjson")
 
 saved_path = "saved/"
-data_path = "data/"
+framedata_path = "data/framedata/"
 training_settings_file = "training_settings.json"
 frame_data_file_ext = "_framedata.json"
 
@@ -668,6 +668,7 @@ function load_training_data()
   local _training_settings = read_object_from_json_file(saved_path..training_settings_file)
   if _training_settings == nil then
     print(string.format("Error: Failed to load training settings from \"%s\"", training_settings_file))
+    _training_settings = {}
   end
 
   for _key, _value in pairs(_training_settings) do
@@ -715,7 +716,7 @@ function save_frame_data()
   for _key, _value in ipairs(characters) do
     if frame_data[_value].dirty then
       frame_data[_value].dirty = nil
-      local _file_path = data_path.._value..frame_data_file_ext
+      local _file_path = framedata_path.._value..frame_data_file_ext
       if not write_object_to_json_file(frame_data[_value], _file_path) then
         print(string.format("Error: Failed to write frame data to \"%s\"", _file_path))
       else
@@ -727,7 +728,7 @@ end
 
 function load_frame_data()
   for _key, _value in ipairs(characters) do
-    local _file_path = data_path.._value..frame_data_file_ext
+    local _file_path = framedata_path.._value..frame_data_file_ext
     frame_data[_value] = read_object_from_json_file(_file_path) or {}
   end
 end
