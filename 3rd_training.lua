@@ -1,7 +1,7 @@
 --
 --  3rd_training.lua - v0.1
 
---  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR emulator
+--  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator
 --  https://github.com/Grouflon/3rd_training_lua
 --
 
@@ -1099,7 +1099,7 @@ end
 
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
-  local _debug = true
+  local _debug = false
   if _player.has_relevant_animation_just_changed then
     if (
       frame_data[_player.char_str] and
@@ -1129,23 +1129,28 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   if _dummy.blocking.listening then
 
-    print(string.format("%d - %d %d", frame_number, _player.animation_frame, _player.remaining_freeze_frames))
+    --print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
 
     if (_dummy.blocking.next_attack_animation_hit_frame < frame_number) then
-      local _predicted_hit = predict_hitboxes(_player, 2)
-      if _predicted_hit.frame_data then
-        local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
-        local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
+      local _max_prediction_frames = 2
+      for i = 1, _max_prediction_frames do
+        local _predicted_hit = predict_hitboxes(_player, i)
+        --print(string.format(" predicted frame %d", _predicted_hit.frame))
+        if _predicted_hit.frame_data then
+          local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
+          local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
 
-        if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
-          _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
-          _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
-          4 -- defender hitbox dilation
-        ) then
-          _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
-          _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
-          if _debug then
-            print(string.format(" %d: next hit %d at frame %d (%d)", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame))
+          if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
+            _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
+            _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
+            4 -- defender hitbox dilation
+          ) then
+            _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
+            _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
+            if _debug then
+              print(string.format(" %d: next hit %d at frame %d (%d)", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame))
+            end
+            break
           end
         end
       end
@@ -1467,36 +1472,32 @@ function read_player_vars(_player_obj)
   if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
 
   -- ANIMATION
+  local _self_cancel = false
   local _previous_animation = _player_obj.animation or ""
   _player_obj.animation = bit.tohex(memory.readword(_player_obj.base + 0x202), 4)
   _player_obj.has_animation_just_changed = _previous_animation ~= _player_obj.animation
-  if _player_obj.debug_state_variables and _player_obj.has_animation_just_changed then print(string.format("%d - %s animation changed (%s -> %s)", frame_number, _player_obj.prefix, _previous_animation, _player_obj.animation)) end
-
-  if _player_obj.has_animation_just_changed then
-    _player_obj.current_animation_start_frame = frame_number
-    _player_obj.current_animation_freeze_frames = 0
-  else
-    -- has_just_attacked can change in the middle of an attack (see Alex's QCF Ps) so we need to ensure all hits are past us in order to allow transition to the same animation
-    local _all_hits_done = true
-    local _frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
+  if not _player_obj.has_animation_just_changed and not debug_settings.record_framedata then -- no self cancel handling if we record animations, this can lead to tenacious ill formed frame data in the database
     if (frame_data[_player_obj.char_str] and frame_data[_player_obj.char_str][_player_obj.animation]) then
+      local _all_hits_done = true
+      local _frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
       for __, _hit_frame in ipairs(frame_data[_player_obj.char_str][_player_obj.animation].hit_frames) do
         if _frame < _hit_frame then
           _all_hits_done = false
           break
         end
       end
-    end
-    if _player_obj.has_just_attacked and _all_hits_done then
-      _player_obj.has_animation_just_changed = true
-      _player_obj.current_animation_start_frame = frame_number
-      _player_obj.current_animation_freeze_frames = 0
+      if _player_obj.has_just_attacked and _all_hits_done then
+        _player_obj.has_animation_just_changed = true
+        _self_cancel = true
+      end
     end
   end
 
-  if _player_obj.remaining_freeze_frames > 0 then
-    _player_obj.current_animation_freeze_frames = _player_obj.current_animation_freeze_frames + 1
+  if _player_obj.has_animation_just_changed then
+    _player_obj.current_animation_start_frame = frame_number
+    _player_obj.current_animation_freeze_frames = 0
   end
+  if _player_obj.debug_state_variables and _player_obj.has_animation_just_changed then print(string.format("%d - %s animation changed (%s -> %s)", frame_number, _player_obj.prefix, _previous_animation, _player_obj.animation)) end
 
   -- special case for animations that introduce animations that hit at frame 0 (Alex's VChargeK for instance)
   -- Note: It's unlikely that intro animation will ever have freeze frames, so I don't think we need to handle that
@@ -1504,16 +1505,25 @@ function read_player_vars(_player_obj)
   if _player_obj.has_animation_just_changed then
     _player_obj.relevant_animation = _player_obj.animation
     _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame
-    if frame_data_meta[_player_obj.char_str] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].intro then
-      _player_obj.relevant_animation = frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].intro.next
-      _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame + frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].intro.length
+    if frame_data_meta[_player_obj.char_str] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].proxy then
+      _player_obj.relevant_animation = frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].proxy.id
+      _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame - frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].proxy.offset
     end
   end
-  _player_obj.has_relevant_animation_just_changed = _player_obj.relevant_animation ~= _previous_relevant_animation
-  --if _player_obj.debug_state_variables and _player_obj.has_relevant_animation_just_changed then print(string.format("%d - %s relevant animation changed (%s -> %s)", frame_number, _player_obj.prefix, _previous_relevant_animation, _player_obj.relevant_animation)) end
+  _player_obj.has_relevant_animation_just_changed = _self_cancel or _player_obj.relevant_animation ~= _previous_relevant_animation
+
+  if _player_obj.has_relevant_animation_just_changed then
+    _player_obj.relevant_animation_freeze_frames = 0
+  end
+  if _player_obj.debug_state_variables and _player_obj.has_relevant_animation_just_changed then print(string.format("%d - %s relevant animation changed (%s -> %s)", frame_number, _player_obj.prefix, _previous_relevant_animation, _player_obj.relevant_animation)) end
+
+  if _player_obj.remaining_freeze_frames > 0 then
+    _player_obj.current_animation_freeze_frames = _player_obj.current_animation_freeze_frames + 1
+    _player_obj.relevant_animation_freeze_frames = _player_obj.relevant_animation_freeze_frames + 1
+  end
 
   _player_obj.animation_frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
-  _player_obj.relevant_animation_frame = frame_number - _player_obj.relevant_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
+  _player_obj.relevant_animation_frame = frame_number - _player_obj.relevant_animation_start_frame - (_player_obj.relevant_animation_freeze_frames - 1)
 
 
   if is_in_match then
@@ -2145,16 +2155,48 @@ frame_data_meta["alex"].moves["bf94"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["alex"].moves["c0e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
 frame_data_meta["alex"].moves["c1c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
 
-frame_data_meta["alex"].moves["6d24"] = { intro = { length = 23, next = "7044" } } -- VCharge LK
+frame_data_meta["alex"].moves["6d24"] = { proxy = { offset = -23, id = "7044" } } -- VCharge LK
 frame_data_meta["alex"].moves["7044"] = { hits = {{ type = 3 }} } -- VCharge LK
 
-frame_data_meta["alex"].moves["6df4"] = { intro = { length = 25, next = "7094" } } -- VCharge MK
+frame_data_meta["alex"].moves["6df4"] = { proxy = { offset = -25, id = "7094" } } -- VCharge MK
 frame_data_meta["alex"].moves["7094"] = { hits = {{ type = 3 }} } -- VCharge MK
 
-frame_data_meta["alex"].moves["6ec4"] = { intro = { length = 26, next = "70e4" } } -- VCharge HK
+frame_data_meta["alex"].moves["6ec4"] = { proxy = { offset = -26, id = "70e4" } } -- VCharge HK
 frame_data_meta["alex"].moves["70e4"] = { hits = {{ type = 3 }} } -- VCharge HK
 
-frame_data_meta["alex"].moves["6f94"] = { intro = { length = 26, next = "70e4" } } -- VCharge EXK
+frame_data_meta["alex"].moves["6f94"] = { proxy = { offset = -26, id = "70e4" } } -- VCharge EXK
 
 -- IBUKI
-frame_data_meta["ibuki"].moves["3a48"] = { cancel = true } -- target MP
+frame_data_meta["ibuki"].moves["14e0"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["ibuki"].moves["15f0"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["ibuki"].moves["1740"] = { hits = {{ type = 2 }} } -- Cr Forward MK
+frame_data_meta["ibuki"].moves["19c0"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["ibuki"].moves["a768"] = { hits = {{ type = 2 }} } -- L Kazekiri rekka
+frame_data_meta["ibuki"].moves["fc60"] = { hits = {{ type = 2 }} } -- H Kazekiri rekka
+frame_data_meta["ibuki"].moves["e810"] = { hits = {{ type = 2 }, { type = 2 }} } -- EX Kazekiri rekka
+frame_data_meta["ibuki"].moves["eb60"] = { hits = {{ type = 2 }, { type = 2 }} } -- EX Kazekiri rekka
+
+frame_data_meta["ibuki"].moves["0748"] = { hits = {{ type = 3 }} } -- Forward MK
+frame_data_meta["ibuki"].moves["dec0"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["ibuki"].moves["2450"] = { hits = {{ type = 3 }} } -- Air LP
+frame_data_meta["ibuki"].moves["25b0"] = { hits = {{ type = 3 }} } -- Air MP
+frame_data_meta["ibuki"].moves["1ee8"] = { hits = {{ type = 3 }} } -- Air HP
+frame_data_meta["ibuki"].moves["2748"] = { hits = {{ type = 3 }} } -- Air LK
+frame_data_meta["ibuki"].moves["2878"] = { hits = {{ type = 3 }} } -- Air MK
+frame_data_meta["ibuki"].moves["29a8"] = { hits = {{ type = 3 }} } -- Air HK
+frame_data_meta["ibuki"].moves["1c10"] = { hits = {{ type = 3 }} } -- Straight Air LP
+frame_data_meta["ibuki"].moves["1d10"] = { hits = {{ type = 3 }} } -- Straight Air MP
+frame_data_meta["ibuki"].moves["20f0"] = { hits = {{ type = 3 }} } -- Straight Air LK
+frame_data_meta["ibuki"].moves["2210"] = { hits = {{ type = 3 }} } -- Straight Air MK
+frame_data_meta["ibuki"].moves["2330"] = { hits = {{ type = 3 }} } -- Straight Air HK
+
+frame_data_meta["ibuki"].moves["3a48"] = { proxy = { offset = -2, id = "f838" } } -- target MP
+
+frame_data_meta["ibuki"].moves["36c8"] = { proxy = { offset = 0, id = "05d0" } } -- target MK
+frame_data_meta["ibuki"].moves["3828"] = { proxy = { offset = 1, id = "0b10" } } -- target HK
+frame_data_meta["ibuki"].moves["4290"] = { proxy = { offset = -2, id = "0b10" } } -- target HK
+frame_data_meta["ibuki"].moves["3290"] = { proxy = { offset = 5, id = "19c0" } } -- target Cr HK
+
+frame_data_meta["ibuki"].moves["3480"] = { proxy = { offset = 2, id = "2878" } } -- target Air MK
+frame_data_meta["ibuki"].moves["3580"] = { proxy = { offset = 4, id = "1ee8" } } -- target Air HP
