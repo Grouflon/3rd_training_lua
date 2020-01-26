@@ -1239,21 +1239,21 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
 
   if _defender.has_just_parried then
     if _debug then
-      print(frame_number.." - init ca")
+      print(frame_number.." - init ca (parry)")
     end
-    _defender.counter.attack_frame = frame_number + 16
-    _defender.counter.sequence = make_input_sequence(_dummy, stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.attack_frame = frame_number + 15
+    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
   elseif _attacker.has_just_hit or _attacker.has_just_been_blocked then
     if _debug then
-      print(frame_number.." - init ca")
+      print(frame_number.." - init ca (hit/block)")
     end
     _defender.counter.ref_time = _defender.recovery_time
     clear_input_sequence(_defender)
     _defender.counter.sequence = nil
   elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
     if _debug then
-      print(frame_number.." - init ca")
+      print(frame_number.." - init ca (wake up)")
     end
     _defender.counter.attack_frame = frame_number + _defender.wake_up_time
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
@@ -1402,11 +1402,13 @@ end
 
 debug_current_animation = false
 
-P1.debug_state_variables = true
+P1.debug_state_variables = false
+P2.debug_freeze_frames = false
 P1.debug_standing_state = false
 P1.debug_wake_up = false
 
 P2.debug_state_variables = false
+P2.debug_freeze_frames = false
 P2.debug_standing_state = false
 P2.debug_wake_up = false
 
@@ -1426,6 +1428,8 @@ function read_player_vars(_player_obj)
 
   update_game_object(_player_obj)
 
+  local _previous_remaining_freeze_frames = _player_obj.remaining_freeze_frames or 0
+
   _player_obj.char_str = characters[_player_obj.char_id]
   _player_obj.is_attacking_ext = memory.readbyte(_player_obj.base + 0x429) > 0
   _player_obj.input_capacity = memory.readword(_player_obj.base + 0x46C)
@@ -1434,6 +1438,8 @@ function read_player_vars(_player_obj)
   _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
+
+  if _player_obj.debug_freeze_frames and _player_obj.remaining_freeze_frames > 0 then print(string.format("%d - %d remaining freeze frames", frame_number, _player_obj.remaining_freeze_frames)) end
 
   local _prev_velocity_x = _player_obj.velocity_x or 0
   local _prev_velocity_y = _player_obj.velocity_y or 0
@@ -1475,6 +1481,13 @@ function read_player_vars(_player_obj)
   _player_obj.has_just_landed = _player_obj.previous_standing_state >= 3 and _player_obj.standing_state < 3
   if _player_obj.debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
   if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
+
+  -- PARRY
+  _player_obj.has_just_parried = false
+  if _player_obj.remaining_freeze_frames == 241 and (_previous_remaining_freeze_frames == 0 or _previous_remaining_freeze_frames > _player_obj.remaining_freeze_frames) then
+    _player_obj.has_just_parried = true
+  end
+  if _player_obj.debug_state_variables and _player_obj.has_just_parried then print(string.format("%d - %s parried", frame_number, _player_obj.prefix)) end
 
   -- ANIMATION
   local _self_cancel = false
