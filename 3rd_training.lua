@@ -1,5 +1,5 @@
 --
---  3rd_training.lua - v0.1
+--  3rd_training.lua - v0.2
 
 --  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator
 --  https://github.com/Grouflon/3rd_training_lua
