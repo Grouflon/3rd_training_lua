@@ -166,9 +166,9 @@ function process_pending_input_sequence(_player_obj)
   for i = 1, #_current_frame_input do
     local _input_name = _player_obj.prefix.." "
     if _current_frame_input[i] == "forward" then
-      if _player_obj.flip_x then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
+      if _player_obj.flip_x == 1 then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
     elseif _current_frame_input[i] == "back" then
-      if _player_obj.flip_x then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
+      if _player_obj.flip_x == 1 then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
     elseif _current_frame_input[i] == "up" then
       _input_name = _input_name.."Up"
     elseif _current_frame_input[i] == "down" then
@@ -231,6 +231,34 @@ end
 function clear_input_sequence(_player_obj)
   _player_obj.pending_input_sequence = nil
 end
+
+function make_input_empty(_input)
+  if _input == nil then
+    return
+  end
+
+  _input["P1 Up"] = false
+  _input["P1 Down"] = false
+  _input["P1 Left"] = false
+  _input["P1 Right"] = false
+  _input["P1 Weak Punch"] = false
+  _input["P1 Medium Punch"] = false
+  _input["P1 Strong Punch"] = false
+  _input["P1 Weak Kick"] = false
+  _input["P1 Medium Kick"] = false
+  _input["P1 Strong Kick"] = false
+  _input["P2 Up"] = false
+  _input["P2 Down"] = false
+  _input["P2 Left"] = false
+  _input["P2 Right"] = false
+  _input["P2 Weak Punch"] = false
+  _input["P2 Medium Punch"] = false
+  _input["P2 Strong Punch"] = false
+  _input["P2 Weak Kick"] = false
+  _input["P2 Medium Kick"] = false
+  _input["P2 Strong Kick"] = false
+end
+
 
 -- training settings
 pose = {
@@ -999,6 +1027,11 @@ end
 
 -- POSE
 function update_pose(_input, _player_obj, _pose)
+
+if current_recording_state ~= 1 then
+  return
+end
+
   -- pose
 if is_in_match and not is_menu_open and _player_obj.pending_input_sequence == nil then
   if _pose == 2 and (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02) then -- crouch
@@ -1097,6 +1130,12 @@ function predict_hitboxes(_player_obj, _frames_prediction)
 end
 
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
+
+  if current_recording_state ~= 1 then
+    _dummy.blocking.listening = false
+    _dummy.blocking.blocked_hit_count = 0
+    return
+  end
 
   local _debug = false
   if _player.has_relevant_animation_just_changed then
@@ -1307,7 +1346,6 @@ training_settings = {
 }
 
 debug_settings = {
-  swap_characters = false,
   show_predicted_hitbox = false,
   record_framedata = false,
   debug_character = "",
@@ -1344,7 +1382,6 @@ menu = {
   {
     name = "Debug Settings",
     entries = {
-      checkbox_menu_item("Swap Characters", debug_settings, "swap_characters"),
       checkbox_menu_item("Show Predicted Hitboxes", debug_settings, "show_predicted_hitbox"),
       checkbox_menu_item("Record Frame Data", debug_settings, "record_framedata"),
       button_menu_item("Save Frame Data", save_frame_data),
@@ -1353,6 +1390,147 @@ menu = {
     }
   },
 }
+
+-- RECORDING
+swap_characters = false
+current_recording_state = 1
+last_coin_input_frame = -1
+recording_states =
+{
+  "none",
+  "waiting",
+  "recording",
+  "playing",
+}
+
+function stick_input_to_sequence_input(_player_obj, _input)
+  if _input == "Up" then return "up" end
+  if _input == "Down" then return "down" end
+  if _input == "Weak Punch" then return "LP" end
+  if _input == "Medium Punch" then return "MP" end
+  if _input == "Strong Punch" then return "HP" end
+  if _input == "Weak Kick" then return "LK" end
+  if _input == "Medium Kick" then return "MK" end
+  if _input == "Strong Kick" then return "HK" end
+
+  if _input == "Left" then
+    if _player_obj.flip_x == 0 then
+      return "forward"
+    else
+      return "back"
+    end
+  end
+
+  if _input == "Right" then
+    if _player_obj.flip_x == 0 then
+      return "back"
+    else
+      return "forward"
+    end
+  end
+  return ""
+end
+
+function set_recording_state(_input, _state)
+  if (_state == current_recording_state) then
+    return
+  end
+
+  -- exit states
+  if current_recording_state == 1 then
+  elseif current_recording_state == 2 then
+    swap_characters = false
+  elseif current_recording_state == 3 then
+    swap_characters = false
+  elseif current_recording_state == 4 then
+    clear_input_sequence(dummy)
+  end
+
+  current_recording_state = _state
+
+  -- enter states
+  if current_recording_state == 1 then
+  elseif current_recording_state == 2 then
+    swap_characters = true
+    make_input_empty(_input)
+  elseif current_recording_state == 3 then
+    swap_characters = true
+    make_input_empty(_input)
+    current_recording = {}
+  elseif current_recording_state == 4 then
+    queue_input_sequence(dummy, current_recording)
+  end
+end
+
+function update_recording(_input)
+
+  local _input_buffer_length = 11
+  if is_in_match and not is_menu_open then
+
+    -- manage input
+    if player.input.pressed.coin then
+      if frame_number < (last_coin_input_frame + _input_buffer_length) then
+        last_coin_input_frame = -1
+
+        -- double tap
+        if current_recording_state == 2 or current_recording_state == 3 then
+          set_recording_state(_input, 1)
+        else
+          set_recording_state(_input, 2)
+        end
+
+      else
+        last_coin_input_frame = frame_number
+      end
+    end
+
+    if last_coin_input_frame > 0 and frame_number >= last_coin_input_frame + _input_buffer_length then
+      last_coin_input_frame = -1
+
+      -- single tap
+      if current_recording_state == 1 then
+        set_recording_state(_input, 4)
+      elseif current_recording_state == 2 then
+        set_recording_state(_input, 3)
+      elseif current_recording_state == 3 then
+        set_recording_state(_input, 1)
+      elseif current_recording_state == 4 then
+        set_recording_state(_input, 1)
+      end
+
+    end
+
+    -- tick states
+    if current_recording_state == 1 then
+    elseif current_recording_state == 2 then
+    elseif current_recording_state == 3 then
+      local _frame = {}
+      local _joypad = joypad.get()
+
+      for _key, _value in pairs(_joypad) do
+        local _prefix = _key:sub(1, #player.prefix)
+        if (_prefix == player.prefix) then
+          local _input_name = _key:sub(1 + #player.prefix + 1)
+          if (_input_name ~= "Coin" and _input_name ~= "Start") then
+            if (_value) then
+              local _sequence_input_name = stick_input_to_sequence_input(dummy, _input_name)
+              --print(_input_name.." ".._sequence_input_name)
+              table.insert(_frame, _sequence_input_name)
+            end
+          end
+        end
+      end
+
+      table.insert(current_recording, _frame)
+    elseif current_recording_state == 4 then
+      if dummy.pending_input_sequence == nil then
+        set_recording_state(_input, 1)
+      end
+    end
+  end
+
+  previous_recording_state = current_recording_state
+end
 
 -- PROGRAM
 
@@ -1376,16 +1554,6 @@ function read_game_vars()
 end
 
 function write_game_vars()
-  -- character swap
-  if is_in_match then
-    local P1_disable_input_address = 0x02068C74
-    if debug_settings.swap_characters then
-      swap_inputs(joypad.get(), input)
-      memory.writebyte(P1_disable_input_address, 0x01)
-    else
-      memory.writebyte(P1_disable_input_address, 0x00)
-    end
-  end
 
   -- freeze game
   if is_menu_open then
@@ -1630,6 +1798,10 @@ function write_player_vars(_player_obj)
     memory.writedword(_stun_base + 0x2, 0); -- Stun bar
   end
 
+  -- character swap
+  local _disable_input = swap_characters and training_settings.dummy_player ~= _player_obj.id
+  memory.writebyte(_player_obj.base + 0x8, to_bit(_disable_input))
+
 end
 
 function on_start()
@@ -1666,6 +1838,10 @@ function before_frame()
   end
 
   local _input = {}
+  if swap_characters then
+    swap_inputs(joypad.get(), _input)
+  end
+
   -- pose
   update_pose(_input, dummy, training_settings.pose)
 
@@ -1673,7 +1849,7 @@ function before_frame()
   update_blocking(_input, player, dummy, training_settings.blocking_mode, training_settings.blocking_style, training_settings.red_parry_hit_count)
 
   -- fast recovery
-  if is_in_match and training_settings.fast_recovery_mode == 2 then
+  if is_in_match and training_settings.fast_recovery_mode == 2 and current_recording_state == 1 then
     if dummy.previous_standing_state ~= 0x00 and dummy.standing_state == 0x00 then
       _input[dummy.prefix..' Down'] = true
     end
@@ -1681,6 +1857,9 @@ function before_frame()
 
   -- counter attack
   update_counter_attack(_input, player, dummy, training_settings.counter_attack_stick, training_settings.counter_attack_button)
+
+  -- recording
+  update_recording(_input)
 
   joypad.set(_input)
 
@@ -1705,6 +1884,27 @@ function on_gui()
     local i = joypad.get()
     draw_input(45, 190, i, "P1 ")
     draw_input(280, 190, i, "P2 ")
+  end
+
+  if is_in_match and current_recording_state ~= 1 then
+    local _text = recording_states[current_recording_state]
+    local _x = 0
+    local _current_recording_size = 0
+    if (current_recording) then
+      _current_recording_size = #current_recording
+    end
+
+    if current_recording_state == 2 then
+      _text = string.format("Wait for recording (%d)", _current_recording_size)
+      _x = 246
+    elseif current_recording_state == 3 then
+      _text = string.format("Recording... (%d)", _current_recording_size)
+      _x = 266
+    elseif current_recording_state == 4 and dummy.pending_input_sequence then
+      _text = string.format("Playing (%d/%d)", dummy.pending_input_sequence.current_frame, #dummy.pending_input_sequence.sequence)
+      _x = 270
+    end
+    gui.text(_x, 35, _text, text_default_color, text_default_border_color)
   end
 
   if is_in_match then
