@@ -741,7 +741,7 @@ reset_current_recording_animation()
 
 function record_framedata(_player_obj)
   local _debug = true
-  -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss (except for moves tagged as "force_recording" that are difficult to record otherwise)
+  -- any connecting attack frame data may be ill formed. We discard it immediately to avoid data loss (except for moves tagged as "force_recording" that are difficult to record otherwise)
   if (_player_obj.has_just_hit or _player_obj.has_just_been_blocked or _player_obj.has_just_been_parried) then
     if not frame_data_meta[_player_obj.char_str] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].force_recording then
       if current_recording_animation and _debug then
@@ -781,7 +781,6 @@ function record_framedata(_player_obj)
 
     local _frame = frame_number - _player_obj.current_animation_freeze_frames - _player_obj.current_animation_start_frame
     if _player_obj.has_just_acted then
-      print("prout ".._frame)
       table.insert(current_recording_animation.hit_frames, _frame)
     end
 
@@ -801,7 +800,7 @@ function record_framedata(_player_obj)
       current_recording_animation_previous_pos = { _player_obj.pos_x, _player_obj.pos_y }
 
       for __, _box in ipairs(_player_obj.boxes) do
-        if (_box.type == "attack") then
+        if (_box.type == "attack") or (_box.type == "throw") then
           table.insert(current_recording_animation.frames[_frame + 1].boxes, copytable(_box))
           current_recording_animation.attack_box_count = current_recording_animation.attack_box_count + 1
         end
@@ -943,16 +942,17 @@ function draw_hitboxes(_pos_x, _pos_y, _flip_x, _boxes)
   end
 end
 
-function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _defender_hitbox_dilation)
+function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _defender_hitbox_dilation, _test_throws)
 
   local _debug = false
   if (_defender_hitbox_dilation == nil) then _defender_hitbox_dilation = 0 end
+  if (_test_throws == nil) then _test_throws = false end
 
   if _debug then print(string.format("   %d defender boxes, %d attacker boxes", #_defender_boxes, #_attacker_boxes)) end
 
   for i = 1, #_defender_boxes do
     local _d_box = _defender_boxes[i]
-    if _d_box.type == "vulnerability" or _d_box.type == "ext. vulnerability" then
+    if _d_box.type == "vulnerability" or _d_box.type == "ext. vulnerability" or (_test_throws and _d_box.type == "throwable") then
       -- compute defender box bounds
       local _d_l
       if _defender_flip_x == 0 then
@@ -966,7 +966,7 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
 
       for j = 1, #_attacker_boxes do
         local _a_box = _attacker_boxes[j]
-        if _a_box.type == "attack" then
+        if (_a_box.type == "attack" and (_d_box.type == "vulnerability" or _d_box.type == "ext. vulnerability")) or (_test_throws and _a_box.type == "throw" and _d_box.type == "throwable") then
           -- compute attacker box bounds
           local _a_l
           if _attacker_flip_x == 0 then
@@ -1098,7 +1098,7 @@ end
 
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
-  local _debug = true
+  local _debug = false
   if _player.has_relevant_animation_just_changed then
     if (
       frame_data[_player.char_str] and
@@ -1128,7 +1128,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   if _dummy.blocking.listening then
 
-    print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
+    --print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
 
     if (_dummy.blocking.next_attack_animation_hit_frame < frame_number) then
       local _max_prediction_frames = 2
@@ -1139,10 +1139,16 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
           local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
           local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
 
+          local _hit_throw = false
+          if frame_data_meta[_player.char_str].moves[_player.relevant_animation] then
+            _hit_throw = frame_data_meta[_player.char_str].moves[_player.relevant_animation].hit_throw
+          end
+
           if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
             _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
             _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
-            4 -- defender hitbox dilation
+            4, -- defender hitbox dilation
+            _hit_throw
           ) then
             _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
             _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
@@ -2190,6 +2196,15 @@ frame_data_meta["ibuki"].moves["1d10"] = { hits = {{ type = 3 }} } -- Straight A
 frame_data_meta["ibuki"].moves["20f0"] = { hits = {{ type = 3 }} } -- Straight Air LK
 frame_data_meta["ibuki"].moves["2210"] = { hits = {{ type = 3 }} } -- Straight Air MK
 frame_data_meta["ibuki"].moves["2330"] = { hits = {{ type = 3 }} } -- Straight Air HK
+
+frame_data_meta["ibuki"].moves["91f8"] = { hit_throw = true, hits = {{ type = 2 }} } -- L Neck Breaker
+frame_data_meta["ibuki"].moves["93b8"] = { hit_throw = true, hits = {{ type = 2 }} } -- M Neck Breaker
+frame_data_meta["ibuki"].moves["9578"] = { hit_throw = true, hits = {{ type = 2 }} } -- H Neck Breaker
+frame_data_meta["ibuki"].moves["9750"] = { hit_throw = true, hits = {{ type = 2 }} } -- EX Neck Breaker
+
+frame_data_meta["ibuki"].moves["8e20"] = { hit_throw = true } -- L Raida
+frame_data_meta["ibuki"].moves["8f68"] = { hit_throw = true } -- M Raida
+frame_data_meta["ibuki"].moves["90b0"] = { hit_throw = true } -- M Raida
 
 frame_data_meta["ibuki"].moves["7ca0"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- L Hien
 frame_data_meta["ibuki"].moves["8100"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- M Hien
