@@ -1400,8 +1400,6 @@ function write_game_vars()
   end
 end
 
-debug_current_animation = false
-
 P1.debug_state_variables = false
 P2.debug_freeze_frames = false
 P1.debug_standing_state = false
@@ -1707,29 +1705,6 @@ function on_gui()
     local i = joypad.get()
     draw_input(45, 190, i, "P1 ")
     draw_input(280, 190, i, "P2 ")
-  end
-
-  if current_animation then
-    last_valid_current_animation = current_animation
-  end
-  if debug_current_animation and last_valid_current_animation then
-    local _x = 300
-    local _y = 20
-    local _line_height = 10
-    gui.text(_x + 5 , _y + _line_height * 0 , "animation: "..last_valid_current_animation.id)
-    local _freeze_frames = 0
-    for i = 1, #last_valid_current_animation.freeze_frames do
-      _freeze_frames = _freeze_frames + last_valid_current_animation.freeze_frames[i].length
-    end
-    gui.text(_x + 5 , _y + _line_height * 1 , "freeze_frames: ".._freeze_frames)
-
-    local _next_hit = last_valid_current_animation.get_next_hit()
-    if _next_hit then
-      last_valid_next_hit = _next_hit
-    end
-    if last_valid_next_hit then
-      gui.text(_x + 5 , _y + _line_height * 2 , "next_hit: "..(last_valid_next_hit.start - last_valid_current_animation.start_frame)..", "..(last_valid_next_hit.stop - last_valid_current_animation.start_frame))
-    end
   end
 
   if is_in_match then
@@ -2217,12 +2192,12 @@ frame_data_meta["ibuki"].moves["9750"] = { hit_throw = true, hits = {{ type = 2 
 
 frame_data_meta["ibuki"].moves["8e20"] = { hit_throw = true } -- L Raida
 frame_data_meta["ibuki"].moves["8f68"] = { hit_throw = true } -- M Raida
-frame_data_meta["ibuki"].moves["90b0"] = { hit_throw = true } -- M Raida
+frame_data_meta["ibuki"].moves["90b0"] = { hit_throw = true } -- H Raida
 
 frame_data_meta["ibuki"].moves["7ca0"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- L Hien
 frame_data_meta["ibuki"].moves["8100"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- M Hien
-frame_data_meta["ibuki"].moves["8560"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- M Hien
-frame_data_meta["ibuki"].moves["89c0"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 , force_recording = true } -- M Hien
+frame_data_meta["ibuki"].moves["8560"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- H Hien
+frame_data_meta["ibuki"].moves["89c0"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 , force_recording = true } -- Ex Hien
 
 frame_data_meta["ibuki"].moves["3a48"] = { proxy = { offset = -2, id = "f838" } } -- target MP
 
@@ -2233,3 +2208,21 @@ frame_data_meta["ibuki"].moves["3290"] = { proxy = { offset = 5, id = "19c0" } }
 
 frame_data_meta["ibuki"].moves["3480"] = { proxy = { offset = 2, id = "2878" } } -- target Air MK
 frame_data_meta["ibuki"].moves["3580"] = { proxy = { offset = 4, id = "1ee8" } } -- target Air HP
+
+-- HUGO
+frame_data_meta["hugo"].moves["5060"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["hugo"].moves["5110"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["hugo"].moves["51d0"] = { hits = {{ type = 3 }} } -- Cr HK
+
+frame_data_meta["hugo"].moves["1cd4"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["hugo"].moves["4200"] = { hits = {{ type = 3 }} } -- HP
+frame_data_meta["hugo"].moves["48d0"] = { hits = {{ type = 1 }, { type = 3 }} } -- MK
+frame_data_meta["hugo"].moves["4c10"] = { hits = {{ type = 3 }}, movement_type = 2 } -- HK
+
+frame_data_meta["hugo"].moves["52a0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["hugo"].moves["5370"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["hugo"].moves["5440"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["hugo"].moves["5540"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air Down HP
+frame_data_meta["hugo"].moves["55f0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["hugo"].moves["56c0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["hugo"].moves["5790"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
