@@ -741,9 +741,9 @@ reset_current_recording_animation()
 
 function record_framedata(_player_obj)
   local _debug = true
-  -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss (except for moves tagged as "cancel" that are difficult to record otherwise)
+  -- any connecting attack frame data will be ill formed. We discard it immediately to avoid data loss (except for moves tagged as "force_recording" that are difficult to record otherwise)
   if (_player_obj.has_just_hit or _player_obj.has_just_been_blocked or _player_obj.has_just_been_parried) then
-    if not frame_data_meta[_player_obj.char_str] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].cancel then
+    if not frame_data_meta[_player_obj.char_str] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] or not frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].force_recording then
       if current_recording_animation and _debug then
         print(string.format("dropped animation because it connected: %s", _player_obj.animation))
       end
@@ -779,15 +779,14 @@ function record_framedata(_player_obj)
 
   if (current_recording_animation) then
 
-    if _player_obj.remaining_freeze_frames > 1 then
-      _player_obj.current_animation_freeze_frames = _player_obj.current_animation_freeze_frames + 1
-    else
-      local _frame = frame_number - _player_obj.current_animation_freeze_frames - _player_obj.current_animation_start_frame
-      --print(string.format("recording frame %d (%d - %d - %d)", _frame, frame_number, _player_obj.current_animation_freeze_frames, _player_obj.current_animation_start_frame))
+    local _frame = frame_number - _player_obj.current_animation_freeze_frames - _player_obj.current_animation_start_frame
+    if _player_obj.has_just_acted then
+      print("prout ".._frame)
+      table.insert(current_recording_animation.hit_frames, _frame)
+    end
 
-      if (_player_obj.has_just_acted) or _player_obj.remaining_freeze_frames == 1 then
-        table.insert(current_recording_animation.hit_frames, _frame - #current_recording_animation.hit_frames)
-      end
+    if _player_obj.remaining_freeze_frames == 0 then
+      --print(string.format("recording frame %d (%d - %d - %d)", _frame, frame_number, _player_obj.current_animation_freeze_frames, _player_obj.current_animation_start_frame))
 
       local _sign = 1
       if _player_obj.flip_x ~= 0 then _sign = -1 end
@@ -1099,7 +1098,7 @@ end
 
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
-  local _debug = false
+  local _debug = true
   if _player.has_relevant_animation_just_changed then
     if (
       frame_data[_player.char_str] and
@@ -1129,7 +1128,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   if _dummy.blocking.listening then
 
-    --print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
+    print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
 
     if (_dummy.blocking.next_attack_animation_hit_frame < frame_number) then
       local _max_prediction_frames = 2
@@ -2178,6 +2177,7 @@ frame_data_meta["ibuki"].moves["e810"] = { hits = {{ type = 2 }, { type = 2 }} }
 frame_data_meta["ibuki"].moves["eb60"] = { hits = {{ type = 2 }, { type = 2 }} } -- EX Kazekiri rekka
 
 frame_data_meta["ibuki"].moves["0748"] = { hits = {{ type = 3 }} } -- Forward MK
+frame_data_meta["ibuki"].moves["30a0"] = { hits = {{ type = 3 }} } -- Target MK
 frame_data_meta["ibuki"].moves["dec0"] = { hits = {{ type = 3 }} } -- UOH
 frame_data_meta["ibuki"].moves["2450"] = { hits = {{ type = 3 }} } -- Air LP
 frame_data_meta["ibuki"].moves["25b0"] = { hits = {{ type = 3 }} } -- Air MP
@@ -2190,6 +2190,11 @@ frame_data_meta["ibuki"].moves["1d10"] = { hits = {{ type = 3 }} } -- Straight A
 frame_data_meta["ibuki"].moves["20f0"] = { hits = {{ type = 3 }} } -- Straight Air LK
 frame_data_meta["ibuki"].moves["2210"] = { hits = {{ type = 3 }} } -- Straight Air MK
 frame_data_meta["ibuki"].moves["2330"] = { hits = {{ type = 3 }} } -- Straight Air HK
+
+frame_data_meta["ibuki"].moves["7ca0"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- L Hien
+frame_data_meta["ibuki"].moves["8100"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- M Hien
+frame_data_meta["ibuki"].moves["8560"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- M Hien
+frame_data_meta["ibuki"].moves["89c0"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 , force_recording = true } -- M Hien
 
 frame_data_meta["ibuki"].moves["3a48"] = { proxy = { offset = -2, id = "f838" } } -- target MP
 
