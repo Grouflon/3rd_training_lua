@@ -11,7 +11,7 @@
 
 json = require ("lua_libs/dkjson")
 
-advanced_mode = true
+advanced_mode = false
 
 saved_path = "saved/"
 framedata_path = "data/framedata/"
@@ -439,6 +439,13 @@ recording_slots_names = {
   "slot 6",
   "slot 7",
   "slot 8",
+}
+
+slot_replay_mode = {
+  "normal",
+  "random",
+  "repeat",
+  "repeat random",
 }
 
 -- menu
@@ -1357,7 +1364,8 @@ training_settings = {
   display_input = true,
   display_hitboxes = false,
   auto_crop_recording = false,
-  recording_slot = 1
+  current_recording_slot = 1,
+  replay_mode = 1,
 }
 
 debug_settings = {
@@ -1396,7 +1404,8 @@ menu = {
     name = "Recording Settings",
     entries = {
       checkbox_menu_item("Auto Crop Recording", training_settings, "auto_crop_recording"),
-      list_menu_item("Slot", training_settings, "recording_slot", recording_slots_names),
+      list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
+      list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
       button_menu_item("Clear slot", clear_slot),
     }
   },
@@ -1481,7 +1490,7 @@ function set_recording_state(_input, _state)
     if training_settings.auto_crop_recording then
       local _first_input = 1
       local _last_input = 1
-      for _i, _value in ipairs(recording_slots[training_settings.recording_slot]) do
+      for _i, _value in ipairs(recording_slots[training_settings.current_recording_slot]) do
         if #_value > 0 then
           _last_input = _i
         elseif _first_input == _i then
@@ -1489,11 +1498,14 @@ function set_recording_state(_input, _state)
         end
       end
 
+      -- cropping end of animation is actually not a good idea if we want to repeat sequences
+      _last_input = #recording_slots[training_settings.current_recording_slot]
+
       local _cropped_sequence = {}
       for _i = _first_input, _last_input do
-        table.insert(_cropped_sequence, recording_slots[training_settings.recording_slot][_i])
+        table.insert(_cropped_sequence, recording_slots[training_settings.current_recording_slot][_i])
       end
-      recording_slots[training_settings.recording_slot] = _cropped_sequence
+      recording_slots[training_settings.current_recording_slot] = _cropped_sequence
     end
 
     swap_characters = false
@@ -1511,9 +1523,24 @@ function set_recording_state(_input, _state)
   elseif current_recording_state == 3 then
     swap_characters = true
     make_input_empty(_input)
-    recording_slots[training_settings.recording_slot] = {}
+    recording_slots[training_settings.current_recording_slot] = {}
   elseif current_recording_state == 4 then
-    queue_input_sequence(dummy, recording_slots[training_settings.recording_slot])
+    if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+      -- random slot selection
+      local _recorded_slots = {}
+      for _i, _value in ipairs(recording_slots) do
+        if #_value > 0 then
+          table.insert(_recorded_slots, _i)
+        end
+      end
+      if #_recorded_slots > 0 then
+        local _random_slot = math.ceil(math.random(#_recorded_slots))
+        queue_input_sequence(dummy, recording_slots[_recorded_slots[_random_slot]])
+      end
+    else
+      -- current slot selection
+      queue_input_sequence(dummy, recording_slots[training_settings.current_recording_slot])
+    end
   end
 end
 
@@ -1576,10 +1603,13 @@ function update_recording(_input)
         end
       end
 
-      table.insert(recording_slots[training_settings.recording_slot], _frame)
+      table.insert(recording_slots[training_settings.current_recording_slot], _frame)
     elseif current_recording_state == 4 then
       if dummy.pending_input_sequence == nil then
         set_recording_state(_input, 1)
+        if training_settings.replay_mode == 3 or training_settings.replay_mode == 4 then
+          set_recording_state(_input, 4)
+        end
       end
     end
   end
@@ -1588,7 +1618,7 @@ function update_recording(_input)
 end
 
 function clear_slot()
-  recording_slots[training_settings.recording_slot] = {}
+  recording_slots[training_settings.current_recording_slot] = {}
 end
 
 -- PROGRAM
@@ -1946,24 +1976,30 @@ function on_gui()
   end
 
   if is_in_match and current_recording_state ~= 1 then
-    local _text = recording_states[current_recording_state]
-    local _x = 0
+    local _y = 35
     local _current_recording_size = 0
-    if (recording_slots[training_settings.recording_slot]) then
-      _current_recording_size = #recording_slots[training_settings.recording_slot]
+    if (recording_slots[training_settings.current_recording_slot]) then
+      _current_recording_size = #recording_slots[training_settings.current_recording_slot]
     end
 
     if current_recording_state == 2 then
-      _text = string.format("%s: Wait for recording (%d)", recording_slots_names[training_settings.recording_slot], _current_recording_size)
-      _x = 212
+      local _text = string.format("%s: Wait for recording (%d)", recording_slots_names[training_settings.current_recording_slot], _current_recording_size)
+      gui.text(212, _y, _text, text_default_color, text_default_border_color)
     elseif current_recording_state == 3 then
-      _text = string.format("%s: Recording... (%d)", recording_slots_names[training_settings.recording_slot], _current_recording_size)
-      _x = 236
-    elseif current_recording_state == 4 and dummy.pending_input_sequence then
-      _text = string.format("Playing (%d/%d)", dummy.pending_input_sequence.current_frame, #dummy.pending_input_sequence.sequence)
-      _x = 270
+      local _text = string.format("%s: Recording... (%d)", recording_slots_names[training_settings.current_recording_slot], _current_recording_size)
+      gui.text(236, _y, _text, text_default_color, text_default_border_color)
+    elseif current_recording_state == 4 and dummy.pending_input_sequence and dummy.pending_input_sequence.sequence then
+      local _text = ""
+      local _x = 0
+      if training_settings.replay_mode == 1 or training_settings.replay_mode == 3 then
+        _x = 270
+        _text = string.format("Playing (%d/%d)", dummy.pending_input_sequence.current_frame, #dummy.pending_input_sequence.sequence)
+      else
+        _x = 300
+        _text = "Playing..."
+      end
+      gui.text(_x, _y, _text, text_default_color, text_default_border_color)
     end
-    gui.text(_x, 35, _text, text_default_color, text_default_border_color)
   end
 
   if is_in_match then
@@ -2070,8 +2106,8 @@ function on_gui()
 
     -- recording slots special display
     if main_menu_selected_index == 3 then
-      local _t = string.format("%d frames", #recording_slots[training_settings.recording_slot])
-      gui.text(106,73, _t, text_disabled_color, text_default_border_color)
+      local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot])
+      gui.text(106,83, _t, text_disabled_color, text_default_border_color)
     end
 
     gui.text(33, 168, "LK: Reset value to default", text_disabled_color, text_default_border_color)
