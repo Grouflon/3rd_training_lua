@@ -11,6 +11,8 @@
 
 json = require ("lua_libs/dkjson")
 
+advanced_mode = true
+
 saved_path = "saved/"
 framedata_path = "data/framedata/"
 training_settings_file = "training_settings.json"
@@ -117,7 +119,7 @@ function update_input(_player_obj)
 end
 
 function queue_input_sequence(_player_obj, _sequence)
-  if #_sequence == 0 then
+  if _sequence == nil or #_sequence == 0 then
     return
   end
 
@@ -1343,6 +1345,7 @@ training_settings = {
   no_stun = true,
   display_input = true,
   display_hitboxes = false,
+  auto_crop_recording = false,
 }
 
 debug_settings = {
@@ -1351,8 +1354,6 @@ debug_settings = {
   debug_character = "",
   debug_move = "",
 }
-
-debug_move_menu_item = map_menu_item("Debug Move", debug_settings, "debug_move", frame_data, nil)
 
 menu = {
   {
@@ -1380,6 +1381,16 @@ menu = {
     }
   },
   {
+    name = "Recording Settings",
+    entries = {
+      checkbox_menu_item("Auto Crop Recording", training_settings, "auto_crop_recording"),
+    }
+  },
+}
+
+debug_move_menu_item = map_menu_item("Debug Move", debug_settings, "debug_move", frame_data, nil)
+if advanced_mode then
+  local _debug_settings_menu = {
     name = "Debug Settings",
     entries = {
       checkbox_menu_item("Show Predicted Hitboxes", debug_settings, "show_predicted_hitbox"),
@@ -1388,8 +1399,9 @@ menu = {
       map_menu_item("Debug Character", debug_settings, "debug_character", _G, "frame_data"),
       debug_move_menu_item
     }
-  },
-}
+  }
+  table.insert(menu, _debug_settings_menu)
+end
 
 -- RECORDING
 swap_characters = false
@@ -1441,6 +1453,25 @@ function set_recording_state(_input, _state)
   elseif current_recording_state == 2 then
     swap_characters = false
   elseif current_recording_state == 3 then
+
+    if training_settings.auto_crop_recording then
+      local _first_input = 1
+      local _last_input = 1
+      for _i, _value in ipairs(current_recording) do
+        if #_value > 0 then
+          _last_input = _i
+        elseif _first_input == _i then
+          _first_input = _first_input + 1
+        end
+      end
+
+      local _cropped_sequence = {}
+      for _i = _first_input, _last_input do
+        table.insert(_cropped_sequence, current_recording[_i])
+      end
+      current_recording = _cropped_sequence
+    end
+
     swap_characters = false
   elseif current_recording_state == 4 then
     clear_input_sequence(dummy)
@@ -1838,7 +1869,7 @@ function before_frame()
   end
 
   local _input = {}
-  if swap_characters then
+  if is_in_match and not is_menu_open and swap_characters then
     swap_inputs(joypad.get(), _input)
   end
 
@@ -1982,32 +2013,34 @@ function on_gui()
     end
 
     -- screen size 383,223
-    gui.box(43,40,340,180, 0x293139FF, 0x840000FF)
+    gui.box(23,40,360,180, 0x293139FF, 0x840000FF)
     --gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
 
-    local _bar_x = 53
+    local _bar_x = 41
     local _bar_y = 46
     for i = 1, #menu do
+      local _offset = 0
       local _c = text_disabled_color
       local _t = menu[i].name
       if is_main_menu_selected and i == main_menu_selected_index then
         _t = "< ".._t.." >"
+        _offset = -8
         _c = text_selected_color
       elseif i == main_menu_selected_index then
         _c = text_default_color
       end
-      gui.text(_bar_x + (i - 1) * 100, _bar_y, _t, _c, text_default_border_color)
+      gui.text(_bar_x + _offset + (i - 1) * 85, _bar_y, _t, _c, text_default_border_color)
     end
 
 
-    local _menu_x = 53
+    local _menu_x = 33
     local _menu_y = 63
     local _menu_y_interval = 10
     for i = 1, #menu[main_menu_selected_index].entries do
       menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * (i - 1), not is_main_menu_selected and sub_menu_selected_index == i)
     end
 
-    gui.text(53, 168, "LK: Reset value to default", text_disabled_color, text_default_border_color)
+    gui.text(33, 168, "LK: Reset value to default", text_disabled_color, text_default_border_color)
 
   else
     gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
