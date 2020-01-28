@@ -20,7 +20,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ## Changelog
 
-### v0.3 ()
+### v0.3 (28/01/2020)
 - Can now record sequences within 8 different slots
 - Can play recorded sequences repeatedly and on random
 - Recorded sequences can by triggered as a counter-attack

@@ -1,5 +1,5 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.2")
+print("  3rd_training.lua - v0.3")
 print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
@@ -16,7 +16,7 @@ print("- In normal mode, press \"Coin\" to start/stop replay")
 
 json = require ("lua_libs/dkjson")
 
--- Unlock frame data recording options. Do not touch unless you know what you are doing since it can fuck up blocking behaviour
+-- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 advanced_mode = false
 
 saved_path = "saved/"
