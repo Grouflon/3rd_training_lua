@@ -11,7 +11,7 @@
 
 json = require ("lua_libs/dkjson")
 
-advanced_mode = false
+advanced_mode = true
 
 saved_path = "saved/"
 framedata_path = "data/framedata/"
@@ -1671,7 +1671,7 @@ function write_game_vars()
   end
 end
 
-P1.debug_state_variables = false
+P1.debug_state_variables = true
 P2.debug_freeze_frames = false
 P1.debug_standing_state = false
 P1.debug_wake_up = false
@@ -2475,6 +2475,8 @@ frame_data_meta["alex"].moves["6ec4"] = { proxy = { offset = -26, id = "70e4" } 
 frame_data_meta["alex"].moves["70e4"] = { hits = {{ type = 3 }} } -- VCharge HK
 
 frame_data_meta["alex"].moves["6f94"] = { proxy = { offset = -26, id = "70e4" } } -- VCharge EXK
+
+frame_data_meta["alex"].moves["ad04"] = {  hit_throw = true } -- Back HP
 
 -- IBUKI
 frame_data_meta["ibuki"].moves["14e0"] = { hits = {{ type = 2 }} } -- Cr LK
