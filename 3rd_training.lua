@@ -1068,12 +1068,13 @@ end
 
   -- pose
 if is_in_match and not is_menu_open and _player_obj.pending_input_sequence == nil then
-  if _pose == 2 and (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02) then -- crouch
+  local _on_ground = (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02 or _player_obj.standing_state == 0x06)
+
+  if _pose == 2 and _on_ground then -- crouch
     _input[_player_obj.prefix..' Down'] = true
-  elseif _pose == 3 and (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02) then -- jump
+  elseif _pose == 3 and _on_ground then -- jump
     _input[_player_obj.prefix..' Up'] = true
   elseif _pose == 4 then -- high jump
-    local _on_ground = (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02)
     if _on_ground and _player_obj.pending_input_sequence == nil then
       queue_input_sequence(_player_obj, {{"down"}, {"up"}})
     end
@@ -2551,3 +2552,24 @@ frame_data_meta["hugo"].moves["5540"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["hugo"].moves["55f0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
 frame_data_meta["hugo"].moves["56c0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
 frame_data_meta["hugo"].moves["5790"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+
+-- URIEN
+frame_data_meta["urien"].moves["eaf4"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["urien"].moves["ebc4"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["urien"].moves["ec84"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["urien"].moves["6784"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["urien"].moves["dc1c"] = { hits = {{ type = 3 }} } -- Forward HP
+frame_data_meta["urien"].moves["e0b4"] = { hits = {{ type = 3 }, { type = 3 }} } -- HK
+
+frame_data_meta["urien"].moves["4cbc"] = { hits = {{ type = 3 }} } -- L Knee Drop
+frame_data_meta["urien"].moves["4e4c"] = { hits = {{ type = 3 }} } -- M Knee Drop
+frame_data_meta["urien"].moves["4fdc"] = { hits = {{ type = 3 }} } -- H Knee Drop
+frame_data_meta["urien"].moves["516c"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- EX Knee Drop
+
+frame_data_meta["urien"].moves["ee14"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["urien"].moves["eeb4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["urien"].moves["ef94"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["urien"].moves["f074"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["urien"].moves["f114"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["urien"].moves["f1f4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK

@@ -20,6 +20,10 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ## Changelog
 
+### v0.4 ()
+- Urien frame data
+- [Bugfix] Fixed Dudley (and maybe others) not crouching correctly
+
 ### v0.3 (28/01/2020)
 - Can now record sequences within 8 different slots
 - Can play recorded sequences repeatedly and on random
