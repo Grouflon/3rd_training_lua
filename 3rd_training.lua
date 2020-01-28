@@ -296,6 +296,7 @@ stick_gesture = {
 button_gesture =
 {
   "none",
+  "recording",
   "LP",
   "MP",
   "HP",
@@ -310,6 +311,11 @@ button_gesture =
 }
 
 function make_input_sequence(_stick, _button)
+
+  if _button == "recording" then
+    return nil
+  end
+
   local _sequence = {}
   if      _stick == "none"    then _sequence = { { } }
   elseif  _stick == "forward" then _sequence = { { "forward" } }
@@ -1343,6 +1349,12 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       queue_input_sequence(_defender, _defender.counter.sequence)
       _defender.counter.sequence = nil
     end
+  elseif button_gesture[_button] == "recording" and _defender.counter.attack_frame == (frame_number + 1) then
+    if _debug then
+      print(frame_number.." - queue recording")
+    end
+    set_recording_state(_input, 1)
+    set_recording_state(_input, 4)
   end
 end
 
@@ -1384,7 +1396,7 @@ menu = {
       list_menu_item("Blocking", training_settings, "blocking_mode", blocking_mode),
       integer_menu_item("Hits before Red Parry", training_settings, "red_parry_hit_count", 1, 20, true),
       list_menu_item("Counter-Attack Move", training_settings, "counter_attack_stick", stick_gesture),
-      list_menu_item("Counter-Attack Button", training_settings, "counter_attack_button", button_gesture),
+      list_menu_item("Counter-Attack Action", training_settings, "counter_attack_button", button_gesture),
       list_menu_item("Fast Recovery", training_settings, "fast_recovery_mode", fast_recovery_mode),
     }
   },
@@ -1403,7 +1415,7 @@ menu = {
   {
     name = "Recording Settings",
     entries = {
-      checkbox_menu_item("Auto Crop Recording", training_settings, "auto_crop_recording"),
+      checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
       list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
       button_menu_item("Clear slot", clear_slot),
