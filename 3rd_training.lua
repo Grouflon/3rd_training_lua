@@ -81,7 +81,9 @@ function make_player_object(_id, _base, _prefix)
       down = make_input_set()
     },
     blocking = {},
-    counter = {},
+    counter = {
+      ref_time = -1
+    },
   }
 end
 
