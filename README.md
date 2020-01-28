@@ -1,44 +1,41 @@
 # 3rd_training_lua
-Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR emulator
+Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator
 
-## Planned / missing features
-- Tech throws
-- Blocking: projectiles
-- Blocking: random block
-- Blocking: first block
-- Parry: air parry
-- Record & replay system (random replay, replay as counter-attack)
-- Record: crop recording up to first input
-- Counter-Attack: Kara cancels
-- Counter-Attack: On Landing
-- Detect self cancelled moves
+The right version of FBA-RR can be downloaded [here](http://tasvideos.org/EmulatorResources/Fbarr.html)
 
-## Frame data database
-For the script to function at its best, we need to enter specific frame data for every character and every move into the script database.
-When a character frame data is correctly entered in the database, it allows the script to make any opponent dummy successfully block/parry/red parry the corresponding move. Otherwise, the script will fall back to a default frame data, that may not match the actual move properties.
-Here is a list of character/moves that has been done so far.
-### Done characters
-- Ibuki : All normals + targets, All specials except projectiles, No supers yet.
-- Urien : All normals + targets, All specials except projectiles, knee drop and headbutt, No supers yet.
+## Main features
+- Can set dummy to counter-attack with any move on frame 1 after any hit / block / parry / wake-up
+- Can record and replay sequences into 8 different slots
+- Can replay sequences randomly and as counter-attack
 
-### Remaining characters
-- Alex
-- Ryu
-- Yun
-- Dudley
-- Necro
-- Hugo
-- Elena
-- Oro
-- Yang
-- Ken
-- Sean
-- Gouki
-- Chunli
-- Makoto
-- Q
-- Twelve
-- Remy
+## Roadmap
+[Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
+
+## Missing features
+Automatic blocking needs some manual setup to be done by character in order to work correctly, so a lot of characters do not support this feature yet. Every missing character is mentioned on the Roadmap though and will be added at some point.
+
+## Bug reporting / Contribute
+This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird thing on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues)
+If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
+
+## Changelog
+
+###v0.3 ()
+- Can now record sequences within 8 different slots
+- Can play recorded sequences repeatedly and on random
+- Recorded sequences can by triggered as a counter-attack
+
+###v0.2 (26/01/2020)
+- New blocking system: Now works by recording hitboxes characteristics to a file for every move and predict hitbox collisions with actual frame data.
+- Can switch main player between P1 and P2
+- Removed all old frame data
+- Entered frame data for Ibuki, Alex and Hugo
+
+###v0.1 (25/11/2019)
+- Basic blocking and training options
+- Can set dummy to block, parry and red parry after x hits
+- Can set dummy to counter-attack with any move after hit, block parry or wake up
+- Entered frame data by hand for Ibuki and Urien
 
 ## References & Inspirations
 - [Wonderful 3S frame data reference](http://ensabahnur.free.fr/BastonNew/index.php)

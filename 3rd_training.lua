@@ -1,9 +1,14 @@
---
---  3rd_training.lua - v0.2
-
---  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator
---  https://github.com/Grouflon/3rd_training_lua
---
+print("-----------------------------")
+print("  3rd_training.lua - v0.2")
+print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator")
+print("  project url: https://github.com/Grouflon/3rd_training_lua")
+print("-----------------------------")
+print("")
+print("Command List:")
+print("- Enter training menu by pressing \"Start\" while in game")
+print("- Enter/exit recording mode by double tapping \"Coin\"")
+print("- In recording mode, press \"Coin\" again to start/stop recording")
+print("- In normal mode, press \"Coin\" to start/stop replay")
 
 -- FBA-RR Scripting reference:
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
@@ -11,7 +16,8 @@
 
 json = require ("lua_libs/dkjson")
 
-advanced_mode = true
+-- Unlock frame data recording options. Do not touch unless you know what you are doing since it can fuck up blocking behaviour
+advanced_mode = false
 
 saved_path = "saved/"
 framedata_path = "data/framedata/"
@@ -1671,7 +1677,7 @@ function write_game_vars()
   end
 end
 
-P1.debug_state_variables = true
+P1.debug_state_variables = false
 P2.debug_freeze_frames = false
 P1.debug_standing_state = false
 P1.debug_wake_up = false
