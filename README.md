@@ -20,18 +20,18 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ## Changelog
 
-###v0.3 ()
+### v0.3 ()
 - Can now record sequences within 8 different slots
 - Can play recorded sequences repeatedly and on random
 - Recorded sequences can by triggered as a counter-attack
 
-###v0.2 (26/01/2020)
+### v0.2 (26/01/2020)
 - New blocking system: Now works by recording hitboxes characteristics to a file for every move and predict hitbox collisions with actual frame data.
 - Can switch main player between P1 and P2
 - Removed all old frame data
 - Entered frame data for Ibuki, Alex and Hugo
 
-###v0.1 (25/11/2019)
+### v0.1 (25/11/2019)
 - Basic blocking and training options
 - Can set dummy to block, parry and red parry after x hits
 - Can set dummy to counter-attack with any move after hit, block parry or wake up
