@@ -90,6 +90,7 @@ function make_player_object(_id, _base, _prefix)
     counter = {
       ref_time = -1
     },
+    throw = {},
   }
 end
 
@@ -403,6 +404,7 @@ fast_recovery_mode =
 {
   "never",
   "always",
+  "random",
 }
 
 blocking_style =
@@ -416,8 +418,15 @@ blocking_mode =
 {
   "never",
   "always",
+  "random",
 }
 
+tech_throws_mode =
+{
+  "never",
+  "always",
+  "random",
+}
 
 hit_type =
 {
@@ -983,7 +992,7 @@ function draw_hitboxes(_pos_x, _pos_y, _flip_x, _boxes)
     elseif (_box.type == "throwable") then
       _c = 0x00FF00FF
     elseif (_box.type == "throw") then
-      _c = 0x77FF00FF
+      _c = 0xFFFF00FF
     elseif (_box.type == "push") then
       _c = 0xFF00FFFF
     elseif (_box.type == "ext. vulnerability") then
@@ -1004,52 +1013,81 @@ function draw_hitboxes(_pos_x, _pos_y, _flip_x, _boxes)
   end
 end
 
-function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _defender_hitbox_dilation, _test_throws)
+function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _box_type_matches, _defender_hitbox_dilation)
 
   local _debug = false
   if (_defender_hitbox_dilation == nil) then _defender_hitbox_dilation = 0 end
   if (_test_throws == nil) then _test_throws = false end
+  if (_box_type_matches == nil) then _box_type_matches = {{{"vulnerability", "ext. vulnerability"}, {"attack"}}} end
+
+  if (#_box_type_matches == 0 ) then return false end
+  if (#_defender_boxes == 0 ) then return false end
+  if (#_attacker_boxes == 0 ) then return false end
 
   if _debug then print(string.format("   %d defender boxes, %d attacker boxes", #_defender_boxes, #_attacker_boxes)) end
 
-  for i = 1, #_defender_boxes do
-    local _d_box = _defender_boxes[i]
-    if _d_box.type == "vulnerability" or _d_box.type == "ext. vulnerability" or (_test_throws and _d_box.type == "throwable") then
-      -- compute defender box bounds
-      local _d_l
-      if _defender_flip_x == 0 then
-        _d_l = _defender_x + _d_box.left - _defender_hitbox_dilation
-      else
-        _d_l = _defender_x - _d_box.left - _d_box.width - _defender_hitbox_dilation
+  for k = 1, #_box_type_matches do
+    local _box_type_match = _box_type_matches[k]
+    for i = 1, #_defender_boxes do
+      local _d_box = _defender_boxes[i]
+
+      --print("d ".._d_box.type)
+
+      local _defender_box_match = false
+      for _key, _value in ipairs(_box_type_match[1]) do
+        if _value == _d_box.type then
+          _defender_box_match = true
+          break
+        end
       end
-      local _d_r = _d_l + _d_box.width + _defender_hitbox_dilation
-      local _d_b = _defender_y + _d_box.bottom - _defender_hitbox_dilation
-      local _d_t = _d_b + _d_box.height + _defender_hitbox_dilation
 
-      for j = 1, #_attacker_boxes do
-        local _a_box = _attacker_boxes[j]
-        if (_a_box.type == "attack" and (_d_box.type == "vulnerability" or _d_box.type == "ext. vulnerability")) or (_test_throws and _a_box.type == "throw" and _d_box.type == "throwable") then
-          -- compute attacker box bounds
-          local _a_l
-          if _attacker_flip_x == 0 then
-            _a_l = _attacker_x + _a_box.left
-          else
-            _a_l = _attacker_x - _a_box.left - _a_box.width
+      if _defender_box_match then
+        -- compute defender box bounds
+        local _d_l
+        if _defender_flip_x == 0 then
+          _d_l = _defender_x + _d_box.left - _defender_hitbox_dilation
+        else
+          _d_l = _defender_x - _d_box.left - _d_box.width - _defender_hitbox_dilation
+        end
+        local _d_r = _d_l + _d_box.width + _defender_hitbox_dilation
+        local _d_b = _defender_y + _d_box.bottom - _defender_hitbox_dilation
+        local _d_t = _d_b + _d_box.height + _defender_hitbox_dilation
+
+        for j = 1, #_attacker_boxes do
+          local _a_box = _attacker_boxes[j]
+
+          --print("a ".._a_box.type)
+
+          local _attacker_box_match = false
+          for _key, _value in ipairs(_box_type_match[2]) do
+            if _value == _a_box.type then
+              _attacker_box_match = true
+              break
+            end
           end
-          local _a_r = _a_l + _a_box.width
-          local _a_b = _attacker_y + _a_box.bottom
-          local _a_t = _a_b + _a_box.height
+          if _attacker_box_match then
+            -- compute attacker box bounds
+            local _a_l
+            if _attacker_flip_x == 0 then
+              _a_l = _attacker_x + _a_box.left
+            else
+              _a_l = _attacker_x - _a_box.left - _a_box.width
+            end
+            local _a_r = _a_l + _a_box.width
+            local _a_b = _attacker_y + _a_box.bottom
+            local _a_t = _a_b + _a_box.height
 
-          if _debug then print(string.format("   testing (%d,%d,%d,%d) against (%d,%d,%d,%d)", _d_t, _d_r, _d_b, _d_l, _a_t, _a_r, _a_b, _a_l)) end
+            if _debug then print(string.format("   testing (%d,%d,%d,%d)(%s) against (%d,%d,%d,%d)(%s)", _d_t, _d_r, _d_b, _d_l, _d_box.type, _a_t, _a_r, _a_b, _a_l, _a_box.type)) end
 
-          -- check collision
-          if not (
-            (_a_l >= _d_r) or
-            (_a_r <= _d_l) or
-            (_a_b >= _d_t) or
-            (_a_t <= _d_b)
-          ) then
-            return true
+            -- check collision
+            if not (
+              (_a_l >= _d_r) or
+              (_a_r <= _d_l) or
+              (_a_b >= _d_t) or
+              (_a_t <= _d_b)
+            ) then
+              return true
+            end
           end
         end
       end
@@ -1192,12 +1230,14 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
       _dummy.blocking.listening = false
       _dummy.blocking.blocked_hit_count = 0
+      return
     end
   end
 
-  if _mode == 1 then
+  if _mode == 1 or _dummy.throw.listening == true then
     _dummy.blocking.listening = false
     _dummy.blocking.blocked_hit_count = 0
+    return
   end
 
   if _dummy.blocking.listening then
@@ -1213,21 +1253,28 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
           local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
           local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
 
-          local _hit_throw = false
-          if frame_data_meta[_player.char_str].moves[_player.relevant_animation] then
-            _hit_throw = frame_data_meta[_player.char_str].moves[_player.relevant_animation].hit_throw
+          local _box_type_matches = {{{"vulnerability", "ext. vulnerability"}, {"attack"}}}
+          if frame_data_meta[_player.char_str].moves[_player.relevant_animation] and frame_data_meta[_player.char_str].moves[_player.relevant_animation].hit_throw then
+            table.insert(_box_type_matches, {{"throwable"}, {"throw"}})
           end
 
           if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
             _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
             _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
-            4, -- defender hitbox dilation
-            _hit_throw
+            _box_type_matches,
+            4 -- defender hitbox dilation
           ) then
             _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
             _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
+            _dummy.blocking.should_block = true
             if _debug then
               print(string.format(" %d: next hit %d at frame %d (%d)", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame))
+            end
+            if _mode == 3 and math.random() > 0.5 then
+              _dummy.blocking.should_block = false
+              if _debug then
+                print(string.format(" %d: next hit randomized out", frame_number))
+              end
             end
             break
           end
@@ -1235,7 +1282,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
     end
 
-    if frame_number <= _dummy.blocking.next_attack_animation_hit_frame and _dummy.blocking.last_attack_hit_id < _dummy.blocking.next_attack_hit_id then
+    if frame_number <= _dummy.blocking.next_attack_animation_hit_frame and _dummy.blocking.last_attack_hit_id < _dummy.blocking.next_attack_hit_id and _dummy.blocking.should_block then
 
       local _hit_type = 1
       local _blocking_style = _style
@@ -1367,12 +1414,59 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
   end
 end
 
+function update_tech_throws(_input, _attacker, _defender, _mode)
+  local _debug = false
+
+  if not is_in_match or _mode == 1 then
+    _defender.throw.listening = false
+    if _debug and _attacker.previous_throw_countdown > 0 then
+      print(string.format("%d - %s stopped listening for throws", frame_number, _defender.prefix))
+    end
+    return
+  end
+
+  if _attacker.throw_countdown > _attacker.previous_throw_countdown then
+    _defender.throw.listening = true
+    if _debug then
+      print(string.format("%d - %s listening for throws", frame_number, _defender.prefix))
+    end
+  end
+
+  if _attacker.throw_countdown == 0 then
+    _defender.throw.listening = false
+    if _debug and _attacker.previous_throw_countdown > 0  then
+      print(string.format("%d - %s stopped listening for throws", frame_number, _defender.prefix))
+    end
+  end
+
+  if _defender.throw.listening then
+
+    if test_collision(
+      _defender.pos_x, _defender.pos_y, _defender.flip_x, _defender.boxes, -- defender
+      _attacker.pos_x, _attacker.pos_y, _attacker.flip_x, _attacker.boxes, -- attacker
+      {{{"throwable"},{"throw"}}},
+      0 -- defender hitbox dilation
+    ) then
+      _defender.throw.listening = false
+      if _debug then
+        print(string.format("%d - %s teching throw", frame_number, _defender.prefix))
+      end
+      local _r = math.random()
+      if _mode ~= 3 or _r > 0.5 then
+        _input[_defender.prefix..' Weak Punch'] = true
+        _input[_defender.prefix..' Weak Kick'] = true
+      end
+    end
+  end
+end
+
 -- GUI DECLARATION
 
 training_settings = {
   pose = 1,
   blocking_style = 1,
   blocking_mode = 1,
+  tech_throws_mode = 1,
   dummy_player = 2,
   red_parry_hit_count = 1,
   counter_attack_stick = 1,
@@ -1404,6 +1498,7 @@ menu = {
       list_menu_item("Blocking Style", training_settings, "blocking_style", blocking_style),
       list_menu_item("Blocking", training_settings, "blocking_mode", blocking_mode),
       integer_menu_item("Hits before Red Parry", training_settings, "red_parry_hit_count", 1, 20, true),
+      list_menu_item("Tech Throws", training_settings, "tech_throws_mode", tech_throws_mode),
       list_menu_item("Counter-Attack Move", training_settings, "counter_attack_stick", stick_gesture),
       list_menu_item("Counter-Attack Action", training_settings, "counter_attack_button", button_gesture),
       list_menu_item("Fast Recovery", training_settings, "fast_recovery_mode", fast_recovery_mode),
@@ -1715,6 +1810,17 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
 
+  -- THROW
+  _player_obj.throw_countdown = _player_obj.throw_countdown or 0
+  _player_obj.previous_throw_countdown = _player_obj.throw_countdown
+
+  local _throw_countdown = memory.readbyte(_player_obj.base + 0x434)
+  if _throw_countdown > _player_obj.previous_throw_countdown then
+    _player_obj.throw_countdown = _throw_countdown + 2 -- air throw animations seems to not match the countdown (ie. Ibuki's Air Throw), let's add a few frames to it
+  else
+    _player_obj.throw_countdown = math.max(_player_obj.throw_countdown - 1, 0)
+  end
+
   if _player_obj.debug_freeze_frames and _player_obj.remaining_freeze_frames > 0 then print(string.format("%d - %d remaining freeze frames", frame_number, _player_obj.remaining_freeze_frames)) end
 
   local _prev_velocity_x = _player_obj.velocity_x or 0
@@ -1959,11 +2065,17 @@ function before_frame()
   update_blocking(_input, player, dummy, training_settings.blocking_mode, training_settings.blocking_style, training_settings.red_parry_hit_count)
 
   -- fast recovery
-  if is_in_match and training_settings.fast_recovery_mode == 2 and current_recording_state == 1 then
+  if is_in_match and training_settings.fast_recovery_mode ~= 1 and current_recording_state == 1 then
     if dummy.previous_standing_state ~= 0x00 and dummy.standing_state == 0x00 then
-      _input[dummy.prefix..' Down'] = true
+      local _r = math.random()
+      if training_settings.fast_recovery_mode ~= 3 or _r > 0.5 then
+        _input[dummy.prefix..' Down'] = true
+      end
     end
   end
+
+  -- tech throws
+  update_tech_throws(_input, player, dummy, training_settings.tech_throws_mode)
 
   -- counter attack
   update_counter_attack(_input, player, dummy, training_settings.counter_attack_stick, training_settings.counter_attack_button)

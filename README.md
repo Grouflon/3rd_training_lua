@@ -22,6 +22,9 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ### v0.4 ()
 - Urien frame data
+- Random fast wake up
+- Random blocking
+- Throws teching
 - [Bugfix] Fixed Dudley (and maybe others) not crouching correctly
 
 ### v0.3 (28/01/2020)
