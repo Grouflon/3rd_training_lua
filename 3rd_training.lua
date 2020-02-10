@@ -1,5 +1,5 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.3")
+print("  3rd_training.lua - v0.4")
 print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
@@ -1106,7 +1106,9 @@ end
 
   -- pose
 if is_in_match and not is_menu_open and _player_obj.pending_input_sequence == nil then
-  local _on_ground = (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02 or _player_obj.standing_state == 0x06)
+  -- 0x03 is Oro's crouching
+  -- 0x06 is Dudley's crouching
+  local _on_ground = (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02 or _player_obj.standing_state == 0x03 or _player_obj.standing_state == 0x06)
 
   if _pose == 2 and _on_ground then -- crouch
     _input[_player_obj.prefix..' Down'] = true

@@ -25,7 +25,8 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - Random fast wake up
 - Random blocking
 - Throws teching
-- [Bugfix] Fixed Dudley (and maybe others) not crouching correctly
+- [Bugfix] Fixed Dudley not crouching correctly
+- [Bugfix] Fixed Oro not crouching correctly
 
 ### v0.3 (28/01/2020)
 - Can now record sequences within 8 different slots
