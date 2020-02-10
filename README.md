@@ -22,6 +22,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ### v0.4 ()
 - Urien frame data
+- Gouki frame data
 - Random fast wake up
 - Random blocking
 - Throws teching
