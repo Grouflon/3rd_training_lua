@@ -94,13 +94,15 @@ function make_player_object(_id, _base, _prefix)
   }
 end
 
-player_objects = {
-  make_player_object(1, 0x02068C6C, "P1"),
-  make_player_object(2, 0x02069104, "P2")
-}
-
-P1 = player_objects[1]
-P2 = player_objects[2]
+function reset_player_objects()
+  player_objects = {
+    make_player_object(1, 0x02068C6C, "P1"),
+    make_player_object(2, 0x02069104, "P2")
+  }
+  P1 = player_objects[1]
+  P2 = player_objects[2]
+end
+reset_player_objects()
 
 function update_input(_player_obj)
 
@@ -2022,6 +2024,10 @@ function write_player_vars(_player_obj)
 
 end
 
+function on_load_state()
+  reset_player_objects()
+end
+
 function on_start()
   load_training_data()
   load_frame_data()
@@ -2310,6 +2316,7 @@ scale = 1
 emu.registerstart(on_start)
 emu.registerbefore(before_frame)
 gui.register(on_gui)
+savestate.registerload(on_load_state)
 
 
 -- character specific stuff
