@@ -27,6 +27,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - Throws teching
 - [Bugfix] Fixed Dudley not crouching correctly
 - [Bugfix] Fixed Oro not crouching correctly
+- [Bugfix] Do not counter attack on state load anymore
 
 ### v0.3 (28/01/2020)
 - Can now record sequences within 8 different slots
