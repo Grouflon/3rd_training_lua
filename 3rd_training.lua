@@ -1100,6 +1100,21 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
 end
 
 -- POSE
+
+function is_state_on_ground(_state, _player_obj)
+  -- 0x01 is standard standing
+  -- 0x02 is standard crouching
+  if _state == 0x01 or _state == 0x02 then
+    return true
+  elseif character_specific[_player_obj.char_str].additional_standing_states ~= nil then
+    for _, _standing_state in ipairs(character_specific[_player_obj.char_str].additional_standing_states) do
+      if _standing_state == _state then
+        return true
+      end
+    end
+  end
+end
+
 function update_pose(_input, _player_obj, _pose)
 
 if current_recording_state ~= 1 then
@@ -1108,9 +1123,7 @@ end
 
   -- pose
 if is_in_match and not is_menu_open and _player_obj.pending_input_sequence == nil then
-  -- 0x03 is Oro's crouching
-  -- 0x06 is Dudley's crouching
-  local _on_ground = (_player_obj.standing_state == 0x01 or _player_obj.standing_state == 0x02 or _player_obj.standing_state == 0x03 or _player_obj.standing_state == 0x06)
+  local _on_ground = is_state_on_ground(_player_obj.standing_state, _player_obj)
 
   if _pose == 2 and _on_ground then -- crouch
     _input[_player_obj.prefix..' Down'] = true
@@ -1872,7 +1885,7 @@ function read_player_vars(_player_obj)
   -- LANDING
   _player_obj.previous_standing_state = _player_obj.standing_state or 0
   _player_obj.standing_state = memory.readbyte(_player_obj.base + 0x297)
-  _player_obj.has_just_landed = _player_obj.previous_standing_state >= 3 and _player_obj.standing_state < 3
+  _player_obj.has_just_landed = is_state_on_ground(_player_obj.standing_state, _player_obj) and not is_state_on_ground(_player_obj.previous_standing_state, _player_obj)
   if _debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
   if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
 
@@ -1995,10 +2008,10 @@ function write_player_vars(_player_obj)
   local _meter_base = 0
   local _stun_base = 0
   if _player_obj.id == 1 then
-    _meter_base = 0x020695BD
+    _meter_base = 0x020695B3
     _stun_base = 0x020695FD
   elseif _player_obj.id == 2 then
-    _meter_base = 0x020695E9
+    _meter_base = 0x020695E1
     _stun_base = 0x02069611
   end
 
@@ -2008,12 +2021,18 @@ function write_player_vars(_player_obj)
   end
 
   -- METER
-  -- 0x020695BF P1 meter count
+  -- 0x020695B3 P1 max gauge
+  -- 0x020695B5 P1 gauge fill
   -- 0x020695BD P1 max meter count
+  -- 0x020695BF P1 meter count
+
+  -- 0x020695E1 P2 max gauge
+  -- 0x020695E3 P2 gauge fill
   -- 0x020695EB P2 meter count
   -- 0x020695E9 P2 max meter count
   if training_settings.infinite_meter then
-    memory.writebyte(_meter_base + 0x2, memory.readbyte(_meter_base))
+    --memory.writebyte(_meter_base + 0x2, memory.readbyte(_meter_base)) -- gauge
+    memory.writebyte(_meter_base + 0xC, memory.readbyte(_meter_base + 0xA)) -- bars
   end
 
   -- STUN
@@ -2333,6 +2352,11 @@ character_specific = {}
 for i = 1, #characters do
   character_specific[characters[i]] = {}
 end
+
+-- Characters standing states
+character_specific.oro.additional_standing_states = { 3 } -- 3 is crouching
+character_specific.dudley.additional_standing_states = { 6 } -- 6 is crouching
+character_specific.makoto.additional_standing_states = { 7 } -- 7 happens during Oroshi
 
 -- Characters wake ups
 
