@@ -1486,6 +1486,7 @@ training_settings = {
   auto_crop_recording = false,
   current_recording_slot = 1,
   replay_mode = 1,
+  music_volume = 10,
 }
 
 debug_settings = {
@@ -1518,6 +1519,7 @@ menu = {
       checkbox_menu_item("No Stun", training_settings, "no_stun"),
       checkbox_menu_item("Display Input", training_settings, "display_input"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
+      integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
       --list_menu_item("Dummy Player", training_settings, "dummy_player", players),
     }
   },
@@ -1776,6 +1778,9 @@ function write_game_vars()
   if training_settings.infinite_time then
     memory.writebyte(0x02011377, 100)
   end
+
+  -- music
+  memory.writebyte(0x02078D06, training_settings.music_volume * 8)
 end
 
 P1.debug_state_variables = false
