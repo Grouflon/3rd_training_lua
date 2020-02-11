@@ -23,9 +23,11 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 ### v0.4 ()
 - Urien frame data
 - Gouki frame data
+- Makoto frame data
 - Random fast wake up
 - Random blocking
 - Throws teching
+- Added music volume control
 - [Bugfix] Fixed Dudley not crouching correctly
 - [Bugfix] Fixed Oro not crouching correctly
 - [Bugfix] Do not counter attack on state load anymore

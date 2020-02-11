@@ -2754,3 +2754,33 @@ frame_data_meta["gouki"].moves["2aa0"] = { hits = {{ type = 3 }}, movement_type 
 frame_data_meta["gouki"].moves["af08"] = { hits = {{ type = 2 }}, movement_type = 2 } -- Demon flip
 frame_data_meta["gouki"].moves["b218"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Demon flip K cancel
 frame_data_meta["gouki"].moves["b118"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Demon flip P cancel
+
+-- MAKOTO
+frame_data_meta["makoto"].moves["2f10"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["makoto"].moves["2de0"] = { hits = {{ type = 2 }} } -- Cr HP
+frame_data_meta["makoto"].moves["2a20"] = { hits = {{ type = 2 }} } -- Forward HK
+
+frame_data_meta["makoto"].moves["db10"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["makoto"].moves["ebb8"] = { hits = {{ type = 3 }} } -- L Oroshi
+frame_data_meta["makoto"].moves["ed98"] = { hits = {{ type = 3 }} } -- M Oroshi
+frame_data_meta["makoto"].moves["ee98"] = { hits = {{ type = 3 }} } -- H Oroshi
+frame_data_meta["makoto"].moves["ef98"] = { hits = {{ type = 3 }} } -- EX Oroshi
+
+frame_data_meta["makoto"].moves["31e0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["makoto"].moves["32c0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["makoto"].moves["3380"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["makoto"].moves["3460"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["makoto"].moves["3520"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["makoto"].moves["3610"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+
+frame_data_meta["makoto"].moves["3720"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["makoto"].moves["37e0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["makoto"].moves["38e0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["makoto"].moves["3a50"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["makoto"].moves["3b10"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["makoto"].moves["3c00"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+
+frame_data_meta["makoto"].moves["2190"] = { hits = {{ type = 3 }}, movement_type = 2 } -- L Tsurugi
+frame_data_meta["makoto"].moves["2310"] = { hits = {{ type = 3 }}, movement_type = 2 } -- M Tsurugi
+frame_data_meta["makoto"].moves["2410"] = { hits = {{ type = 3 }}, movement_type = 2 } -- H Tsurugi
+frame_data_meta["makoto"].moves["2510"] = { hits = {{ type = 3 }}, movement_type = 2 } -- EX Tsurugi
