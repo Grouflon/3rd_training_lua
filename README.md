@@ -15,12 +15,12 @@ The right version of FBA-RR can be downloaded [here](http://tasvideos.org/Emulat
 Automatic blocking needs some manual setup to be done by character in order to work correctly, so a lot of characters do not support this feature yet. Every missing character is mentioned on the Roadmap though and will be added at some point.
 
 ## Bug reporting / Contribute
-This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird thing on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues)
+This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues)
 If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
 
 ## Changelog
 
-### v0.4 ()
+### v0.4 (13/02/2020)
 - Urien frame data
 - Gouki frame data
 - Makoto frame data
@@ -50,7 +50,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - Entered frame data by hand for Ibuki and Urien
 
 ## References & Inspirations
-- [Wonderful 3S frame data reference](http://ensabahnur.free.fr/BastonNew/index.php)
+- [Wonderful 3S frame data reference](http://baston.esn3s.com/)
 - [Hitbox display script by dammit](https://dammit.typepad.com/blog/2011/10/improved-3rd-strike-hitboxes.html)
 - [Trials mode script by c_cube](https://ameblo.jp/3fv/entry-12429961069.html)
 - [External C# training mode by furitiem](https://www.youtube.com/watch?v=vE27xe0QM64)
