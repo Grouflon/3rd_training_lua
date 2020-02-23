@@ -24,6 +24,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - Frame data prediction can resync itself to the actual animation frame, and thus handle a lot more blocking situations
 - All 2 hits blocking / parying Fixed
 - Blocking / parying of self cancellable moves supported
+- [Bugfix] Fixed infinite meter not working for player 2
 
 ### v0.4 (13/02/2020)
 - Urien frame data

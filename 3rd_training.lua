@@ -1875,6 +1875,14 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
 
+  if _player_obj.id == 1 then
+    _player_obj.max_meter_gauge = memory.readbyte(0x020695B3)
+    _player_obj.max_meter_count = memory.readbyte(0x020695BD)
+  else
+    _player_obj.max_meter_gauge = memory.readbyte(0x020695DF)
+    _player_obj.max_meter_count = memory.readbyte(0x020695E9)
+  end
+
   -- THROW
   _player_obj.throw_countdown = _player_obj.throw_countdown or 0
   _player_obj.previous_throw_countdown = _player_obj.throw_countdown
@@ -2108,13 +2116,16 @@ function write_player_vars(_player_obj)
   -- P1: 0x02068C6C
   -- P2: 0x02069104
 
-  local _meter_base = 0
   local _stun_base = 0
+  local _gauge_addr = 0
+  local _meter_addr = {}
   if _player_obj.id == 1 then
-    _meter_base = 0x020695B3
+    _gauge_addr = 0x020695B5
+    _meter_addr = { 0x020286AB, 0x020695BF }
     _stun_base = 0x020695FD
   elseif _player_obj.id == 2 then
-    _meter_base = 0x020695E1
+    _gauge_addr = 0x020695E1
+    _meter_addr = { 0x020286DF, 0x020695EC}
     _stun_base = 0x02069611
   end
 
@@ -2124,18 +2135,11 @@ function write_player_vars(_player_obj)
   end
 
   -- METER
-  -- 0x020695B3 P1 max gauge
-  -- 0x020695B5 P1 gauge fill
-  -- 0x020695BD P1 max meter count
-  -- 0x020695BF P1 meter count
-
-  -- 0x020695E1 P2 max gauge
-  -- 0x020695E3 P2 gauge fill
-  -- 0x020695EB P2 meter count
-  -- 0x020695E9 P2 max meter count
   if training_settings.infinite_meter then
-    --memory.writebyte(_meter_base + 0x2, memory.readbyte(_meter_base)) -- gauge
-    memory.writebyte(_meter_base + 0xC, memory.readbyte(_meter_base + 0xA)) -- bars
+    memory.writebyte(_gauge_addr, _player_obj.max_meter_gauge)
+    for _, _addr in ipairs(_meter_addr) do
+      memory.writebyte(_addr, _player_obj.max_meter_count)
+    end
   end
 
   -- STUN
