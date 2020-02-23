@@ -831,6 +831,27 @@ function record_framedata(_player_obj)
     if current_recording_animation and current_recording_animation.attack_box_count > 0 then
       current_recording_animation.attack_box_count = nil -- don't save that
       current_recording_animation.id = nil -- don't save that
+
+      -- compute hit frames range
+      for _i, _hit_frame in ipairs(current_recording_animation.hit_frames) do
+        local _range_limit_frame = #current_recording_animation.frames - 1
+        if _i < #current_recording_animation.hit_frames then
+          _range_limit_frame = current_recording_animation.hit_frames[_i + 1] - 1
+        end
+        local _range_end_frame = _hit_frame
+        if _hit_frame < _range_limit_frame then
+          for _j = (_hit_frame + 1), _range_limit_frame do
+            if #current_recording_animation.frames[_j].boxes > 0 then
+              _range_end_frame = _j - 1
+            else
+              break
+            end
+          end
+        end
+
+        current_recording_animation.hit_frames[_i] = { min = _hit_frame, max = _range_end_frame }
+      end
+
       if (frame_data[_player_obj.char_str] == nil) then
         frame_data[_player_obj.char_str] = {}
       end
@@ -868,7 +889,8 @@ function record_framedata(_player_obj)
         movement = {
           (_player_obj.pos_x - current_recording_animation_previous_pos[1]) * _sign,
           (_player_obj.pos_y - current_recording_animation_previous_pos[2]),
-        }
+        },
+        frame_id = _player_obj.animation_frame_id
       }
       current_recording_animation_previous_pos = { _player_obj.pos_x, _player_obj.pos_y }
 
@@ -1181,8 +1203,17 @@ function predict_hitboxes(_player_obj, _frames_prediction)
 
   local _next_hit_id = 1
   for i = 1, #_frame_data.hit_frames do
-    if _frame_to_check >= _frame_data.hit_frames[i] then
-      _next_hit_id = i
+    if _frame_data.hit_frames[i] ~= nil then
+      if type(_frame_data.hit_frames[i]) == "number" then
+        if _frame_to_check >= _frame_data.hit_frames[i] then
+          _next_hit_id = i
+        end
+      else
+        --print(string.format("%d/%d", _frame_to_check, _frame_data.hit_frames[i].max))
+        if _frame_to_check > _frame_data.hit_frames[i].max then
+          _next_hit_id = i + 1
+        end
+      end
     end
   end
 
@@ -1260,13 +1291,25 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   if _dummy.blocking.listening then
 
+    if _player.has_just_been_blocked or _player.has_just_been_parried then
+      _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
+      _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
+    end
+
+    if _player.current_hit_id == 0 and _dummy.blocking.last_attack_hit_id > 0 and _player.remaining_freeze_frames == 0 then
+      if _debug then
+        print(string.format("%d: reset last hit (%d, %d)", frame_number, _player.current_hit_id, _dummy.blocking.last_attack_hit_id))
+      end
+      _dummy.blocking.last_attack_hit_id = 0
+    end
+
     --print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
 
     if (_dummy.blocking.next_attack_animation_hit_frame < frame_number) then
       local _max_prediction_frames = 2
       for i = 1, _max_prediction_frames do
-        local _predicted_hit = predict_hitboxes(_player, i)
-        --print(string.format(" predicted frame %d", _predicted_hit.frame))
+        local _predicted_hit = predict_hitboxes(_player, i, _dummy.blocking.last_attack_hit_id)
+        --print(string.format(" predicted frame %d (id:%d)", _predicted_hit.frame, _predicted_hit.hit_id))
         if _predicted_hit.frame_data then
           local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
           local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
@@ -1286,7 +1329,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
             if _debug then
-              print(string.format(" %d: next hit %d at frame %d (%d)", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame))
+              print(string.format(" %d: next hit %d at frame %d (%d), last hit %d", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame, _dummy.blocking.last_attack_hit_id))
             end
             if _mode == 3 and math.random() > 0.5 then
               _dummy.blocking.should_block = false
@@ -1316,11 +1359,6 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.relevant_animation]
       if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_dummy.blocking.next_attack_hit_id] then
         _hit_type = _frame_data_meta.hits[_dummy.blocking.next_attack_hit_id].type
-      end
-
-      if frame_number == _dummy.blocking.next_attack_animation_hit_frame then
-        _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
-        _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
       end
 
       if _blocking_style == 1 then
@@ -1797,12 +1835,14 @@ function write_game_vars()
 end
 
 P1.debug_state_variables = false
-P2.debug_freeze_frames = false
+P1.debug_freeze_frames = false
+P1.debug_animation_frames = false
 P1.debug_standing_state = false
 P1.debug_wake_up = false
 
 P2.debug_state_variables = false
 P2.debug_freeze_frames = false
+P2.debug_animation_frames = false
 P2.debug_standing_state = false
 P2.debug_wake_up = false
 
@@ -1906,7 +1946,14 @@ function read_player_vars(_player_obj)
       local _all_hits_done = true
       local _frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
       for __, _hit_frame in ipairs(frame_data[_player_obj.char_str][_player_obj.animation].hit_frames) do
-        if _frame < _hit_frame then
+        local _last_hit_frame = 0
+        if type(_hit_frame) == "number" then
+          _last_hit_frame = _hit_frame
+        else
+          _last_hit_frame = _hit_frame.max
+        end
+
+        if _frame < _last_hit_frame then
           _all_hits_done = false
           break
         end
@@ -1947,8 +1994,64 @@ function read_player_vars(_player_obj)
     _player_obj.relevant_animation_freeze_frames = _player_obj.relevant_animation_freeze_frames + 1
   end
 
-  _player_obj.animation_frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
-  _player_obj.relevant_animation_frame = frame_number - _player_obj.relevant_animation_start_frame - (_player_obj.relevant_animation_freeze_frames - 1)
+  _player_obj.animation_frame_id = memory.readword(_player_obj.base + 0x21A)
+  _player_obj.animation_frame = frame_number - _player_obj.current_animation_start_frame - _player_obj.current_animation_freeze_frames
+  _player_obj.relevant_animation_frame = frame_number - _player_obj.relevant_animation_start_frame - _player_obj.relevant_animation_freeze_frames
+
+  _player_obj.relevant_animation_frame_data = nil
+  if frame_data[_player_obj.char_str] then
+    _player_obj.relevant_animation_frame_data = frame_data[_player_obj.char_str][_player_obj.relevant_animation]
+  end
+
+  _player_obj.current_hit_id = 0
+
+  if _player_obj.relevant_animation_frame_data ~= nil then
+
+    -- Resync animation
+    if _player_obj.relevant_animation_frame >= 0
+    and _player_obj.remaining_freeze_frames == 0
+    and _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1] ~= nil
+    and _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id ~= nil
+    and _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id ~= _player_obj.animation_frame_id
+    then
+      local _frame_count =  #_player_obj.relevant_animation_frame_data.frames
+      -- search for frames ahead before frames behind
+      for _i = 0, (_frame_count - 1) do
+        local _frame_index = ((_player_obj.relevant_animation_frame + _i) % _frame_count) + 1
+        local _frame = _player_obj.relevant_animation_frame_data.frames[_frame_index]
+        if _frame.frame_id == _player_obj.animation_frame_id then
+
+          if _player_obj.debug_animation_frames then
+            print(string.format("%d: resynced anim %s from frame %d to %d (%d -> %d)", frame_number, _player_obj.relevant_animation, _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id, _frame.frame_id, _player_obj.relevant_animation_frame, (_frame_index - 1)))
+          end
+
+          _player_obj.relevant_animation_frame = (_frame_index - 1)
+          _player_obj.relevant_animation_start_frame = frame_number - (_frame_index - 1 + _player_obj.relevant_animation_freeze_frames)
+          break
+        end
+      end
+    end
+
+    -- find current attack id
+    for _index, _hit_frame in ipairs(_player_obj.relevant_animation_frame_data.hit_frames) do
+      if type(_hit_frame) == "number" then
+
+        if _player_obj.relevant_animation_frame >= _hit_frame then
+          _player_obj.current_hit_id = _index
+        end
+      else
+        if _player_obj.relevant_animation_frame >= _hit_frame.min and _player_obj.relevant_animation_frame <= _hit_frame.max then
+          _player_obj.current_hit_id = _index
+          break
+        end
+      end
+    end
+
+    if _player_obj.debug_animation_frames then
+      print(string.format("%d - %d, %d, %d, %d", frame_number, _player_obj.relevant_animation_frame, _player_obj.remaining_freeze_frames, _player_obj.animation_frame_id, _player_obj.current_hit_id))
+    end
+  end
+
 
 
   if is_in_match then
@@ -2613,6 +2716,8 @@ frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
 frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} } -- Cr HK
 
+frame_data_meta["alex"].moves["a444"] = { force_recording = true } -- LP
+
 frame_data_meta["alex"].moves["a7dc"] = { hits = {{ type = 3 }} } -- HP
 
 frame_data_meta["alex"].moves["72d4"] = { hits = {{ type = 3 }} } -- UOH
@@ -2693,6 +2798,9 @@ frame_data_meta["hugo"].moves["5060"] = { hits = {{ type = 2 }} } -- Cr LK
 frame_data_meta["hugo"].moves["5110"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["hugo"].moves["51d0"] = { hits = {{ type = 3 }} } -- Cr HK
 
+frame_data_meta["hugo"].moves["4e00"] = { force_recording = true } -- Cr LP
+frame_data_meta["hugo"].moves["3fe0"] = { force_recording = true } -- LP
+
 frame_data_meta["hugo"].moves["1cd4"] = { hits = {{ type = 3 }} } -- UOH
 frame_data_meta["hugo"].moves["4200"] = { hits = {{ type = 3 }} } -- HP
 frame_data_meta["hugo"].moves["48d0"] = { hits = {{ type = 1 }, { type = 3 }} } -- MK
@@ -2711,6 +2819,9 @@ frame_data_meta["urien"].moves["eaf4"] = { hits = {{ type = 2 }} } -- Cr LK
 frame_data_meta["urien"].moves["ebc4"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["urien"].moves["ec84"] = { hits = {{ type = 2 }} } -- Cr HK
 
+frame_data_meta["urien"].moves["d774"] = { force_recording = true } -- LP
+frame_data_meta["urien"].moves["e4ac"] = { force_recording = true } -- Cr LP
+
 frame_data_meta["urien"].moves["6784"] = { hits = {{ type = 3 }} } -- UOH
 frame_data_meta["urien"].moves["dc1c"] = { hits = {{ type = 3 }} } -- Forward HP
 frame_data_meta["urien"].moves["e0b4"] = { hits = {{ type = 3 }, { type = 3 }} } -- HK
@@ -2718,7 +2829,7 @@ frame_data_meta["urien"].moves["e0b4"] = { hits = {{ type = 3 }, { type = 3 }} }
 frame_data_meta["urien"].moves["4cbc"] = { hits = {{ type = 3 }} } -- L Knee Drop
 frame_data_meta["urien"].moves["4e4c"] = { hits = {{ type = 3 }} } -- M Knee Drop
 frame_data_meta["urien"].moves["4fdc"] = { hits = {{ type = 3 }} } -- H Knee Drop
-frame_data_meta["urien"].moves["516c"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- EX Knee Drop
+frame_data_meta["urien"].moves["516c"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2, force_recording = true } -- EX Knee Drop
 
 frame_data_meta["urien"].moves["ee14"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
 frame_data_meta["urien"].moves["eeb4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
@@ -2728,11 +2839,14 @@ frame_data_meta["urien"].moves["f114"] = { hits = {{ type = 3 }}, movement_type 
 frame_data_meta["urien"].moves["f1f4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
 
 -- GOUKI
-frame_data_meta["gouki"].moves["1f68"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["gouki"].moves["1f68"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }, { type = 2 }}, force_recording = true } -- Cr LK
 frame_data_meta["gouki"].moves["2008"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["gouki"].moves["20d8"] = { hits = {{ type = 2 }} } -- Cr HK
 
-frame_data_meta["gouki"].moves["1638"] = { hits = {{ type = 3 }, { type = 3 }} } -- Forward MP
+frame_data_meta["gouki"].moves["1438"] = { force_recording = true } -- LP
+frame_data_meta["gouki"].moves["1d28e"] = { force_recording = true } -- Cr LP
+
+frame_data_meta["gouki"].moves["1638"] = { hits = {{ type = 3 }, { type = 3 }}, force_recording = true } -- Forward MP
 frame_data_meta["gouki"].moves["98f8"] = { hits = {{ type = 3 }, { type = 3 }} } -- UOH
 frame_data_meta["gouki"].moves["1b08"] = { hits = {{ type = 3 }, { type = 3 }} } -- Close HK
 

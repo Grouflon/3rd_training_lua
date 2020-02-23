@@ -507,20 +507,28 @@
       }]
   },
   "a394":{
-    "hit_frames":[4],
+    "hit_frames":[{
+        "min":4,
+        "max":5
+      }],
     "frames":[{
+        "frame_id":1898,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1898,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1898,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1898,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1899,
         "boxes":[{
             "type":"attack",
             "bottom":47,
@@ -534,8 +542,9 @@
             "left":-56,
             "width":23
           }],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1899,
         "boxes":[{
             "type":"attack",
             "bottom":47,
@@ -549,67 +558,87 @@
             "left":-56,
             "width":23
           }],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1900,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1900,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1901,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1901,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1901,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1902,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1902,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1902,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1903,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1903,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1903,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1863,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1863,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1863,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1863,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1864,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1864,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1864,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1864,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1864,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       }]
   },
   "b094":{
@@ -2201,35 +2230,61 @@
       }]
   },
   "899c":{
-    "hit_frames":[9,20],
+    "hit_frames":[{
+        "min":9,
+        "max":14
+      },{
+        "min":20,
+        "max":20
+      }],
     "frames":[{
+        "frame_id":2389,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":2389,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":2390,
         "boxes":[],
         "movement":[-16,0]
       },{
+        "frame_id":2390,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":2391,
         "boxes":[],
         "movement":[-37,0]
       },{
+        "frame_id":2391,
         "boxes":[],
         "movement":[-17,0]
       },{
+        "frame_id":2392,
         "boxes":[],
         "movement":[-16,0]
       },{
+        "frame_id":2392,
         "boxes":[],
         "movement":[-16,0]
       },{
+        "frame_id":2392,
         "boxes":[],
         "movement":[-15,0]
       },{
+        "frame_id":2393,
+        "boxes":[{
+            "type":"attack",
+            "bottom":36,
+            "height":31,
+            "left":-73,
+            "width":41
+          }],
+        "movement":[-13,0]
+      },{
+        "frame_id":2393,
         "boxes":[{
             "type":"attack",
             "bottom":36,
@@ -2239,15 +2294,7 @@
           }],
         "movement":[-14,0]
       },{
-        "boxes":[{
-            "type":"attack",
-            "bottom":36,
-            "height":31,
-            "left":-73,
-            "width":41
-          }],
-        "movement":[-13,0]
-      },{
+        "frame_id":2393,
         "boxes":[{
             "type":"attack",
             "bottom":36,
@@ -2257,6 +2304,7 @@
           }],
         "movement":[-12,0]
       },{
+        "frame_id":2394,
         "boxes":[{
             "type":"attack",
             "bottom":36,
@@ -2264,8 +2312,19 @@
             "left":-73,
             "width":41
           }],
-        "movement":[-12,0]
+        "movement":[-11,0]
       },{
+        "frame_id":2394,
+        "boxes":[{
+            "type":"attack",
+            "bottom":36,
+            "height":31,
+            "left":-73,
+            "width":41
+          }],
+        "movement":[-11,0]
+      },{
+        "frame_id":2394,
         "boxes":[{
             "type":"attack",
             "bottom":36,
@@ -2275,30 +2334,27 @@
           }],
         "movement":[-10,0]
       },{
-        "boxes":[{
-            "type":"attack",
-            "bottom":36,
-            "height":31,
-            "left":-73,
-            "width":41
-          }],
-        "movement":[-10,0]
-      },{
+        "frame_id":2395,
         "boxes":[],
         "movement":[-9,0]
       },{
+        "frame_id":2395,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":2396,
         "boxes":[],
         "movement":[-5,0]
       },{
+        "frame_id":1904,
         "boxes":[],
-        "movement":[-13,0]
+        "movement":[-12,0]
       },{
+        "frame_id":1905,
         "boxes":[],
-        "movement":[-4,0]
+        "movement":[-5,0]
       },{
+        "frame_id":1906,
         "boxes":[{
             "type":"attack",
             "bottom":46,
@@ -2314,72 +2370,143 @@
           }],
         "movement":[-4,0]
       },{
+        "frame_id":1907,
         "boxes":[],
         "movement":[-5,0]
       },{
+        "frame_id":1908,
         "boxes":[],
         "movement":[-4,0]
       },{
+        "frame_id":1908,
         "boxes":[],
         "movement":[-4,0]
       },{
+        "frame_id":1909,
         "boxes":[],
         "movement":[-4,0]
       },{
+        "frame_id":1909,
         "boxes":[],
         "movement":[-3,0]
       },{
+        "frame_id":1909,
         "boxes":[],
         "movement":[-4,0]
       },{
+        "frame_id":1910,
         "boxes":[],
-        "movement":[-4,0]
+        "movement":[-3,0]
       },{
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "boxes":[],
-        "movement":[-0,0]
-      },{
+        "frame_id":1910,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1910,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1910,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1911,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1911,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1911,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1911,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1911,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1912,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1912,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1912,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1912,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1913,
         "boxes":[],
         "movement":[8,0]
       },{
+        "frame_id":1913,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1913,
         "boxes":[],
         "movement":[-0,0]
       },{
+        "frame_id":1914,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1914,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1914,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1914,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":1864,
         "boxes":[],
         "movement":[-0,0]
       }]
@@ -2557,20 +2684,31 @@
       }]
   },
   "a444":{
-    "hit_frames":[4],
+    "hit_frames":[{
+        "min":3,
+        "max":3
+      },{
+        "min":10,
+        "max":11
+      }],
     "frames":[{
+        "frame_id":1856,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1856,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1856,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1856,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1858,
         "boxes":[{
             "type":"attack",
             "bottom":74,
@@ -2584,8 +2722,29 @@
             "left":-67,
             "width":38
           }],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1860,
+        "boxes":[],
+        "movement":[3,0]
+      },{
+        "frame_id":1865,
+        "boxes":[],
+        "movement":[5,0]
+      },{
+        "frame_id":1865,
+        "boxes":[],
+        "movement":[6,0]
+      },{
+        "frame_id":1865,
+        "boxes":[],
+        "movement":[7,0]
+      },{
+        "frame_id":1865,
+        "boxes":[],
+        "movement":[6,0]
+      },{
+        "frame_id":1857,
         "boxes":[{
             "type":"attack",
             "bottom":74,
@@ -2599,31 +2758,99 @@
             "left":-67,
             "width":38
           }],
-        "movement":[-0,0]
+        "movement":[4,0]
       },{
-        "boxes":[],
-        "movement":[-0,0]
+        "frame_id":1858,
+        "boxes":[{
+            "type":"attack",
+            "bottom":74,
+            "height":15,
+            "left":-86,
+            "width":19
+          },{
+            "type":"attack",
+            "bottom":72,
+            "height":17,
+            "left":-67,
+            "width":38
+          }],
+        "movement":[1,0]
       },{
+        "frame_id":1859,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1859,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1860,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1860,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1861,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1861,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
       },{
+        "frame_id":1861,
         "boxes":[],
-        "movement":[-0,0]
+        "movement":[0,0]
+      },{
+        "frame_id":1862,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1862,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1862,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
       }]
   },
   "a694":{
