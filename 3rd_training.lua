@@ -59,20 +59,20 @@ function write_object_to_json_file(_object, _file_path)
 end
 
 -- players
-function make_input_set()
+function make_input_set(_value)
   return {
-    up = false,
-    down = false,
-    left = false,
-    right = false,
-    LP = false,
-    MP = false,
-    HP = false,
-    LK = false,
-    MK = false,
-    HK = false,
-    start = false,
-    coin = false
+    up = _value,
+    down = _value,
+    left = _value,
+    right = _value,
+    LP = _value,
+    MP = _value,
+    HP = _value,
+    LK = _value,
+    MK = _value,
+    HK = _value,
+    start = _value,
+    coin = _value
   }
 end
 
@@ -82,15 +82,18 @@ function make_player_object(_id, _base, _prefix)
     base = _base,
     prefix = _prefix,
     input = {
-      pressed = make_input_set(),
-      released = make_input_set(),
-      down = make_input_set()
+      pressed = make_input_set(false),
+      released = make_input_set(false),
+      down = make_input_set(false),
+      state_time = make_input_set(0),
     },
     blocking = {},
     counter = {
       ref_time = -1
     },
     throw = {},
+    max_meter_gauge = 0,
+    max_meter_count = 0,
   }
 end
 
@@ -111,6 +114,12 @@ function update_input(_player_obj)
     _input_object.released[_input_name] = false
     if _input_object.down[_input_name] == false and _input then _input_object.pressed[_input_name] = true end
     if _input_object.down[_input_name] == true and _input == false then _input_object.released[_input_name] = true end
+
+    if _input_object.down[_input_name] == _input then
+      _input_object.state_time[_input_name] = _input_object.state_time[_input_name] + 1
+    else
+      _input_object.state_time[_input_name] = 0
+    end
     _input_object.down[_input_name] = _input
   end
 
@@ -437,6 +446,13 @@ hit_type =
   "overhead",
 }
 
+meter_mode =
+{
+  "normal",
+  "refill",
+  "infinite"
+}
+
 standing_state =
 {
   "knockeddown",
@@ -562,7 +578,7 @@ function list_menu_item(_name, _object, _property_name, _list, _default_value)
   return _o
 end
 
-function integer_menu_item(_name, _object, _property_name, _min, _max, _loop, _default_value)
+function integer_menu_item(_name, _object, _property_name, _min, _max, _loop, _default_value, _autofire_rate)
   if _default_value == nil then _default_value = _min end
   local _o = {}
   _o.name = _name
@@ -572,6 +588,7 @@ function integer_menu_item(_name, _object, _property_name, _min, _max, _loop, _d
   _o.max = _max
   _o.loop = _loop
   _o.default_value = _default_value
+  _o.autofire_rate = _autofire_rate
 
   function _o:draw(_x, _y, _selected)
     local _c = text_default_color
@@ -1530,7 +1547,9 @@ training_settings = {
   fast_recovery_mode = 1,
   infinite_time = true,
   infinite_life = true,
-  infinite_meter = true,
+  meter_mode = 1,
+  p1_meter = 0,
+  p2_meter = 0,
   no_stun = true,
   display_input = true,
   display_hitboxes = false,
@@ -1546,6 +1565,9 @@ debug_settings = {
   debug_character = "",
   debug_move = "",
 }
+
+p1_meter_gauge_item = integer_menu_item("P1 meter", training_settings, "p1_meter", 0, 1, true, 0, 1)
+p2_meter_gauge_item = integer_menu_item("P2 meter", training_settings, "p2_meter", 0, 1, true, 0, 1)
 
 menu = {
   {
@@ -1566,8 +1588,10 @@ menu = {
     entries = {
       checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
       checkbox_menu_item("Infinite Life", training_settings, "infinite_life"),
-      checkbox_menu_item("Infinite Meter", training_settings, "infinite_meter"),
       checkbox_menu_item("No Stun", training_settings, "no_stun"),
+      list_menu_item("Meter Mode", training_settings, "meter_mode", meter_mode),
+      p1_meter_gauge_item,
+      p2_meter_gauge_item,
       checkbox_menu_item("Display Input", training_settings, "display_input"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
       integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
@@ -1875,12 +1899,19 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
 
+  local _gauge_ui = nil
   if _player_obj.id == 1 then
     _player_obj.max_meter_gauge = memory.readbyte(0x020695B3)
     _player_obj.max_meter_count = memory.readbyte(0x020695BD)
+    _gauge_ui = p1_meter_gauge_item
   else
     _player_obj.max_meter_gauge = memory.readbyte(0x020695DF)
     _player_obj.max_meter_count = memory.readbyte(0x020695E9)
+    _gauge_ui = p2_meter_gauge_item
+  end
+  if is_in_match then
+    _gauge_ui.max = _player_obj.max_meter_count * _player_obj.max_meter_gauge
+    _gauge_ui.object[_gauge_ui.property_name] = math.min(_gauge_ui.object[_gauge_ui.property_name], _gauge_ui.max)
   end
 
   -- THROW
@@ -2135,7 +2166,7 @@ function write_player_vars(_player_obj)
   end
 
   -- METER
-  if training_settings.infinite_meter then
+  if training_settings.meter_mode == 3 then
     memory.writebyte(_gauge_addr, _player_obj.max_meter_gauge)
     for _, _addr in ipairs(_meter_addr) do
       memory.writebyte(_addr, _player_obj.max_meter_count)
@@ -2287,7 +2318,26 @@ function on_gui()
 
   if is_menu_open then
 
-    if P1.input.pressed.down or P2.input.pressed.down then
+    function check_input_down_autofire(_input, _autofire_rate, _autofire_time)
+      _autofire_rate = _autofire_rate or 4
+      _autofire_time = _autofire_time or 23
+      for _i = 1, 2 do
+        if player_objects[_i].input.pressed[_input] or (player_objects[_i].input.down[_input] and player_objects[_i].input.state_time[_input] > _autofire_time and (player_objects[_i].input.state_time[_input] % _autofire_rate) == 0) then
+          return true
+        end
+      end
+      return false
+    end
+
+    local _horizontal_autofire_rate = 4
+    local _vertical_autofire_rate = 4
+    if not is_main_menu_selected then
+      if menu[main_menu_selected_index].entries[sub_menu_selected_index].autofire_rate then
+        _horizontal_autofire_rate = menu[main_menu_selected_index].entries[sub_menu_selected_index].autofire_rate
+      end
+    end
+
+    if check_input_down_autofire("down", _vertical_autofire_rate) then
       if is_main_menu_selected then
         is_main_menu_selected = false
         sub_menu_selected_index = 1
@@ -2299,7 +2349,7 @@ function on_gui()
       end
     end
 
-    if P1.input.pressed.up or P2.input.pressed.up then
+    if check_input_down_autofire("up", _vertical_autofire_rate) then
       if is_main_menu_selected then
         is_main_menu_selected = false
         sub_menu_selected_index = #menu[main_menu_selected_index].entries
@@ -2311,7 +2361,7 @@ function on_gui()
       end
     end
 
-    if P1.input.pressed.left or P2.input.pressed.left then
+    if check_input_down_autofire("left", _horizontal_autofire_rate) then
       if is_main_menu_selected then
         main_menu_selected_index = main_menu_selected_index - 1
         if main_menu_selected_index == 0 then
@@ -2323,7 +2373,7 @@ function on_gui()
       end
     end
 
-    if P1.input.pressed.right or P2.input.pressed.right then
+    if check_input_down_autofire("right", _horizontal_autofire_rate) then
       if is_main_menu_selected then
         main_menu_selected_index = main_menu_selected_index + 1
         if main_menu_selected_index > #menu then

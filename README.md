@@ -21,6 +21,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 ## Changelog
 
 ### v0.5 ()
+- input autofire (rapid movement when holding key) in menus
 - Frame data prediction can resync itself to the actual animation frame, and thus handle a lot more blocking situations
 - All 2 hits blocking / parying Fixed
 - Blocking / parying of self cancellable moves supported
@@ -60,3 +61,4 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - [Hitbox display script by dammit](https://dammit.typepad.com/blog/2011/10/improved-3rd-strike-hitboxes.html)
 - [Trials mode script by c_cube](https://ameblo.jp/3fv/entry-12429961069.html)
 - [External C# training mode by furitiem](https://www.youtube.com/watch?v=vE27xe0QM64)
+- [3S InGame addresses spreadsheet](https://docs.google.com/spreadsheets/d/1eLi9phXMj18QGLfugrHhEQEjIVvSI2zbbUmDgPuLSf0/edit#gid=706955060)
