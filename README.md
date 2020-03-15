@@ -28,7 +28,10 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - All 2 hits blocking / parying Fixed
 - Blocking / parying of self cancellable moves supported
 - [Bugfix] Fixed infinite meter not working for player 2
+- [Bugfix] Fixed recording counterattack triggering in the middle of a blockstring
+- [Bugfix] Fixed recording counterattack restarting on hit
 - [Frame Data] Oro
+- [Frame Data] Ken
 
 ### v0.4 (13/02/2020)
 - Urien frame data
