@@ -3104,3 +3104,38 @@ frame_data_meta["makoto"].moves["2190"] = { hits = {{ type = 3 }}, movement_type
 frame_data_meta["makoto"].moves["2310"] = { hits = {{ type = 3 }}, movement_type = 2 } -- M Tsurugi
 frame_data_meta["makoto"].moves["2410"] = { hits = {{ type = 3 }}, movement_type = 2 } -- H Tsurugi
 frame_data_meta["makoto"].moves["2510"] = { hits = {{ type = 3 }}, movement_type = 2 } -- EX Tsurugi
+
+-- ORO
+frame_data_meta["oro"].moves["5c10"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["oro"].moves["5da0"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["oro"].moves["5ed0"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["oro"].moves["4f08"] = { hits = {{ type = 3 }, { type = 3 }} } -- HP
+frame_data_meta["oro"].moves["0fbc"] = { hits = {{ type = 3}} } -- UOH
+frame_data_meta["oro"].moves["7a18"] = { proxy = { id = "5378", offset = 0 }} -- target MK
+
+frame_data_meta["oro"].moves["5fc0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["oro"].moves["60d0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["oro"].moves["6200"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["oro"].moves["6300"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["oro"].moves["6460"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["oro"].moves["6590"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+
+frame_data_meta["oro"].moves["6708"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["oro"].moves["6888"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["oro"].moves["6a08"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["oro"].moves["6bf8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["oro"].moves["6d08"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["oro"].moves["6ef8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+
+frame_data_meta["oro"].moves["d71c"] = { hit_throw = true } -- HCB LP
+frame_data_meta["oro"].moves["d89c"] = { hit_throw = true } -- HCB LP
+frame_data_meta["oro"].moves["d96c"] = { hit_throw = true } -- HCB LP
+
+frame_data_meta["oro"].moves["08bc"] = { hits = {{ type = 3 }, { type = 3 }} } -- QCF LK
+frame_data_meta["oro"].moves["0b2c"] = { hits = {{ type = 3 }, { type = 3 }} } -- QCF MK
+frame_data_meta["oro"].moves["0c9c"] = { hits = {{ type = 3 }, { type = 3 }} } -- QCF HK
+frame_data_meta["oro"].moves["0e0c"] = { force_recording = true, hits = {{ type = 3 }, { type = 3 }, { type = 3 }}, movement_type = 2 } -- QCF EXK
+
+frame_data_meta["oro"].moves["012c"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }}} -- Air QCF K
+frame_data_meta["oro"].moves["041c"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }}} -- Air QCF EXK
