@@ -3147,3 +3147,39 @@ frame_data_meta["oro"].moves["0e0c"] = { force_recording = true, hits = {{ type 
 
 frame_data_meta["oro"].moves["012c"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }}} -- Air QCF K
 frame_data_meta["oro"].moves["041c"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }}} -- Air QCF EXK
+
+-- KEN
+frame_data_meta["ken"].moves["b048"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["ken"].moves["b0e8"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["ken"].moves["b1b8"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["ken"].moves["23ec"] = { hits = {{ type = 3 }} } -- UOH
+
+frame_data_meta["ken"].moves["a980"] = { hits = {{ type = 3 }, { type = 3 }} } -- Back MK
+frame_data_meta["ken"].moves["abe8"] = { hits = {{ type = 3 }} } -- Forward HK
+
+frame_data_meta["ken"].moves["c188"] = { proxy = { id = "a470", offset = 0 } } -- Target Close HK
+
+frame_data_meta["ken"].moves["b528"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["ken"].moves["b648"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["ken"].moves["b708"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["ken"].moves["b2a8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["ken"].moves["b388"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["ken"].moves["b468"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+
+frame_data_meta["ken"].moves["ba88"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["ken"].moves["bb68"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["ken"].moves["bc48"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["ken"].moves["b7e8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["ken"].moves["b8c8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["ken"].moves["b9a8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["ken"].moves["1fd4"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }}, movement_type = 2 } -- Air Tatsu L
+frame_data_meta["ken"].moves["2114"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }}, movement_type = 2 } -- Air Tatsu M
+frame_data_meta["ken"].moves["21f4"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }}, movement_type = 2 } -- Air Tatsu H
+frame_data_meta["ken"].moves["22d4"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }, { type = 3 }}, movement_type = 2 } -- Air Tatsu Ex
+
+frame_data_meta["ken"].moves["1214"] = { force_recording = true } -- SA 1
+frame_data_meta["ken"].moves["15b4"] = { force_recording = true } -- SA 2
+frame_data_meta["ken"].moves["1834"] = { force_recording = true } -- SA 3
+frame_data_meta["ken"].moves["1d24"] = { force_recording = true } -- SA 3
