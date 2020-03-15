@@ -167,6 +167,12 @@ function process_pending_input_sequence(_player_obj)
   if _player_obj.pending_input_sequence == nil then
     return
   end
+  if is_menu_open then
+    return
+  end
+  if not is_in_match then
+    return
+  end
 
   -- Charge moves memory locations
   -- P1
@@ -1493,6 +1499,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
 
   if not is_in_match then return end
   if _stick == 1 and _button == 1 then return end
+  if current_recording_state ~= 1 then return end
 
   if _defender.has_just_parried then
     if _debug then
@@ -1507,6 +1514,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     end
     _defender.counter.ref_time = _defender.recovery_time
     clear_input_sequence(_defender)
+    _defender.counter.attack_frame = -1
     _defender.counter.sequence = nil
   elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
     if _debug then
