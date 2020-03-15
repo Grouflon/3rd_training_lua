@@ -1,5 +1,5 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.4")
+print("  3rd_training.lua - v0.5")
 print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
@@ -102,8 +102,17 @@ function reset_player_objects()
     make_player_object(1, 0x02068C6C, "P1"),
     make_player_object(2, 0x02069104, "P2")
   }
+
   P1 = player_objects[1]
   P2 = player_objects[2]
+
+  P1.gauge_addr = 0x020695B5
+  P1.meter_addr = { 0x020286AB, 0x020695BF }
+  P1.stun_base = 0x020695FD
+
+  P2.gauge_addr = 0x020695E1
+  P2.meter_addr = { 0x020286DF, 0x020695EB}
+  P2.stun_base = 0x02069611
 end
 reset_player_objects()
 
@@ -494,6 +503,60 @@ text_default_color = 0xF7FFF7FF
 text_default_border_color = 0x101008FF
 text_selected_color = 0xFF0000FF
 text_disabled_color = 0x999999FF
+
+function meter_gauge_menu_item(_name, _object, _property_name, _player_obj)
+  local _o = {}
+  local _bar_ratio = 2
+  _o.name = _name
+  _o.object = _object
+  _o.property_name = _property_name
+  _o.player_obj = _player_obj
+  _o.autofire_rate = 1
+
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix = ""
+    local _suffix = ""
+    if _selected then
+      _c = text_selected_color
+      _prefix = "< "
+      _suffix = " >"
+    end
+    gui.text(_x, _y, _prefix..self.name.." : ", _c, text_default_border_color)
+
+    local _box_width = self.player_obj.max_meter_gauge * self.player_obj.max_meter_count / _bar_ratio
+    local _box_top = _y + 1
+    local _box_left = _x + 53
+    local _box_right = _box_left + _box_width
+    local _box_bottom = _box_top + 4
+    gui.box(_box_left, _box_top, _box_right, _box_bottom, text_default_color, text_default_border_color)
+    local _content_width = self.object[self.property_name] / _bar_ratio
+    gui.box(_box_left, _box_top, _box_left + _content_width, _box_bottom, 0x0000FFFF, 0x00000000)
+    for _i = 1, self.player_obj.max_meter_count - 1 do
+      local _line_x = _box_left + _i * self.player_obj.max_meter_gauge / _bar_ratio
+      gui.line(_line_x, _box_top, _line_x, _box_bottom, text_default_border_color)
+    end
+
+    gui.text(_box_right + 2, _y, _suffix, _c, text_default_border_color)
+  end
+
+  function _o:left()
+    self.object[self.property_name] = math.max(self.object[self.property_name] - _bar_ratio, 0)
+  end
+
+  function _o:right()
+    self.object[self.property_name] = math.min(self.object[self.property_name] + _bar_ratio, self.player_obj.max_meter_gauge * self.player_obj.max_meter_count)
+  end
+
+  function _o:validate()
+  end
+
+  function _o:cancel()
+    self.object[self.property_name] = 0
+  end
+
+  return _o
+end
 
 function checkbox_menu_item(_name, _object, _property_name, _default_value)
   if _default_value == nil then _default_value = false end
@@ -1550,6 +1613,7 @@ training_settings = {
   meter_mode = 1,
   p1_meter = 0,
   p2_meter = 0,
+  infinite_sa_time = false,
   no_stun = true,
   display_input = true,
   display_hitboxes = false,
@@ -1566,8 +1630,13 @@ debug_settings = {
   debug_move = "",
 }
 
-p1_meter_gauge_item = integer_menu_item("P1 meter", training_settings, "p1_meter", 0, 1, true, 0, 1)
-p2_meter_gauge_item = integer_menu_item("P2 meter", training_settings, "p2_meter", 0, 1, true, 0, 1)
+p1_meter_gauge_item = meter_gauge_menu_item("P1 meter", training_settings, "p1_meter", player_objects[1])
+p2_meter_gauge_item = meter_gauge_menu_item("P2 meter", training_settings, "p2_meter", player_objects[2])
+
+p1_meter_gauge_item.is_disabled = function()
+  return training_settings.meter_mode ~= 2
+end
+p2_meter_gauge_item.is_disabled = p1_meter_gauge_item.is_disabled
 
 menu = {
   {
@@ -1592,6 +1661,7 @@ menu = {
       list_menu_item("Meter Mode", training_settings, "meter_mode", meter_mode),
       p1_meter_gauge_item,
       p2_meter_gauge_item,
+      checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
       checkbox_menu_item("Display Input", training_settings, "display_input"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
       integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
@@ -1899,19 +1969,29 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
 
-  local _gauge_ui = nil
+  --local _gauge_ui = nil
   if _player_obj.id == 1 then
     _player_obj.max_meter_gauge = memory.readbyte(0x020695B3)
     _player_obj.max_meter_count = memory.readbyte(0x020695BD)
-    _gauge_ui = p1_meter_gauge_item
+    _player_obj.selected_sa = memory.readbyte(0x0201138B) + 1
+    _player_obj.superfreeze_decount = memory.readbyte(0x02069520) -- seems to be in P2 memory space, don't know why
+
+    training_settings.p1_meter = math.min(training_settings.p1_meter, _player_obj.max_meter_count * _player_obj.max_meter_gauge)
+
+    --_gauge_ui = p1_meter_gauge_item
   else
     _player_obj.max_meter_gauge = memory.readbyte(0x020695DF)
     _player_obj.max_meter_count = memory.readbyte(0x020695E9)
-    _gauge_ui = p2_meter_gauge_item
+    _player_obj.selected_sa = memory.readbyte(0x0201138C) + 1
+    _player_obj.superfreeze_decount = memory.readbyte(0x02069088) -- seems to be in P1 memory space, don't know why
+
+    training_settings.p2_meter = math.min(training_settings.p2_meter, _player_obj.max_meter_count * _player_obj.max_meter_gauge)
+
+    --_gauge_ui = p2_meter_gauge_item
   end
   if is_in_match then
-    _gauge_ui.max = _player_obj.max_meter_count * _player_obj.max_meter_gauge
-    _gauge_ui.object[_gauge_ui.property_name] = math.min(_gauge_ui.object[_gauge_ui.property_name], _gauge_ui.max)
+    --_gauge_ui.max = _player_obj.max_meter_count * _player_obj.max_meter_gauge
+    --_gauge_ui.object[_gauge_ui.property_name] = math.min(_gauge_ui.object[_gauge_ui.property_name], _gauge_ui.max)
   end
 
   -- THROW
@@ -1975,6 +2055,23 @@ function read_player_vars(_player_obj)
   end
   if _debug_state_variables and _player_obj.has_just_parried then print(string.format("%d - %s parried", frame_number, _player_obj.prefix)) end
 
+  -- IS IDLE
+  _player_obj.idle_time = _player_obj.idle_time or 0
+  _player_obj.is_idle = (
+    not _player_obj.is_attacking and
+    not _player_obj.is_attacking_ext and
+    not _player_obj.is_blocking and
+    not _player_obj.is_waking_up and
+    not _player_obj.is_fast_waking_up and
+    _player_obj.input_capacity > 0
+  )
+
+  if _player_obj.is_idle then
+    _player_obj.idle_time = _player_obj.idle_time + 1
+  else
+    _player_obj.idle_time = 0
+  end
+
   -- ANIMATION
   local _self_cancel = false
   local _previous_animation = _player_obj.animation or ""
@@ -2018,7 +2115,8 @@ function read_player_vars(_player_obj)
     _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame
     if frame_data_meta[_player_obj.char_str] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation] and frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].proxy then
       _player_obj.relevant_animation = frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].proxy.id
-      _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame - frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].proxy.offset
+      _player_obj.relevant_animation_start_frame = _player_obj.current_animation_start_frame -
+       frame_data_meta[_player_obj.char_str].moves[_player_obj.animation].proxy.offset
     end
   end
   _player_obj.has_relevant_animation_just_changed = _self_cancel or _player_obj.relevant_animation ~= _previous_relevant_animation
@@ -2140,6 +2238,17 @@ function read_player_vars(_player_obj)
     _player_obj.has_just_started_wake_up = not _previous_is_waking_up and _player_obj.is_waking_up
     _player_obj.has_just_started_fast_wake_up = not _previous_is_fast_waking_up and _player_obj.is_fast_waking_up
   end
+
+  -- TIMED SA
+  if character_specific[_player_obj.char_str].timed_sa[_player_obj.selected_sa] then
+    if _player_obj.superfreeze_decount > 0 then
+      _player_obj.is_in_timed_sa = true
+    elseif _player_obj.is_in_timed_sa and memory.readbyte(_player_obj.gauge_addr) == 0 then
+      _player_obj.is_in_timed_sa = false
+    end
+  else
+    _player_obj.is_in_timed_sa = false
+  end
 end
 
 function write_player_vars(_player_obj)
@@ -2147,17 +2256,11 @@ function write_player_vars(_player_obj)
   -- P1: 0x02068C6C
   -- P2: 0x02069104
 
-  local _stun_base = 0
-  local _gauge_addr = 0
-  local _meter_addr = {}
+  local _wanted_meter = 0
   if _player_obj.id == 1 then
-    _gauge_addr = 0x020695B5
-    _meter_addr = { 0x020286AB, 0x020695BF }
-    _stun_base = 0x020695FD
+    _wanted_meter = training_settings.p1_meter
   elseif _player_obj.id == 2 then
-    _gauge_addr = 0x020695E1
-    _meter_addr = { 0x020286DF, 0x020695EC}
-    _stun_base = 0x02069611
+    _wanted_meter = training_settings.p2_meter
   end
 
   -- LIFE
@@ -2166,11 +2269,33 @@ function write_player_vars(_player_obj)
   end
 
   -- METER
-  if training_settings.meter_mode == 3 then
-    memory.writebyte(_gauge_addr, _player_obj.max_meter_gauge)
-    for _, _addr in ipairs(_meter_addr) do
-      memory.writebyte(_addr, _player_obj.max_meter_count)
+  if is_in_match and not is_menu_open and not _player_obj.is_in_timed_sa then
+    if training_settings.meter_mode == 3 then
+      memory.writebyte(_player_obj.gauge_addr, _player_obj.max_meter_gauge)
+      for _, _addr in ipairs(_player_obj.meter_addr) do
+        memory.writebyte(_addr, _player_obj.max_meter_count)
+      end
+    elseif training_settings.meter_mode == 2 then
+      if _player_obj.is_idle and _player_obj.idle_time > 20 then
+        local _meter = memory.readbyte(_player_obj.gauge_addr) + _player_obj.max_meter_gauge * memory.readbyte(_player_obj.meter_addr[1])
+        if _meter > _wanted_meter then
+          _meter = _meter - 6
+          _meter = math.max(_meter, _wanted_meter)
+        elseif _meter < _wanted_meter then
+          _meter = _meter + 6
+          _meter = math.min(_meter, _wanted_meter)
+        end
+
+        memory.writebyte(_player_obj.gauge_addr, _meter % _player_obj.max_meter_gauge)
+        for _, _addr in ipairs(_player_obj.meter_addr) do
+          memory.writebyte(_addr, math.floor(_meter / _player_obj.max_meter_gauge))
+        end
+      end
     end
+  end
+
+  if training_settings.infinite_sa_time and _player_obj.is_in_timed_sa then
+    memory.writebyte(_player_obj.gauge_addr, _player_obj.max_meter_gauge)
   end
 
   -- STUN
@@ -2179,8 +2304,8 @@ function write_player_vars(_player_obj)
   -- 0x02069611 P2 stun timer
   -- 0x02069613 P2 stun bar
   if training_settings.no_stun then
-    memory.writebyte(_stun_base, 0); -- Stun timer
-    memory.writedword(_stun_base + 0x2, 0); -- Stun bar
+    memory.writebyte(_player_obj.stun_base, 0); -- Stun timer
+    memory.writedword(_player_obj.stun_base + 0x2, 0); -- Stun bar
   end
 
   -- character swap
@@ -2337,27 +2462,41 @@ function on_gui()
       end
     end
 
+    function _sub_menu_down()
+      sub_menu_selected_index = sub_menu_selected_index + 1
+      if sub_menu_selected_index > #menu[main_menu_selected_index].entries then
+        is_main_menu_selected = true
+      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled ~= nil and menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled() then
+        _sub_menu_down()
+      end
+    end
+
+    function _sub_menu_up()
+      sub_menu_selected_index = sub_menu_selected_index - 1
+      if sub_menu_selected_index == 0 then
+        is_main_menu_selected = true
+      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled ~= nil and menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled() then
+        _sub_menu_up()
+      end
+    end
+
     if check_input_down_autofire("down", _vertical_autofire_rate) then
       if is_main_menu_selected then
         is_main_menu_selected = false
-        sub_menu_selected_index = 1
+        sub_menu_selected_index = 0
+        _sub_menu_down()
       else
-        sub_menu_selected_index = sub_menu_selected_index + 1
-        if sub_menu_selected_index > #menu[main_menu_selected_index].entries then
-          is_main_menu_selected = true
-        end
+        _sub_menu_down()
       end
     end
 
     if check_input_down_autofire("up", _vertical_autofire_rate) then
       if is_main_menu_selected then
         is_main_menu_selected = false
-        sub_menu_selected_index = #menu[main_menu_selected_index].entries
+        sub_menu_selected_index = #menu[main_menu_selected_index].entries + 1
+        _sub_menu_up()
       else
-        sub_menu_selected_index = sub_menu_selected_index - 1
-        if sub_menu_selected_index == 0 then
-          is_main_menu_selected = true
-        end
+        _sub_menu_up()
       end
     end
 
@@ -2425,8 +2564,12 @@ function on_gui()
     local _menu_x = 33
     local _menu_y = 63
     local _menu_y_interval = 10
+    local _draw_index = 0
     for i = 1, #menu[main_menu_selected_index].entries do
-      menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * (i - 1), not is_main_menu_selected and sub_menu_selected_index == i)
+      if menu[main_menu_selected_index].entries[i].is_disabled == nil or not menu[main_menu_selected_index].entries[i].is_disabled() then
+        menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * _draw_index, not is_main_menu_selected and sub_menu_selected_index == i)
+        _draw_index = _draw_index + 1
+      end
     end
 
     -- recording slots special display
@@ -2507,13 +2650,22 @@ savestate.registerload(on_load_state)
 
 character_specific = {}
 for i = 1, #characters do
-  character_specific[characters[i]] = {}
+  character_specific[characters[i]] = { timed_sa = {false, false, false} }
 end
 
 -- Characters standing states
 character_specific.oro.additional_standing_states = { 3 } -- 3 is crouching
 character_specific.dudley.additional_standing_states = { 6 } -- 6 is crouching
 character_specific.makoto.additional_standing_states = { 7 } -- 7 happens during Oroshi
+
+-- Charcters timed SA
+character_specific.oro.timed_sa[1] = true;
+character_specific.oro.timed_sa[3] = true;
+character_specific.q.timed_sa[3] = true;
+character_specific.makoto.timed_sa[3] = true;
+character_specific.twelve.timed_sa[3] = true;
+character_specific.yang.timed_sa[3] = true;
+character_specific.yun.timed_sa[3] = true;
 
 -- Characters wake ups
 
