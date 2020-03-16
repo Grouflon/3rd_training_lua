@@ -20,7 +20,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ## Changelog
 
-### v0.5 ()
+### v0.5 (16/03/2020)
 - Auto refill meter mode + ability to set a precise meter amount from the menu
 - Infinite Super Art Timer mode
 - input autofire (rapid movement when holding key) in menus
