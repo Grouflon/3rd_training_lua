@@ -20,13 +20,15 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ## Changelog
 
-### v0.5 (16/03/2020)
+### v0.5 (23/03/2020)
+- Auto refill life mode
 - Auto refill meter mode + ability to set a precise meter amount from the menu
 - Infinite Super Art Timer mode
 - input autofire (rapid movement when holding key) in menus
 - Frame data prediction can resync itself to the actual animation frame, and thus handle a lot more blocking situations
 - All 2 hits blocking / parying Fixed
 - Blocking / parying of self cancellable moves supported
+- Improved wording of some menu elements
 - [Bugfix] Fixed infinite meter not working for player 2
 - [Bugfix] Fixed recording counterattack triggering in the middle of a blockstring
 - [Bugfix] Fixed recording counterattack restarting on hit
