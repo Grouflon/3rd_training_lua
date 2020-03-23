@@ -461,6 +461,13 @@ hit_type =
   "overhead",
 }
 
+life_mode =
+{
+  "normal",
+  "refill",
+  "infinite"
+}
+
 meter_mode =
 {
   "normal",
@@ -1617,7 +1624,7 @@ training_settings = {
   counter_attack_button = 1,
   fast_recovery_mode = 1,
   infinite_time = true,
-  infinite_life = true,
+  life_mode = 1,
   meter_mode = 1,
   p1_meter = 0,
   p2_meter = 0,
@@ -1664,9 +1671,9 @@ menu = {
     name = "Training Settings",
     entries = {
       checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
-      checkbox_menu_item("Infinite Life", training_settings, "infinite_life"),
+      list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
       checkbox_menu_item("No Stun", training_settings, "no_stun"),
-      list_menu_item("Meter Mode", training_settings, "meter_mode", meter_mode),
+      list_menu_item("Meter Refill Mode", training_settings, "meter_mode", meter_mode),
       p1_meter_gauge_item,
       p2_meter_gauge_item,
       checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
@@ -2272,8 +2279,17 @@ function write_player_vars(_player_obj)
   end
 
   -- LIFE
-  if training_settings.infinite_life then
-    memory.writebyte(_player_obj.base + 0x9F, 160)
+  if is_in_match and not is_menu_open then
+    local _life = memory.readbyte(_player_obj.base + 0x9F)
+    if training_settings.life_mode == 2 then
+      if _player_obj.is_idle and _player_obj.idle_time > 20 then
+        local _refill_rate = 6
+        _life = math.min(_life + _refill_rate, 160)
+      end
+    elseif training_settings.life_mode == 3 then
+      _life = 160
+    end
+    memory.writebyte(_player_obj.base + 0x9F, _life)
   end
 
   -- METER
