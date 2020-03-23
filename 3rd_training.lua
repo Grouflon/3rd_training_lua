@@ -588,7 +588,14 @@ function checkbox_menu_item(_name, _object, _property_name, _default_value)
       _prefix = "< "
       _suffix = " >"
     end
-    gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.object[self.property_name]).._suffix, _c, text_default_border_color)
+
+    local _value = ""
+    if self.object[self.property_name] then
+      _value = "yes"
+    else
+      _value = "no"
+    end
+    gui.text(_x, _y, _prefix..self.name.." : ".._value.._suffix, _c, text_default_border_color)
   end
 
   function _o:left()
@@ -1672,7 +1679,7 @@ menu = {
     entries = {
       checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
       list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
-      checkbox_menu_item("No Stun", training_settings, "no_stun"),
+      checkbox_menu_item("Disable Stun", training_settings, "no_stun"),
       list_menu_item("Meter Refill Mode", training_settings, "meter_mode", meter_mode),
       p1_meter_gauge_item,
       p2_meter_gauge_item,
