@@ -1,6 +1,6 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.5")
-print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator")
+print("  3rd_training.lua - v0.6")
+print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.0.7 emulator")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
 print("")
@@ -1812,6 +1812,19 @@ function stick_input_to_sequence_input(_player_obj, _input)
   return ""
 end
 
+function can_play_recording()
+  if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+    for _i, _value in ipairs(recording_slots) do
+      if #_value > 0 then
+        return true
+      end
+    end
+  else
+    return recording_slots[training_settings.current_recording_slot] ~= nil
+  end
+  return false
+end
+
 function set_recording_state(_input, _state)
   if (_state == current_recording_state) then
     return
@@ -1907,7 +1920,9 @@ function update_recording(_input)
 
       -- single tap
       if current_recording_state == 1 then
-        set_recording_state(_input, 4)
+        if can_play_recording() then
+          set_recording_state(_input, 4)
+        end
       elseif current_recording_state == 2 then
         set_recording_state(_input, 3)
       elseif current_recording_state == 3 then
@@ -1943,7 +1958,7 @@ function update_recording(_input)
     elseif current_recording_state == 4 then
       if dummy.pending_input_sequence == nil then
         set_recording_state(_input, 1)
-        if training_settings.replay_mode == 3 or training_settings.replay_mode == 4 then
+        if can_play_recording() and (training_settings.replay_mode == 3 or training_settings.replay_mode == 4) then
           set_recording_state(_input, 4)
         end
       end
