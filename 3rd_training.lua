@@ -87,7 +87,12 @@ function make_player_object(_id, _base, _prefix)
       down = make_input_set(false),
       state_time = make_input_set(0),
     },
-    blocking = {},
+    blocking = {
+      last_attack_hit_id = 0,
+      next_attack_hit_id = 0,
+      wait_for_block_string = true,
+      block_string = false,
+    },
     counter = {
       ref_time = -1
     },
@@ -444,6 +449,7 @@ blocking_mode =
 {
   "never",
   "always",
+  "first hit",
   "random",
 }
 
@@ -1353,6 +1359,25 @@ end
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
   local _debug = false
+  local _debug_block_string = false
+
+  if _dummy.blocking.block_string then
+    if _dummy.remaining_freeze_frames == 0 and _dummy.recovery_time == 0 and _dummy.previous_recovery_time == 1 then
+      _dummy.blocking.block_string = false
+      if _debug_block_string then
+        print(string.format("%d - ended block string (%d, %d, %d)", frame_number, _dummy.blocking.last_attack_hit_id, _dummy.blocking.next_attack_hit_id, _dummy.recovery_time))
+      end
+    end
+  elseif not _dummy.blocking.wait_for_block_string then
+    --print(string.format("%d - (%s, %s, %d)", frame_number, tostring(_dummy.blocking.last_attack_hit_id), tostring(_dummy.blocking.next_attack_hit_id), _dummy.idle_time))
+
+    if ((_dummy.blocking.next_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20) then
+      _dummy.blocking.wait_for_block_string = true
+      if _debug_block_string then
+        print(string.format("%d - wait for block string (%d, %d, %d)", frame_number, _dummy.blocking.next_attack_hit_id, _dummy.blocking.last_attack_hit_id, _dummy.idle_time))
+      end
+    end
+  end
 
   if current_recording_state ~= 1 then
     _dummy.blocking.listening = false
@@ -1389,18 +1414,18 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     return
   end
 
+  if _player.has_just_been_blocked or _player.has_just_been_parried then
+    _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
+    _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
+  end
+
   if _dummy.blocking.listening then
-
-    if _player.has_just_been_blocked or _player.has_just_been_parried then
-      _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
-      _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
-    end
-
     if _player.current_hit_id == 0 and _dummy.blocking.last_attack_hit_id > 0 and _player.remaining_freeze_frames == 0 then
       if _debug then
-        print(string.format("%d: reset last hit (%d, %d)", frame_number, _player.current_hit_id, _dummy.blocking.last_attack_hit_id))
+        print(string.format("%d - reset last hit (%d, %d)", frame_number, _player.current_hit_id, _dummy.blocking.last_attack_hit_id))
       end
       _dummy.blocking.last_attack_hit_id = 0
+      _dummy.blocking.next_attack_hit_id = 0
     end
 
     --print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
@@ -1428,15 +1453,36 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
             _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
+
+            if _mode == 3 then -- first hit
+              if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
+                _dummy.blocking.should_block = false
+              end
+            elseif _mode == 4 then -- random
+              if not _dummy.blocking.block_string then
+                if  math.random() > 0.5 then
+                  _dummy.blocking.should_block = false
+                  if _debug then
+                    print(string.format(" %d: next hit randomized out", frame_number))
+                  end
+                else
+                  _dummy.blocking.wait_for_block_string = true
+                end
+              end
+            end
+
+            if _dummy.blocking.wait_for_block_string then
+              _dummy.blocking.block_string = true
+              _dummy.blocking.wait_for_block_string = false
+              if _debug_block_string then
+                print(string.format("%d - start block string", frame_number))
+              end
+            end
+
             if _debug then
               print(string.format(" %d: next hit %d at frame %d (%d), last hit %d", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame, _dummy.blocking.last_attack_hit_id))
             end
-            if _mode == 3 and math.random() > 0.5 then
-              _dummy.blocking.should_block = false
-              if _debug then
-                print(string.format(" %d: next hit randomized out", frame_number))
-              end
-            end
+
             break
           end
         end
@@ -1987,9 +2033,17 @@ function read_player_vars(_player_obj)
   _player_obj.input_capacity = memory.readword(_player_obj.base + 0x46C)
   _player_obj.action = memory.readdword(_player_obj.base + 0xAC)
   _player_obj.action_ext = memory.readdword(_player_obj.base + 0x12C)
-  _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
+  _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
+  if _player_obj.previous_recovery_time == _player_obj.recovery_time then -- if we take a hit during recovery, it will get stuck (ie. Ibuki's close HK's second hit) so we reset it manually
+    memory.writebyte(_player_obj.base + 0x187, 0)
+    _player_obj.recovery_time = 0
+  end
+
+  local _previous_is_blocking = _player_obj.is_blocking or false
+  _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
+  if _debug_state_variables and not _previous_is_blocking and _player_obj.is_blocking then print(string.format("%d - %s blocked", frame_number, _player_obj.prefix)) end
 
   --local _gauge_ui = nil
   if _player_obj.id == 1 then
@@ -2085,6 +2139,8 @@ function read_player_vars(_player_obj)
     not _player_obj.is_blocking and
     not _player_obj.is_waking_up and
     not _player_obj.is_fast_waking_up and
+    _player_obj.recovery_time == 0 and
+    _player_obj.remaining_freeze_frames == 0 and
     _player_obj.input_capacity > 0
   )
 
