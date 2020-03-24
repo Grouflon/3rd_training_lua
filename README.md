@@ -1,5 +1,5 @@
 # 3rd_training_lua
-Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator
+Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.0.7 emulator
 
 The right version of FBA-RR can be downloaded [here](http://tasvideos.org/EmulatorResources/Fbarr.html)
 
@@ -19,6 +19,11 @@ This training mode is still in development and you may encounter bugs or missing
 If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
 
 ## Changelog
+
+### v0.6 ()
+- Random blocking mode won't stop blocking in the middle of a true blockstring
+- Added First Hit blocking mode
+- [Bugfix] Fixed dummy bricking when triggering a recording counter attack with nothing recorded
 
 ### v0.5 (23/03/2020)
 - Auto refill life mode
