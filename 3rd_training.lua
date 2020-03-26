@@ -567,13 +567,220 @@ function meter_gauge_menu_item(_name, _object, _property_name, _player_obj)
     self.object[self.property_name] = math.min(self.object[self.property_name] + _bar_ratio, self.player_obj.max_meter_gauge * self.player_obj.max_meter_count)
   end
 
-  function _o:validate()
-  end
-
-  function _o:cancel()
+  function _o:reset()
     self.object[self.property_name] = 0
   end
 
+  function _o:legend()
+    return "MP: Reset to default"
+  end
+
+  return _o
+end
+
+available_characters = {
+  " ",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "X",
+  "Y",
+  "Z",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "-",
+  "_",
+}
+
+function textfield_menu_item(_name, _object, _property_name, _default_value, _max_length)
+  _default_value = _default_value or ""
+  _max_length = _max_length or 16
+  local _o = {}
+  _o.name = _name
+  _o.object = _object
+  _o.property_name = _property_name
+  _o.default_value = _default_value
+  _o.max_length = _max_length
+  _o.edition_index = 0
+  _o.is_in_edition = false
+  _o.content = {}
+
+  function _o:sync_to_var()
+    local _str = ""
+    for i = 1, #self.content do
+      _str = _str..available_characters[self.content[i]]
+    end
+    self.object[self.property_name] = _str
+  end
+
+  function _o:sync_from_var()
+    self.content = {}
+    for i = 1, #self.object[self.property_name] do
+      local _c = self.object[self.property_name]:sub(i,i)
+      for j = 1, #available_characters do
+        if available_characters[j] == _c then
+          table.insert(self.content, j)
+          break
+        end
+      end
+    end
+  end
+
+  function _o:crop_char_table()
+    local _last_empty_index = 0
+    for i = 1, #self.content do
+      if self.content[i] == 1 then
+        _last_empty_index = i
+      else
+        _last_empty_index = 0
+      end
+    end
+
+    if _last_empty_index > 0 then
+      for i = _last_empty_index, #self.content do
+        table.remove(self.content, _last_empty_index)
+      end
+    end
+  end
+
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix = ""
+    local _suffix = ""
+    if self.is_in_edition then
+      _c =  0xFFFF00FF
+    elseif _selected then
+      _c = text_selected_color
+    end
+
+    local _value = self.object[self.property_name]
+
+    if self.is_in_edition then
+      local _cycle = 100
+      if ((frame_number % _cycle) / _cycle) < 0.5 then
+        gui.text(_x + (#self.name + 3 + #self.content - 1) * 4, _y + 2, "_", _c, text_default_border_color)
+      end
+    end
+
+    gui.text(_x, _y, _prefix..self.name.." : ".._value.._suffix, _c, text_default_border_color)
+  end
+
+  function _o:left()
+    if self.is_in_edition then
+      self:reset()
+    end
+  end
+
+  function _o:right()
+    if self.is_in_edition then
+      self:validate()
+    end
+  end
+
+  function _o:up()
+    if self.is_in_edition then
+      self.content[self.edition_index] = self.content[self.edition_index] + 1
+      if self.content[self.edition_index] > #available_characters then
+        self.content[self.edition_index] = 1
+      end
+      self:sync_to_var()
+      return true
+    else
+      return false
+    end
+  end
+
+  function _o:down()
+    if self.is_in_edition then
+      self.content[self.edition_index] = self.content[self.edition_index] - 1
+      if self.content[self.edition_index] == 0 then
+        self.content[self.edition_index] = #available_characters
+      end
+      self:sync_to_var()
+      return true
+    else
+      return false
+    end
+  end
+
+  function _o:validate()
+    if not self.is_in_edition then
+      self:sync_from_var()
+      if #self.content < self.max_length then
+        table.insert(self.content, 1)
+      end
+      self.edition_index = #self.content
+      self.is_in_edition = true
+    else
+      if self.content[self.edition_index] ~= 1 then
+        if #self.content < self.max_length then
+          table.insert(self.content, 1)
+          self.edition_index = #self.content
+        end
+      end
+    end
+    self:sync_to_var()
+  end
+
+  function _o:reset()
+    if not self.is_in_edition then
+      _o.content = {}
+      self.edition_index = 0
+    else
+      if #self.content > 1 then
+        table.remove(self.content, #self.content)
+        self.edition_index = #self.content
+      else
+        self.content[1] = 1
+      end
+    end
+    self:sync_to_var()
+  end
+
+  function _o:cancel()
+    if self.is_in_edition then
+      self:crop_char_table()
+      self:sync_to_var()
+      self.is_in_edition = false
+    end
+  end
+
+  function _o:legend()
+    if self.is_in_edition then
+      return "LP/Right: Next letter   MP/Left: Previous letter   LK: Leave edition"
+    else
+      return "LP: Edit   MP: Reset to default"
+    end
+  end
+
+  _o:sync_from_var()
   return _o
 end
 
@@ -612,11 +819,12 @@ function checkbox_menu_item(_name, _object, _property_name, _default_value)
     self.object[self.property_name] = not self.object[self.property_name]
   end
 
-  function _o:validate()
+  function _o:reset()
+    self.object[self.property_name] = self.default_value
   end
 
-  function _o:cancel()
-    self.object[self.property_name] = self.default_value
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -657,11 +865,12 @@ function list_menu_item(_name, _object, _property_name, _list, _default_value)
     end
   end
 
-  function _o:validate()
+  function _o:reset()
+    self.object[self.property_name] = self.default_value
   end
 
-  function _o:cancel()
-    self.object[self.property_name] = self.default_value
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -713,11 +922,12 @@ function integer_menu_item(_name, _object, _property_name, _min, _max, _loop, _d
     end
   end
 
-  function _o:validate()
+  function _o:reset()
+    self.object[self.property_name] = self.default_value
   end
 
-  function _o:cancel()
-    self.object[self.property_name] = self.default_value
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -790,11 +1000,12 @@ function map_menu_item(_name, _object, _property_name, _map_object, _map_propert
     end
   end
 
-  function _o:validate()
+  function _o:reset()
+    training_settings[self.property_name] = ""
   end
 
-  function _o:cancel()
-    training_settings[self.property_name] = ""
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -819,18 +1030,13 @@ function button_menu_item(_name, _validate_function)
     gui.text(_x, _y,self.name, _c, text_default_border_color)
   end
 
-  function _o:left()
-  end
-
-  function _o:right()
-  end
-
   function _o:validate()
     self.last_frame_validated = frame_number
     self.validate_function()
   end
 
-  function _o:cancel()
+  function _o:legend()
+    return "LP: Validate"
   end
 
   return _o
@@ -2588,7 +2794,11 @@ function on_gui()
         sub_menu_selected_index = 0
         _sub_menu_down()
       else
-        _sub_menu_down()
+        if menu[main_menu_selected_index].entries[sub_menu_selected_index].down and menu[main_menu_selected_index].entries[sub_menu_selected_index]:down() then
+          save_training_data()
+        else
+          _sub_menu_down()
+        end
       end
     end
 
@@ -2598,7 +2808,11 @@ function on_gui()
         sub_menu_selected_index = #menu[main_menu_selected_index].entries + 1
         _sub_menu_up()
       else
-        _sub_menu_up()
+        if menu[main_menu_selected_index].entries[sub_menu_selected_index].up and menu[main_menu_selected_index].entries[sub_menu_selected_index]:up() then
+          save_training_data()
+        else
+          _sub_menu_up()
+        end
       end
     end
 
@@ -2608,7 +2822,7 @@ function on_gui()
         if main_menu_selected_index == 0 then
           main_menu_selected_index = #menu
         end
-      else
+      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].left then
         menu[main_menu_selected_index].entries[sub_menu_selected_index]:left()
         save_training_data()
       end
@@ -2620,7 +2834,7 @@ function on_gui()
         if main_menu_selected_index > #menu then
           main_menu_selected_index = 1
         end
-      else
+      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].right then
         menu[main_menu_selected_index].entries[sub_menu_selected_index]:right()
         save_training_data()
       end
@@ -2628,15 +2842,23 @@ function on_gui()
 
     if P1.input.pressed.LP or P2.input.pressed.LP then
       if is_main_menu_selected then
-      else
+      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].validate then
         menu[main_menu_selected_index].entries[sub_menu_selected_index]:validate()
+        save_training_data()
+      end
+    end
+
+    if P1.input.pressed.MP or P2.input.pressed.MP then
+      if is_main_menu_selected then
+      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].reset then
+        menu[main_menu_selected_index].entries[sub_menu_selected_index]:reset()
         save_training_data()
       end
     end
 
     if P1.input.pressed.LK or P2.input.pressed.LK then
       if is_main_menu_selected then
-      else
+      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].cancel then
         menu[main_menu_selected_index].entries[sub_menu_selected_index]:cancel()
         save_training_data()
       end
@@ -2680,7 +2902,11 @@ function on_gui()
       gui.text(106,83, _t, text_disabled_color, text_default_border_color)
     end
 
-    gui.text(33, 168, "LK: Reset value to default", text_disabled_color, text_default_border_color)
+    if not is_main_menu_selected then
+      if menu[main_menu_selected_index].entries[sub_menu_selected_index].legend then
+        gui.text(33, 168, menu[main_menu_selected_index].entries[sub_menu_selected_index]:legend(), text_disabled_color, text_default_border_color)
+      end
+    end
 
   else
     gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
