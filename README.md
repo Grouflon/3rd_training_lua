@@ -7,6 +7,7 @@ The right version of FBA-RR can be downloaded [here](http://tasvideos.org/Emulat
 - Can set dummy to counter-attack with any move on frame 1 after any hit / block / parry / wake-up
 - Can record and replay sequences into 8 different slots
 - Can replay sequences randomly and as counter-attack
+- Can save/load recorded sequences to/from files
 
 ## How to use
 
@@ -29,7 +30,7 @@ You may need to rename zip files so they match exactly what the emulator expect 
 
 A: Check video settings, you musn't use "Enhanced" blitter option.
 
-**Q: UI looks weired and hitboxes are misplaced**
+**Q: UI looks weird and hitboxes are misplaced**
 
 A: Check video settings, you must use "Basic" blitter option with no scanlines if you want the UI to work properly.
 
@@ -50,6 +51,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 ## Changelog
 
 ### v0.6 ()
+- Can save/load recorded sequences to/from files
 - Random blocking mode won't stop blocking in the middle of a true blockstring
 - Added First Hit blocking mode
 - [Bugfix] Fixed dummy bricking when triggering a recording counter attack with nothing recorded
