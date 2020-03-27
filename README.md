@@ -8,6 +8,35 @@ The right version of FBA-RR can be downloaded [here](http://tasvideos.org/Emulat
 - Can record and replay sequences into 8 different slots
 - Can replay sequences randomly and as counter-attack
 
+## How to use
+
+* Download emulator from [here](http://tasvideos.org/EmulatorResources/Fbarr.html) and find the proper roms
+* Download script from [here](https://github.com/Grouflon/3rd_training_lua/archive/master.zip) or clone repository
+* Extract script anywhere on your computer
+* Start the emulator, load the rom, start a match with P1 and P2 (you will need to map input for both players)
+* Go to Game->Lua Scripting->New Lua Script Window and run the script **3rd_training.lua** from here
+* Follow instructions from Output Console
+
+## Troubleshooting
+
+**Q: Missing rom, zip file not found**
+
+A: Make sure you have the proper roms. You must have at least 2 roms: _sfiii3.zip_ and _sfiii3a.zip_. sfiii3 is the japanese version and the zip contains _sfiii3_japan_nocd.29f400.u2_. sfiiia is the american version and contains _sfiii3_usa.29f400.u2_.
+
+You may need to rename zip files so they match exactly what the emulator expect for.
+
+**Q: Emulator crash when I run lua script**
+
+A: Check video settings, you musn't use "Enhanced" blitter option.
+
+**Q: UI looks weired and hitboxes are misplaced**
+
+A: Check video settings, you must use "Basic" blitter option with no scanlines if you want the UI to work properly.
+
+**Q: Emulator doesn't run at all, there's a missing dll**
+
+A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/releases/latest/)
+
 ## Roadmap
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
