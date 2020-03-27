@@ -1058,6 +1058,7 @@ end
 
 -- save/load
 function save_training_data()
+  backup_recordings()
   if not write_object_to_json_file(training_settings, saved_path..training_settings_file) then
     print(string.format("Error: Failed to save training settings to \"%s\"", training_settings_file))
   end
@@ -1066,12 +1067,44 @@ end
 function load_training_data()
   local _training_settings = read_object_from_json_file(saved_path..training_settings_file)
   if _training_settings == nil then
-    print(string.format("Error: Failed to load training settings from \"%s\"", training_settings_file))
     _training_settings = {}
   end
 
   for _key, _value in pairs(_training_settings) do
     training_settings[_key] = _value
+  end
+
+  restore_recordings()
+end
+
+function backup_recordings()
+  -- Init base table
+  if training_settings.recordings == nil then
+    training_settings.recordings = {}
+    for _key, _value in ipairs(characters) do
+      training_settings.recordings[_value] = {}
+      for _i = 1, #recording_slots do
+        table.insert(training_settings.recordings[_value], {})
+      end
+    end
+  end
+
+  if dummy.char_str ~= "" then
+    training_settings.recordings[dummy.char_str] = recording_slots
+  end
+end
+
+function restore_recordings()
+  local _char = player_objects[training_settings.dummy_player].char_str
+  if _char and _char ~= "" then
+    local _recording_count = #recording_slots
+    if training_settings.recordings then
+      recording_slots = training_settings.recordings[_char]
+    end
+    local _missing_slots = _recording_count - #recording_slots
+    for _i = 1, _missing_slots do
+      table.insert(recording_slots, {})
+    end
   end
 end
 
@@ -1884,6 +1917,95 @@ function update_tech_throws(_input, _attacker, _defender, _mode)
   end
 end
 
+-- RECORDING POPUS
+
+function clear_slot()
+  recording_slots[training_settings.current_recording_slot] = {}
+  save_training_data()
+end
+
+function open_save_popup()
+  current_popup = save_recording_slot_popup
+  current_popup.selected_index = 1
+  save_file_name = string.gsub(dummy.char_str, "(.*)", string.upper).."_"
+end
+
+function open_load_popup()
+  current_popup = load_recording_slot_popup
+  current_popup.selected_index = 1
+
+  load_file_index = 1
+
+  local _cmd = "dir "..string.gsub(saved_recordings_path, "/", "\\")
+  local _f = io.popen(_cmd)
+  if _f == nil then
+    print(string.format("Error: Failed to execute command \"%s\"", _cmd))
+    return
+  end
+  local _str = _f:read("*all")
+  load_file_list = {}
+  for _file in string.gmatch(_str, "([%a%p]+\.json)") do
+    _file = _file:gsub("\.json", "")
+    table.insert(load_file_list, _file)
+  end
+  load_recording_slot_popup.entries[1].list = load_file_list
+end
+
+function close_popup()
+  current_popup = nil
+end
+
+function save_recording_slot_to_file()
+  if save_file_name == "" then
+    print(string.format("Error: Can't save to empty file name"))
+    return
+  end
+
+  local _path = string.format("%s%s.json",saved_recordings_path, save_file_name)
+  if not write_object_to_json_file(recording_slots[training_settings.current_recording_slot], _path) then
+    print(string.format("Error: Failed to save recording to \"%s\"", _path))
+  else
+    print(string.format("Saved slot %d to \"%s\"", training_settings.current_recording_slot, _path))
+  end
+
+  close_popup()
+end
+
+function load_recording_slot_from_file()
+  if #load_file_list == 0 or load_file_list[load_file_index] == nil then
+    print(string.format("Error: Can't load from empty file name"))
+    return
+  end
+
+  local _path = string.format("%s%s.json",saved_recordings_path, load_file_list[load_file_index])
+  local _recording = read_object_from_json_file(_path)
+  if not _recording then
+    print(string.format("Error: Failed to load recording from \"%s\"", _path))
+  else
+    recording_slots[training_settings.current_recording_slot] = _recording
+    print(string.format("Loaded \"%s\" to slot %d", _path, training_settings.current_recording_slot))
+  end
+  save_training_data()
+  close_popup()
+end
+
+save_file_name = ""
+save_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
+{
+  textfield_menu_item("File Name", _G, "save_file_name", ""),
+  button_menu_item("Save", save_recording_slot_to_file),
+  button_menu_item("Cancel", close_popup),
+})
+
+load_file_list = {}
+load_file_index = 1
+load_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
+{
+  list_menu_item("File", _G, "load_file_index", load_file_list),
+  button_menu_item("Load", load_recording_slot_from_file),
+  button_menu_item("Cancel", close_popup),
+})
+
 -- GUI DECLARATION
 
 training_settings = {
@@ -2079,6 +2201,8 @@ function set_recording_state(_input, _state)
       recording_slots[training_settings.current_recording_slot] = _cropped_sequence
     end
 
+    save_training_data()
+
     swap_characters = false
   elseif current_recording_state == 4 then
     clear_input_sequence(dummy)
@@ -2190,91 +2314,6 @@ function update_recording(_input)
   previous_recording_state = current_recording_state
 end
 
-function clear_slot()
-  recording_slots[training_settings.current_recording_slot] = {}
-end
-
-function open_save_popup()
-  current_popup = save_recording_slot_popup
-  current_popup.selected_index = 1
-  save_file_name = string.gsub(dummy.char_str, "(.*)", string.upper).."_"
-end
-
-function open_load_popup()
-  current_popup = load_recording_slot_popup
-  current_popup.selected_index = 1
-
-  load_file_index = 1
-
-  local _cmd = "dir "..string.gsub(saved_recordings_path, "/", "\\")
-  local _f = io.popen(_cmd)
-  if _f == nil then
-    print(string.format("Error: Failed to execute command \"%s\"", _cmd))
-    return
-  end
-  local _str = _f:read("*all")
-  load_file_list = {}
-  for _file in string.gmatch(_str, "([%a%p]+\.json)") do
-    _file = _file:gsub("\.json", "")
-    table.insert(load_file_list, _file)
-  end
-  load_recording_slot_popup.entries[1].list = load_file_list
-end
-
-function close_popup()
-  current_popup = nil
-end
-
-function save_recording_slot_to_file()
-  if save_file_name == "" then
-    print(string.format("Error: Can't save to empty file name"))
-    return
-  end
-
-  local _path = string.format("%s%s.json",saved_recordings_path, save_file_name)
-  if not write_object_to_json_file(recording_slots[training_settings.current_recording_slot], _path) then
-    print(string.format("Error: Failed to save recording to \"%s\"", _path))
-  else
-    print(string.format("Saved slot %d to \"%s\"", training_settings.current_recording_slot, _path))
-  end
-
-  close_popup()
-end
-
-function load_recording_slot_from_file()
-  if #load_file_list == 0 or load_file_list[load_file_index] == nil then
-    print(string.format("Error: Can't load from empty file name"))
-    return
-  end
-
-  local _path = string.format("%s%s.json",saved_recordings_path, load_file_list[load_file_index])
-  local _recording = read_object_from_json_file(_path)
-  if not _recording then
-    print(string.format("Error: Failed to load recording from \"%s\"", _path))
-  else
-    recording_slots[training_settings.current_recording_slot] = _recording
-    print(string.format("Loaded \"%s\" to slot %d", _path, training_settings.current_recording_slot))
-  end
-  close_popup()
-end
-
-save_file_name = ""
-save_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
-{
-  textfield_menu_item("File Name", _G, "save_file_name", ""),
-  button_menu_item("Save", save_recording_slot_to_file),
-  button_menu_item("Cancel", close_popup),
-})
-
-load_file_list = {}
-load_file_index = 1
-load_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
-{
-  list_menu_item("File", _G, "load_file_index", load_file_list),
-  button_menu_item("Load", load_recording_slot_from_file),
-  button_menu_item("Cancel", close_popup),
-})
-
 -- PROGRAM
 
 function read_game_vars()
@@ -2346,7 +2385,12 @@ function read_player_vars(_player_obj)
 
   local _previous_remaining_freeze_frames = _player_obj.remaining_freeze_frames or 0
 
+  local _previous_char_str = _player_obj.char_str or ""
   _player_obj.char_str = characters[_player_obj.char_id]
+  if _player_obj == player_objects[training_settings.dummy_player] and _previous_char_str ~= _player_obj.char_str then
+    restore_recordings()
+  end
+
   _player_obj.is_attacking_ext = memory.readbyte(_player_obj.base + 0x429) > 0
   _player_obj.input_capacity = memory.readword(_player_obj.base + 0x46C)
   _player_obj.action = memory.readdword(_player_obj.base + 0xAC)
