@@ -3682,3 +3682,45 @@ frame_data_meta["ken"].moves["1214"] = { force_recording = true } -- SA 1
 frame_data_meta["ken"].moves["15b4"] = { force_recording = true } -- SA 2
 frame_data_meta["ken"].moves["1834"] = { force_recording = true } -- SA 3
 frame_data_meta["ken"].moves["1d24"] = { force_recording = true } -- SA 3
+
+-- ELENA
+frame_data_meta["elena"].moves["bde0"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["elena"].moves["bf88"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["elena"].moves["c1d8"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["elena"].moves["c440"] = { hits = {{ type = 2 }} } -- Cr Forward HK
+frame_data_meta["elena"].moves["63d4"] = { hits = {{ type = 2 }, { type = 1 }} } -- Taunt
+
+frame_data_meta["elena"].moves["6354"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["elena"].moves["ab98"] = { hits = {{ type = 3 }} } -- Forward MP
+frame_data_meta["elena"].moves["b430"] = { hits = {{ type = 3 }} } -- Forward MK
+
+frame_data_meta["elena"].moves["e370"] = { proxy = { id = "b560", offset = 0 }} -- Target HK
+frame_data_meta["elena"].moves["e068"] = { proxy = { id = "d798", offset = 0 }} -- Target Air MK
+frame_data_meta["elena"].moves["e1f8"] = { proxy = { id = "d448", offset = 6 }} -- Target Air HP
+
+frame_data_meta["elena"].moves["cba0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["elena"].moves["cda0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["elena"].moves["cef0"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["elena"].moves["d608"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["elena"].moves["d798"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["elena"].moves["d958"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- Air HK
+
+frame_data_meta["elena"].moves["c690"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["elena"].moves["c820"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["elena"].moves["c9e0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["elena"].moves["d0f8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["elena"].moves["d288"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["elena"].moves["d448"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["elena"].moves["094c"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash L
+frame_data_meta["elena"].moves["0cec"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash M
+frame_data_meta["elena"].moves["0eac"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash H
+frame_data_meta["elena"].moves["fde4"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash EX
+
+frame_data_meta["elena"].moves["83cc"] = { hits = {{ type = 2 }, { type = 2 }} } -- Scratch Wheel L
+frame_data_meta["elena"].moves["858c"] = { hits = {{ type = 2 }, { type = 2 }} } -- Scratch Wheel M
+frame_data_meta["elena"].moves["874c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }, { type = 2 }} } -- Scratch Wheel H
+frame_data_meta["elena"].moves["89fc"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }, { type = 2 }, { type = 1 }} } -- Scratch Wheel EX
+
+frame_data_meta["elena"].moves["4dc4"] = { force_recording = true, hits = {{ type = 1 }, { type = 1 }, { type = 2 }} } -- SA 2
+frame_data_meta["elena"].moves["5074"] = { force_recording = true, hits = {{ type = 1 }, { type = 2 }, { type = 1 }, { type = 2 }, { type = 2 }} } -- SA 2

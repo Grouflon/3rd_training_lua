@@ -56,6 +56,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - Random blocking mode won't stop blocking in the middle of a true blockstring
 - Added First Hit blocking mode
 - [Bugfix] Fixed dummy bricking when triggering a recording counter attack with nothing recorded
+- [Frame Data] Elena
 
 ### v0.5 (23/03/2020)
 - Auto refill life mode
