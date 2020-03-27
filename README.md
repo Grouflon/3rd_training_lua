@@ -27,11 +27,11 @@ You may need to rename zip files so they match exactly what the emulator expect 
 
 **Q: Emulator crash when I run lua script**
 
-A: Check video settings, you musn't use "Enhanced" bitter option.
+A: Check video settings, you musn't use "Enhanced" blitter option.
 
 **Q: UI looks weired and hitboxes are misplaced**
 
-A: Check video settings, you must use "Basic" bitter option with no scanlines if you want the UI to work properly.
+A: Check video settings, you must use "Basic" blitter option with no scanlines if you want the UI to work properly.
 
 **Q: Emulator doesn't run at all, there's a missing dll**
 
