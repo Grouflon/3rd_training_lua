@@ -2238,7 +2238,7 @@ function save_recording_slot_to_file()
     print(string.format("Saved slot %d to \"%s\"", training_settings.current_recording_slot, _path))
   end
 
-  close_save_popup()
+  close_popup()
 end
 
 function load_recording_slot_from_file()
@@ -2255,7 +2255,7 @@ function load_recording_slot_from_file()
     recording_slots[training_settings.current_recording_slot] = _recording
     print(string.format("Loaded \"%s\" to slot %d", _path, training_settings.current_recording_slot))
   end
-  close_save_popup()
+  close_popup()
 end
 
 save_file_name = ""
