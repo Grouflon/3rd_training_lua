@@ -9,6 +9,7 @@ print("- Enter training menu by pressing \"Start\" while in game")
 print("- Enter/exit recording mode by double tapping \"Coin\"")
 print("- In recording mode, press \"Coin\" again to start/stop recording")
 print("- In normal mode, press \"Coin\" to start/stop replay")
+print("")
 
 -- FBA-RR Scripting reference:
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
@@ -16,15 +17,15 @@ print("- In normal mode, press \"Coin\" to start/stop replay")
 
 json = require ("lua_libs/dkjson")
 
+
 -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 advanced_mode = false
 
 saved_path = "saved/"
 framedata_path = "data/framedata/"
+saved_recordings_path = "saved/recordings/"
 training_settings_file = "training_settings.json"
 frame_data_file_ext = "_framedata.json"
-
-
 
 -- json tools
 function read_object_from_json_file(_file_path)
@@ -774,7 +775,7 @@ function textfield_menu_item(_name, _object, _property_name, _default_value, _ma
 
   function _o:legend()
     if self.is_in_edition then
-      return "LP/Right: Next letter   MP/Left: Previous letter   LK: Leave edition"
+      return "LP/Right: Next   MP/Left: Previous   LK: Leave edition"
     else
       return "LP: Edit   MP: Reset to default"
     end
@@ -1032,7 +1033,9 @@ function button_menu_item(_name, _validate_function)
 
   function _o:validate()
     self.last_frame_validated = frame_number
-    self.validate_function()
+    if self.validate_function then
+      self.validate_function()
+    end
   end
 
   function _o:legend()
@@ -1040,6 +1043,17 @@ function button_menu_item(_name, _validate_function)
   end
 
   return _o
+end
+
+function make_popup(_left, _top, _right, _bottom, _entries)
+  local _p = {}
+  _p.left = _left
+  _p.top = _top
+  _p.right = _right
+  _p.bottom = _bottom
+  _p.entries = _entries
+
+  return _p
 end
 
 -- save/load
@@ -1949,6 +1963,8 @@ menu = {
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
       list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
       button_menu_item("Clear slot", clear_slot),
+      button_menu_item("Save slot to file", open_save_popup),
+      button_menu_item("Load slot from file", open_load_popup),
     }
   },
 }
@@ -2177,6 +2193,87 @@ end
 function clear_slot()
   recording_slots[training_settings.current_recording_slot] = {}
 end
+
+function open_save_popup()
+  current_popup = save_recording_slot_popup
+  current_popup.selected_index = 1
+  save_file_name = string.gsub(dummy.char_str, "(.*)", string.upper).."_"
+end
+
+function open_load_popup()
+  current_popup = load_recording_slot_popup
+  current_popup.selected_index = 1
+
+  load_file_index = 1
+
+  local _cmd = "dir "..string.gsub(saved_recordings_path, "/", "\\")
+  local _f = io.popen(_cmd)
+  if _f == nil then
+    print(string.format("Error: Failed to execute command \"%s\"", _cmd))
+    return
+  end
+  local _str = _f:read("*all")
+  load_file_list = {}
+  for _file in string.gmatch(_str, "([%a%p]+\.json)") do
+    _file = _file:gsub("\.json", "")
+    table.insert(load_file_list, _file)
+  end
+  load_recording_slot_popup.entries[1].list = load_file_list
+end
+
+function close_popup()
+  current_popup = nil
+end
+
+function save_recording_slot_to_file()
+  if save_file_name == "" then
+    print(string.format("Error: Can't save to empty file name"))
+    return
+  end
+
+  local _path = string.format("%s%s.json",saved_recordings_path, save_file_name)
+  if not write_object_to_json_file(recording_slots[training_settings.current_recording_slot], _path) then
+    print(string.format("Error: Failed to save recording to \"%s\"", _path))
+  else
+    print(string.format("Saved slot %d to \"%s\"", training_settings.current_recording_slot, _path))
+  end
+
+  close_save_popup()
+end
+
+function load_recording_slot_from_file()
+  if #load_file_list == 0 or load_file_list[load_file_index] == nil then
+    print(string.format("Error: Can't load from empty file name"))
+    return
+  end
+
+  local _path = string.format("%s%s.json",saved_recordings_path, load_file_list[load_file_index])
+  local _recording = read_object_from_json_file(_path)
+  if not _recording then
+    print(string.format("Error: Failed to load recording from \"%s\"", _path))
+  else
+    recording_slots[training_settings.current_recording_slot] = _recording
+    print(string.format("Loaded \"%s\" to slot %d", _path, training_settings.current_recording_slot))
+  end
+  close_save_popup()
+end
+
+save_file_name = ""
+save_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
+{
+  textfield_menu_item("File Name", _G, "save_file_name", ""),
+  button_menu_item("Save", save_recording_slot_to_file),
+  button_menu_item("Cancel", close_popup),
+})
+
+load_file_list = {}
+load_file_index = 1
+load_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
+{
+  list_menu_item("File", _G, "load_file_index", load_file_list),
+  button_menu_item("Load", load_recording_slot_from_file),
+  button_menu_item("Cancel", close_popup),
+})
 
 -- PROGRAM
 
@@ -2701,6 +2798,7 @@ is_menu_open = false
 main_menu_selected_index = 1
 is_main_menu_selected = true
 sub_menu_selected_index = 1
+current_popup = nil
 
 function on_gui()
 
@@ -2744,13 +2842,15 @@ function on_gui()
   if is_in_match then
     if P1.input.pressed.start or P2.input.pressed.start then
       is_menu_open = (not is_menu_open)
+      if current_popup ~= nil then
+        close_popup()
+      end
     end
   else
     is_menu_open = false
   end
 
   if is_menu_open then
-
     function check_input_down_autofire(_input, _autofire_rate, _autofire_time)
       _autofire_rate = _autofire_rate or 4
       _autofire_time = _autofire_time or 23
@@ -2762,28 +2862,35 @@ function on_gui()
       return false
     end
 
+    local _current_entry = menu[main_menu_selected_index].entries[sub_menu_selected_index]
+
+    if current_popup then
+      _current_entry = current_popup.entries[current_popup.selected_index]
+    end
     local _horizontal_autofire_rate = 4
     local _vertical_autofire_rate = 4
     if not is_main_menu_selected then
-      if menu[main_menu_selected_index].entries[sub_menu_selected_index].autofire_rate then
-        _horizontal_autofire_rate = menu[main_menu_selected_index].entries[sub_menu_selected_index].autofire_rate
+      if _current_entry.autofire_rate then
+        _horizontal_autofire_rate = _current_entry.autofire_rate
       end
     end
 
     function _sub_menu_down()
       sub_menu_selected_index = sub_menu_selected_index + 1
+      _current_entry = menu[main_menu_selected_index].entries[sub_menu_selected_index]
       if sub_menu_selected_index > #menu[main_menu_selected_index].entries then
         is_main_menu_selected = true
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled ~= nil and menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled() then
+      elseif _current_entry.is_disabled ~= nil and _current_entry.is_disabled() then
         _sub_menu_down()
       end
     end
 
     function _sub_menu_up()
       sub_menu_selected_index = sub_menu_selected_index - 1
+      _current_entry = menu[main_menu_selected_index].entries[sub_menu_selected_index]
       if sub_menu_selected_index == 0 then
         is_main_menu_selected = true
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled ~= nil and menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled() then
+      elseif _current_entry.is_disabled ~= nil and _current_entry.is_disabled() then
         _sub_menu_up()
       end
     end
@@ -2793,12 +2900,15 @@ function on_gui()
         is_main_menu_selected = false
         sub_menu_selected_index = 0
         _sub_menu_down()
-      else
-        if menu[main_menu_selected_index].entries[sub_menu_selected_index].down and menu[main_menu_selected_index].entries[sub_menu_selected_index]:down() then
-          save_training_data()
-        else
-          _sub_menu_down()
+      elseif _current_entry.down and _current_entry:down() then
+        save_training_data()
+      elseif current_popup then
+        current_popup.selected_index = current_popup.selected_index + 1
+        if current_popup.selected_index > #current_popup.entries then
+          current_popup.selected_index = 1
         end
+      else
+        _sub_menu_down()
       end
     end
 
@@ -2807,12 +2917,15 @@ function on_gui()
         is_main_menu_selected = false
         sub_menu_selected_index = #menu[main_menu_selected_index].entries + 1
         _sub_menu_up()
-      else
-        if menu[main_menu_selected_index].entries[sub_menu_selected_index].up and menu[main_menu_selected_index].entries[sub_menu_selected_index]:up() then
+      elseif _current_entry.up and _current_entry:up() then
           save_training_data()
-        else
-          _sub_menu_up()
+      elseif current_popup then
+        current_popup.selected_index = current_popup.selected_index - 1
+        if current_popup.selected_index == 0 then
+          current_popup.selected_index = #current_popup.entries
         end
+      else
+        _sub_menu_up()
       end
     end
 
@@ -2822,8 +2935,8 @@ function on_gui()
         if main_menu_selected_index == 0 then
           main_menu_selected_index = #menu
         end
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].left then
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:left()
+      elseif _current_entry.left then
+        _current_entry:left()
         save_training_data()
       end
     end
@@ -2834,38 +2947,40 @@ function on_gui()
         if main_menu_selected_index > #menu then
           main_menu_selected_index = 1
         end
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].right then
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:right()
+      elseif _current_entry.right then
+        _current_entry:right()
         save_training_data()
       end
     end
 
     if P1.input.pressed.LP or P2.input.pressed.LP then
       if is_main_menu_selected then
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].validate then
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:validate()
+      elseif _current_entry.validate then
+        _current_entry:validate()
         save_training_data()
       end
     end
 
     if P1.input.pressed.MP or P2.input.pressed.MP then
       if is_main_menu_selected then
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].reset then
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:reset()
+      elseif _current_entry.reset then
+        _current_entry:reset()
         save_training_data()
       end
     end
 
     if P1.input.pressed.LK or P2.input.pressed.LK then
       if is_main_menu_selected then
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].cancel then
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:cancel()
+      elseif _current_entry.cancel then
+        _current_entry:cancel()
         save_training_data()
       end
     end
 
     -- screen size 383,223
-    gui.box(23,40,360,180, 0x293139FF, 0x840000FF)
+    local _gui_box_bg_color = 0x293139FF
+    local _gui_box_outline_color = 0x840000FF
+    gui.box(23,40,360,180, _gui_box_bg_color, _gui_box_outline_color)
     --gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
 
     local _bar_x = 41
@@ -2891,7 +3006,7 @@ function on_gui()
     local _draw_index = 0
     for i = 1, #menu[main_menu_selected_index].entries do
       if menu[main_menu_selected_index].entries[i].is_disabled == nil or not menu[main_menu_selected_index].entries[i].is_disabled() then
-        menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * _draw_index, not is_main_menu_selected and sub_menu_selected_index == i)
+        menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * _draw_index, not is_main_menu_selected and not current_popup and sub_menu_selected_index == i)
         _draw_index = _draw_index + 1
       end
     end
@@ -2905,6 +3020,26 @@ function on_gui()
     if not is_main_menu_selected then
       if menu[main_menu_selected_index].entries[sub_menu_selected_index].legend then
         gui.text(33, 168, menu[main_menu_selected_index].entries[sub_menu_selected_index]:legend(), text_disabled_color, text_default_border_color)
+      end
+    end
+
+    -- popup
+    if current_popup then
+      gui.box(current_popup.left, current_popup.top, current_popup.right, current_popup.bottom, _gui_box_bg_color, _gui_box_outline_color)
+
+      _menu_x = current_popup.left + 10
+      _menu_y = current_popup.top + 9
+      _draw_index = 0
+
+      for i = 1, #current_popup.entries do
+        if current_popup.entries[i].is_disabled == nil or not current_popup.entries[i].is_disabled() then
+          current_popup.entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * _draw_index, current_popup.selected_index == i)
+          _draw_index = _draw_index + 1
+        end
+      end
+
+      if current_popup.entries[current_popup.selected_index].legend then
+        gui.text(_menu_x, current_popup.bottom - 12, current_popup.entries[current_popup.selected_index]:legend(), text_disabled_color, text_default_border_color)
       end
     end
 
