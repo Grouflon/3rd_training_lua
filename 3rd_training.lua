@@ -3785,3 +3785,18 @@ frame_data_meta["ryu"].moves["7edc"] = { movement_type = 2 } -- Air tatsu H
 
 frame_data_meta["ryu"].moves["894c"] = { force_recording = true } -- SA2
 frame_data_meta["ryu"].moves["8be4"] = { force_recording = true } -- SA2
+
+-- REMY
+frame_data_meta["remy"].moves["ab20"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["remy"].moves["abf0"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["remy"].moves["acc0"] = { hits = {{ type = 2 }, { type = 2 }} } -- Cr HK
+
+frame_data_meta["remy"].moves["ff48"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["remy"].moves["a4b0"] = { hits = {{ type = 3 }} } -- Forward MP
+
+frame_data_meta["remy"].moves["b270"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["remy"].moves["b370"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["remy"].moves["b450"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["remy"].moves["af40"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["remy"].moves["b040"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["remy"].moves["b140"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
