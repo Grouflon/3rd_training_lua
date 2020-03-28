@@ -3757,3 +3757,31 @@ frame_data_meta["q"].moves["5a2c"] = { hits = {{ type = 2 }, { type = 2 }} } -- 
 
 frame_data_meta["q"].moves["8304"] = { hits = {{ type = 2 }} } -- SA1
 frame_data_meta["q"].moves["8464"] = { force_recording = true } -- SA2
+
+-- RYU
+frame_data_meta["ryu"].moves["2304"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["ryu"].moves["23a4"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["ryu"].moves["2474"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["ryu"].moves["80dc"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["ryu"].moves["1984"] = { hits = {{ type = 3 }, { type = 3 }} } -- Forward MP
+
+frame_data_meta["ryu"].moves["27e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["ryu"].moves["28f4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["ryu"].moves["29c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["ryu"].moves["2d64"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["ryu"].moves["2e44"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["ryu"].moves["2f24"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["ryu"].moves["2564"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["ryu"].moves["2644"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["ryu"].moves["2724"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["ryu"].moves["2aa4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["ryu"].moves["2b84"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["ryu"].moves["2c84"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["ryu"].moves["7cbc"] = { movement_type = 2 } -- Air tatsu L
+frame_data_meta["ryu"].moves["7dfc"] = { movement_type = 2 } -- Air tatsu M
+frame_data_meta["ryu"].moves["7edc"] = { movement_type = 2 } -- Air tatsu H
+
+frame_data_meta["ryu"].moves["894c"] = { force_recording = true } -- SA2
+frame_data_meta["ryu"].moves["8be4"] = { force_recording = true } -- SA2
