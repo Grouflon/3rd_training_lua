@@ -95,7 +95,8 @@ function make_player_object(_id, _base, _prefix)
       block_string = false,
     },
     counter = {
-      ref_time = -1
+      attack_frame = -1,
+      ref_time = -1,
     },
     throw = {},
     max_meter_gauge = 0,
@@ -500,16 +501,21 @@ frame_data_movement_type = {
   "velocity"
 }
 
-recording_slots_names = {
-  "slot 1",
-  "slot 2",
-  "slot 3",
-  "slot 4",
-  "slot 5",
-  "slot 6",
-  "slot 7",
-  "slot 8",
-}
+function make_recording_slot()
+  return {
+    inputs = {},
+    delay = 0,
+  }
+end
+recording_slots = {}
+for _i = 1, 8 do
+  table.insert(recording_slots, make_recording_slot())
+end
+
+recording_slots_names = {}
+for _i = 1, #recording_slots do
+  table.insert(recording_slots_names, "slot ".._i)
+end
 
 slot_replay_mode = {
   "normal",
@@ -1084,7 +1090,7 @@ function backup_recordings()
     for _key, _value in ipairs(characters) do
       training_settings.recordings[_value] = {}
       for _i = 1, #recording_slots do
-        table.insert(training_settings.recordings[_value], {})
+        table.insert(training_settings.recordings[_value], make_recording_slot())
       end
     end
   end
@@ -1103,7 +1109,7 @@ function restore_recordings()
     end
     local _missing_slots = _recording_count - #recording_slots
     for _i = 1, _missing_slots do
-      table.insert(recording_slots, {})
+      table.insert(recording_slots, make_recording_slot())
     end
   end
 end
@@ -1861,11 +1867,13 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       end
       queue_input_sequence(_defender, _defender.counter.sequence)
       _defender.counter.sequence = nil
+      _defender.counter.attack_frame = -1
     end
-  elseif button_gesture[_button] == "recording" and _defender.counter.attack_frame == (frame_number + 1) then
+  elseif button_gesture[_button] == "recording" and _defender.counter.attack_frame > 0 and _defender.counter.attack_frame <= (frame_number + 1) - recording_slots[training_settings.current_recording_slot].delay then
     if _debug then
       print(frame_number.." - queue recording")
     end
+    _defender.counter.attack_frame = -1
     set_recording_state(_input, 1)
     set_recording_state(_input, 4)
   end
@@ -1920,7 +1928,7 @@ end
 -- RECORDING POPUS
 
 function clear_slot()
-  recording_slots[training_settings.current_recording_slot] = {}
+  recording_slots[training_settings.current_recording_slot].inputs = {}
   save_training_data()
 end
 
@@ -1962,7 +1970,7 @@ function save_recording_slot_to_file()
   end
 
   local _path = string.format("%s%s.json",saved_recordings_path, save_file_name)
-  if not write_object_to_json_file(recording_slots[training_settings.current_recording_slot], _path) then
+  if not write_object_to_json_file(recording_slots[training_settings.current_recording_slot].inputs, _path) then
     print(string.format("Error: Failed to save recording to \"%s\"", _path))
   else
     print(string.format("Saved slot %d to \"%s\"", training_settings.current_recording_slot, _path))
@@ -1982,7 +1990,7 @@ function load_recording_slot_from_file()
   if not _recording then
     print(string.format("Error: Failed to load recording from \"%s\"", _path))
   else
-    recording_slots[training_settings.current_recording_slot] = _recording
+    recording_slots[training_settings.current_recording_slot].inputs = _recording
     print(string.format("Loaded \"%s\" to slot %d", _path, training_settings.current_recording_slot))
   end
   save_training_data()
@@ -2048,6 +2056,8 @@ p1_meter_gauge_item.is_disabled = function()
 end
 p2_meter_gauge_item.is_disabled = p1_meter_gauge_item.is_disabled
 
+counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -20, 20, false, 0)
+
 menu = {
   {
     name = "Dummy Settings",
@@ -2084,6 +2094,7 @@ menu = {
       checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
       list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
+      counter_attack_delay_item,
       button_menu_item("Clear slot", clear_slot),
       button_menu_item("Save slot to file", open_save_popup),
       button_menu_item("Load slot from file", open_load_popup),
@@ -2117,16 +2128,6 @@ recording_states =
   "recording",
   "playing",
 }
-recording_slots = {
-  {},
-  {},
-  {},
-  {},
-  {},
-  {},
-  {},
-  {},
-}
 
 function stick_input_to_sequence_input(_player_obj, _input)
   if _input == "Up" then return "up" end
@@ -2159,12 +2160,12 @@ end
 function can_play_recording()
   if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
     for _i, _value in ipairs(recording_slots) do
-      if #_value > 0 then
+      if #_value.inputs > 0 then
         return true
       end
     end
   else
-    return recording_slots[training_settings.current_recording_slot] ~= nil
+    return recording_slots[training_settings.current_recording_slot].inputs ~= nil and #recording_slots[training_settings.current_recording_slot].inputs > 0
   end
   return false
 end
@@ -2183,7 +2184,7 @@ function set_recording_state(_input, _state)
     if training_settings.auto_crop_recording then
       local _first_input = 1
       local _last_input = 1
-      for _i, _value in ipairs(recording_slots[training_settings.current_recording_slot]) do
+      for _i, _value in ipairs(recording_slots[training_settings.current_recording_slot].inputs) do
         if #_value > 0 then
           _last_input = _i
         elseif _first_input == _i then
@@ -2192,13 +2193,13 @@ function set_recording_state(_input, _state)
       end
 
       -- cropping end of animation is actually not a good idea if we want to repeat sequences
-      _last_input = #recording_slots[training_settings.current_recording_slot]
+      _last_input = #recording_slots[training_settings.current_recording_slot].inputs
 
       local _cropped_sequence = {}
       for _i = _first_input, _last_input do
-        table.insert(_cropped_sequence, recording_slots[training_settings.current_recording_slot][_i])
+        table.insert(_cropped_sequence, recording_slots[training_settings.current_recording_slot].inputs[_i])
       end
-      recording_slots[training_settings.current_recording_slot] = _cropped_sequence
+      recording_slots[training_settings.current_recording_slot].inputs = _cropped_sequence
     end
 
     save_training_data()
@@ -2218,23 +2219,23 @@ function set_recording_state(_input, _state)
   elseif current_recording_state == 3 then
     swap_characters = true
     make_input_empty(_input)
-    recording_slots[training_settings.current_recording_slot] = {}
+    recording_slots[training_settings.current_recording_slot].inputs = {}
   elseif current_recording_state == 4 then
     if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
       -- random slot selection
       local _recorded_slots = {}
       for _i, _value in ipairs(recording_slots) do
-        if #_value > 0 then
+        if #_value.inputs > 0 then
           table.insert(_recorded_slots, _i)
         end
       end
       if #_recorded_slots > 0 then
         local _random_slot = math.ceil(math.random(#_recorded_slots))
-        queue_input_sequence(dummy, recording_slots[_recorded_slots[_random_slot]])
+        queue_input_sequence(dummy, recording_slots[_recorded_slots[_random_slot]].inputs)
       end
     else
       -- current slot selection
-      queue_input_sequence(dummy, recording_slots[training_settings.current_recording_slot])
+      queue_input_sequence(dummy, recording_slots[training_settings.current_recording_slot].inputs)
     end
   end
 end
@@ -2300,7 +2301,7 @@ function update_recording(_input)
         end
       end
 
-      table.insert(recording_slots[training_settings.current_recording_slot], _frame)
+      table.insert(recording_slots[training_settings.current_recording_slot].inputs, _frame)
     elseif current_recording_state == 4 then
       if dummy.pending_input_sequence == nil then
         set_recording_state(_input, 1)
@@ -2781,6 +2782,8 @@ function before_frame()
     debug_settings.debug_move = ""
   end
 
+  counter_attack_delay_item.object = recording_slots[training_settings.current_recording_slot]
+
   -- game
   read_game_vars()
   write_game_vars()
@@ -2859,8 +2862,8 @@ function on_gui()
   if is_in_match and current_recording_state ~= 1 then
     local _y = 35
     local _current_recording_size = 0
-    if (recording_slots[training_settings.current_recording_slot]) then
-      _current_recording_size = #recording_slots[training_settings.current_recording_slot]
+    if (recording_slots[training_settings.current_recording_slot].inputs) then
+      _current_recording_size = #recording_slots[training_settings.current_recording_slot].inputs
     end
 
     if current_recording_state == 2 then
@@ -3057,7 +3060,7 @@ function on_gui()
 
     -- recording slots special display
     if main_menu_selected_index == 3 then
-      local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot])
+      local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot].inputs)
       gui.text(106,83, _t, text_disabled_color, text_default_border_color)
     end
 

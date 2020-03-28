@@ -53,6 +53,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 ### v0.6 ()
 - Can save/load recorded sequences to/from files
 - Keep recordings between sessions (saved per character inside training_settings.json)
+- Added counter-attack delay to recording slots
 - Random blocking mode won't stop blocking in the middle of a true blockstring
 - Added First Hit blocking mode
 - [Bugfix] Fixed dummy bricking when triggering a recording counter attack with nothing recorded
