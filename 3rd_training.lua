@@ -3800,3 +3800,28 @@ frame_data_meta["remy"].moves["b450"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["remy"].moves["af40"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
 frame_data_meta["remy"].moves["b040"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
 frame_data_meta["remy"].moves["b140"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+-- TWELVE
+frame_data_meta["twelve"].moves["462c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["twelve"].moves["46fc"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["twelve"].moves["480c"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["twelve"].moves["e1b4"] = { hits = {{ type = 3 }} } -- UOH
+
+frame_data_meta["twelve"].moves["4ccc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["twelve"].moves["4d9c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["twelve"].moves["4e9c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["twelve"].moves["522c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["twelve"].moves["52fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["twelve"].moves["53fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["twelve"].moves["4a2c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["twelve"].moves["4aec"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["twelve"].moves["4bac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["twelve"].moves["4f8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["twelve"].moves["504c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["twelve"].moves["510c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["twelve"].moves["a9dc"] = { hits = {{ type = 3 }} } -- Air QCB LK
+frame_data_meta["twelve"].moves["ad34"] = { hits = {{ type = 3 }} } -- Air QCB MK
+frame_data_meta["twelve"].moves["af94"] = { hits = {{ type = 3 }} } -- Air QCB HK
+frame_data_meta["twelve"].moves["b1f4"] = { hits = {{ type = 3 }} } -- Air QCB EX
