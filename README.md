@@ -58,6 +58,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - Added First Hit blocking mode
 - [Bugfix] Fixed dummy bricking when triggering a recording counter attack with nothing recorded
 - [Frame Data] Elena
+- [Frame Data] Q
 
 ### v0.5 (23/03/2020)
 - Auto refill life mode

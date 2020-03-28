@@ -3727,3 +3727,33 @@ frame_data_meta["elena"].moves["89fc"] = { hits = {{ type = 2 }, { type = 2 }, {
 
 frame_data_meta["elena"].moves["4dc4"] = { force_recording = true, hits = {{ type = 1 }, { type = 1 }, { type = 2 }} } -- SA 2
 frame_data_meta["elena"].moves["5074"] = { force_recording = true, hits = {{ type = 1 }, { type = 2 }, { type = 1 }, { type = 2 }, { type = 2 }} } -- SA 2
+
+-- Q
+frame_data_meta["q"].moves["e684"] = { hits = {{ type = 2 }} } -- Cr HP
+frame_data_meta["q"].moves["e7e4"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["q"].moves["e8b4"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["q"].moves["ea14"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["q"].moves["9074"] = { hits = {{ type = 3 }} } -- UOH
+
+frame_data_meta["q"].moves["eea4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["q"].moves["ef94"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["q"].moves["f074"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["q"].moves["ec04"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["q"].moves["eca4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["q"].moves["eda4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["q"].moves["f194"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["q"].moves["f234"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["q"].moves["f334"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["q"].moves["5cdc"] = { hits = {{ type = 3 }} } -- OH Dash punch L
+frame_data_meta["q"].moves["5f44"] = { hits = {{ type = 3 }} } -- OH Dash punch M
+frame_data_meta["q"].moves["61ac"] = { hits = {{ type = 3 }} } -- OH Dash punch H
+
+frame_data_meta["q"].moves["518c"] = { hits = {{ type = 2 }} } -- Low Dash punch L
+frame_data_meta["q"].moves["5454"] = { hits = {{ type = 2 }} } -- Low Dash punch M
+frame_data_meta["q"].moves["5734"] = { hits = {{ type = 2 }} } -- Low Dash punch H
+frame_data_meta["q"].moves["5a2c"] = { hits = {{ type = 2 }, { type = 2 }} } -- Low Dash punch EX
+
+frame_data_meta["q"].moves["8304"] = { hits = {{ type = 2 }} } -- SA1
+frame_data_meta["q"].moves["8464"] = { force_recording = true } -- SA2
