@@ -60,6 +60,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - [Frame Data] Ryu
 - [Frame Data] Remy
 - [Frame Data] Twelve
+- [Frame Data] Chun-Li
 
 ### v0.5 (23/03/2020)
 - Auto refill life mode

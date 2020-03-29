@@ -3905,3 +3905,31 @@ frame_data_meta["twelve"].moves["a9dc"] = { hits = {{ type = 3 }} } -- Air QCB L
 frame_data_meta["twelve"].moves["ad34"] = { hits = {{ type = 3 }} } -- Air QCB MK
 frame_data_meta["twelve"].moves["af94"] = { hits = {{ type = 3 }} } -- Air QCB HK
 frame_data_meta["twelve"].moves["b1f4"] = { hits = {{ type = 3 }} } -- Air QCB EX
+
+-- CHUNLI
+frame_data_meta["chunli"].moves["cac4"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["chunli"].moves["cbb4"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["chunli"].moves["cce4"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["chunli"].moves["c804"] = { hits = {{ type = 2 }} } -- Cr MP
+
+frame_data_meta["chunli"].moves["6a3c"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["chunli"].moves["ce8c"] = { hits = {{ type = 3 }} } -- Cr Forward HK
+
+frame_data_meta["chunli"].moves["d38c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["chunli"].moves["d49c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["chunli"].moves["d5ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["chunli"].moves["dbbc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["chunli"].moves["dc5c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["chunli"].moves["debc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["chunli"].moves["cfdc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["chunli"].moves["d0ec"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["chunli"].moves["d1fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["chunli"].moves["d68c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["chunli"].moves["d72c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["chunli"].moves["d7dc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["chunli"].moves["dd4c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air Down MK
+
+frame_data_meta["chunli"].moves["6aec"] = { hits = {{ type = 3 }} } -- HCB LK
+frame_data_meta["chunli"].moves["6e5c"] = { hits = {{ type = 3 }} } -- HCB MK
+frame_data_meta["chunli"].moves["71cc"] = { hits = {{ type = 3 }} } -- HCB HK
+frame_data_meta["chunli"].moves["753c"] = { hits = {{ type = 3 }} } -- HCB EXK
