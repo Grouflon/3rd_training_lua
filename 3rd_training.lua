@@ -2087,6 +2087,8 @@ training_settings = {
   current_recording_slot = 1,
   replay_mode = 1,
   music_volume = 10,
+  life_refill_delay = 20,
+  meter_refill_delay = 20,
 }
 
 debug_settings = {
@@ -2096,13 +2098,20 @@ debug_settings = {
   debug_move = "",
 }
 
+life_refill_delay_item = integer_menu_item("Life refill delay", training_settings, "life_refill_delay", 1, 100, false, 20)
+life_refill_delay_item.is_disabled = function()
+  return training_settings.life_mode ~= 2
+end
+
 p1_meter_gauge_item = meter_gauge_menu_item("P1 meter", training_settings, "p1_meter", player_objects[1])
 p2_meter_gauge_item = meter_gauge_menu_item("P2 meter", training_settings, "p2_meter", player_objects[2])
+meter_refill_delay_item = integer_menu_item("Meter refill delay", training_settings, "meter_refill_delay", 1, 100, false, 20)
 
 p1_meter_gauge_item.is_disabled = function()
   return training_settings.meter_mode ~= 2
 end
 p2_meter_gauge_item.is_disabled = p1_meter_gauge_item.is_disabled
+meter_refill_delay_item.is_disabled = p1_meter_gauge_item.is_disabled
 
 counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
 counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -40, 40, false, 0)
@@ -2126,10 +2135,12 @@ menu = {
     entries = {
       checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
       list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
+      life_refill_delay_item,
       checkbox_menu_item("Disable Stun", training_settings, "no_stun"),
       list_menu_item("Meter Refill Mode", training_settings, "meter_mode", meter_mode),
       p1_meter_gauge_item,
       p2_meter_gauge_item,
+      meter_refill_delay_item,
       checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
       checkbox_menu_item("Display Input", training_settings, "display_input"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
@@ -2772,7 +2783,7 @@ function write_player_vars(_player_obj)
   if is_in_match and not is_menu_open then
     local _life = memory.readbyte(_player_obj.base + 0x9F)
     if training_settings.life_mode == 2 then
-      if _player_obj.is_idle and _player_obj.idle_time > 20 then
+      if _player_obj.is_idle and _player_obj.idle_time > training_settings.life_refill_delay then
         local _refill_rate = 6
         _life = math.min(_life + _refill_rate, 160)
       end
@@ -2790,7 +2801,7 @@ function write_player_vars(_player_obj)
         memory.writebyte(_addr, _player_obj.max_meter_count)
       end
     elseif training_settings.meter_mode == 2 then
-      if _player_obj.is_idle and _player_obj.idle_time > 20 then
+      if _player_obj.is_idle and _player_obj.idle_time > training_settings.meter_refill_delay then
         local _meter = memory.readbyte(_player_obj.gauge_addr) + _player_obj.max_meter_gauge * memory.readbyte(_player_obj.meter_addr[1])
         if _meter > _wanted_meter then
           _meter = _meter - 6
@@ -3092,11 +3103,15 @@ function on_gui()
     -- screen size 383,223
     local _gui_box_bg_color = 0x293139FF
     local _gui_box_outline_color = 0x840000FF
-    gui.box(23,40,360,180, _gui_box_bg_color, _gui_box_outline_color)
+    local _menu_box_left = 23
+    local _menu_box_top = 20
+    local _menu_box_right = 360
+    local _menu_box_bottom = 180
+    gui.box(_menu_box_left, _menu_box_top, _menu_box_right, _menu_box_bottom, _gui_box_bg_color, _gui_box_outline_color)
     --gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
 
-    local _bar_x = 41
-    local _bar_y = 46
+    local _bar_x = _menu_box_left + 18
+    local _bar_y = _menu_box_top + 6
     for i = 1, #menu do
       local _offset = 0
       local _c = text_disabled_color
@@ -3112,8 +3127,8 @@ function on_gui()
     end
 
 
-    local _menu_x = 33
-    local _menu_y = 63
+    local _menu_x = _menu_box_left + 10
+    local _menu_y = _menu_box_top + 23
     local _menu_y_interval = 10
     local _draw_index = 0
     for i = 1, #menu[main_menu_selected_index].entries do
@@ -3126,12 +3141,12 @@ function on_gui()
     -- recording slots special display
     if main_menu_selected_index == 3 then
       local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot].inputs)
-      gui.text(106,83, _t, text_disabled_color, text_default_border_color)
+      gui.text(_menu_box_left + 83, _menu_y + 2 * _menu_y_interval, _t, text_disabled_color, text_default_border_color)
     end
 
     if not is_main_menu_selected then
       if menu[main_menu_selected_index].entries[sub_menu_selected_index].legend then
-        gui.text(33, 168, menu[main_menu_selected_index].entries[sub_menu_selected_index]:legend(), text_disabled_color, text_default_border_color)
+        gui.text(_menu_x, _menu_box_bottom - 12, menu[main_menu_selected_index].entries[sub_menu_selected_index]:legend(), text_disabled_color, text_default_border_color)
       end
     end
 

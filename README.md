@@ -10,7 +10,6 @@ The right version of FBA-RR can be downloaded [here](http://tasvideos.org/Emulat
 - Can save/load recorded sequences to/from files
 
 ## How to use
-
 * Download emulator from [here](http://tasvideos.org/EmulatorResources/Fbarr.html) and find the proper roms
 * Download script from [here](https://github.com/Grouflon/3rd_training_lua/archive/master.zip) or clone repository
 * Extract script anywhere on your computer
@@ -19,7 +18,6 @@ The right version of FBA-RR can be downloaded [here](http://tasvideos.org/Emulat
 * Follow instructions from Output Console
 
 ## Troubleshooting
-
 **Q: Missing rom, zip file not found**
 
 A: Make sure you have the proper roms. You must have at least 2 roms: _sfiii3.zip_ and _sfiii3a.zip_. sfiii3 is the japanese version and the zip contains _sfiii3_japan_nocd.29f400.u2_. sfiiia is the american version and contains _sfiii3_usa.29f400.u2_.
@@ -49,13 +47,13 @@ This training mode is still in development and you may encounter bugs or missing
 If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
 
 ## Changelog
-
 ### v0.6 ()
 - Can save/load recorded sequences to/from files
 - Keep recordings between sessions (saved per character inside training_settings.json)
 - Added counter-attack delay and maximum random deviation to recording slots
 - Random blocking mode won't stop blocking in the middle of a true blockstring
 - Added First Hit blocking mode
+- Added refill delay for life and meter into training settings
 - [Bugfix] Fixed dummy bricking when triggering a recording counter attack with nothing recorded
 - [Frame Data] Elena
 - [Frame Data] Q
