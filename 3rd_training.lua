@@ -4021,3 +4021,32 @@ frame_data_meta["dudley"].moves["5764"] = { hits = {{ type = 3 }}, movement_type
 
 frame_data_meta["dudley"].moves["656c"] = { proxy = { id = "3fd4", offset = 0 } } -- Target MK
 frame_data_meta["dudley"].moves["675c"] = { proxy = { id = "3914", offset = 0 } } -- Target MP
+
+-- YANG
+frame_data_meta["yang"].moves["d45c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["yang"].moves["d52c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["yang"].moves["d6a4"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["yang"].moves["d1c4"] = { hits = {{ type = 2 }} } -- Cr MP
+
+frame_data_meta["yang"].moves["dd18"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["yang"].moves["caa4"] = { hits = {{ type = 3 }} } -- Forward MK
+
+frame_data_meta["yang"].moves["f50c"] = { force_recording = true } -- Target HK
+frame_data_meta["yang"].moves["ef0c"] = { proxy = { id = "c4c4", offset = 0 } } -- Target HP
+frame_data_meta["yang"].moves["f0fc"] = { force_recording = true } -- Target Back HP
+
+frame_data_meta["yang"].moves["dbfc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["yang"].moves["dd3c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["yang"].moves["de8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["yang"].moves["e25c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["yang"].moves["e44c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["yang"].moves["e65c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["yang"].moves["d8ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["yang"].moves["d99c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["yang"].moves["da8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["yang"].moves["df8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["yang"].moves["e08c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["yang"].moves["e17c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["yang"].moves["e39c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive L
+frame_data_meta["yang"].moves["e5ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
+frame_data_meta["yang"].moves["e75c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
