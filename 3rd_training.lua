@@ -3933,3 +3933,34 @@ frame_data_meta["chunli"].moves["6aec"] = { hits = {{ type = 3 }} } -- HCB LK
 frame_data_meta["chunli"].moves["6e5c"] = { hits = {{ type = 3 }} } -- HCB MK
 frame_data_meta["chunli"].moves["71cc"] = { hits = {{ type = 3 }} } -- HCB HK
 frame_data_meta["chunli"].moves["753c"] = { hits = {{ type = 3 }} } -- HCB EXK
+
+-- SEAN
+frame_data_meta["sean"].moves["ca3c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["sean"].moves["cadc"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["sean"].moves["cbac"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["sean"].moves["1ef0"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF LP
+frame_data_meta["sean"].moves["2060"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF MP
+frame_data_meta["sean"].moves["2130"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF HP
+frame_data_meta["sean"].moves["2200"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF EXP
+
+frame_data_meta["sean"].moves["dad4"] = { force_recording = true } -- Target HK
+
+frame_data_meta["sean"].moves["3e50"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["sean"].moves["c25c"] = { hits = {{ type = 3 }, { type = 3 }} } -- Forward HP
+frame_data_meta["sean"].moves["dc7c"] = { proxy = { id = "c25c", offset = 0 } } -- Target Forward HP
+
+frame_data_meta["sean"].moves["28c0"] = { hits = {{ type = 3 }} } -- QCF K
+frame_data_meta["sean"].moves["2a10"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }} } -- QCF EXK
+
+frame_data_meta["sean"].moves["cf1c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["sean"].moves["d02c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["sean"].moves["d0fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["sean"].moves["d47c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["sean"].moves["d55c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["sean"].moves["d63c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["sean"].moves["cc9c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["sean"].moves["cd7c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["sean"].moves["ce5c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["sean"].moves["d1dc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["sean"].moves["d2bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["sean"].moves["d39c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP

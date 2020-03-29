@@ -61,6 +61,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - [Frame Data] Remy
 - [Frame Data] Twelve
 - [Frame Data] Chun-Li
+- [Frame Data] Sean
 
 ### v0.5 (23/03/2020)
 - Auto refill life mode
