@@ -1079,13 +1079,15 @@ function load_training_data()
   end
 
   -- update old versions data
-  for _key, _value in pairs(_training_settings.recordings) do
-    for _i, _slot in ipairs(_value) do
-      if _value[_i].inputs == nil then
-        _value[_i] = make_recording_slot()
-      else
-        _slot.delay = _slot.delay or 0
-        _slot.random_deviation = _slot.random_deviation or 0
+  if _training_settings.recordings then
+    for _key, _value in pairs(_training_settings.recordings) do
+      for _i, _slot in ipairs(_value) do
+        if _value[_i].inputs == nil then
+          _value[_i] = make_recording_slot()
+        else
+          _slot.delay = _slot.delay or 0
+          _slot.random_deviation = _slot.random_deviation or 0
+        end
       end
     end
   end
