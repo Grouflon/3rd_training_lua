@@ -97,6 +97,7 @@ function make_player_object(_id, _base, _prefix)
     counter = {
       attack_frame = -1,
       ref_time = -1,
+      recording_slot = -1,
     },
     throw = {},
     max_meter_gauge = 0,
@@ -505,6 +506,7 @@ function make_recording_slot()
   return {
     inputs = {},
     delay = 0,
+    random_deviation = 0,
   }
 end
 recording_slots = {}
@@ -1074,6 +1076,18 @@ function load_training_data()
   local _training_settings = read_object_from_json_file(saved_path..training_settings_file)
   if _training_settings == nil then
     _training_settings = {}
+  end
+
+  -- update old versions data
+  for _key, _value in pairs(_training_settings.recordings) do
+    for _i, _slot in ipairs(_value) do
+      if _value[_i].inputs == nil then
+        _value[_i] = make_recording_slot()
+      else
+        _slot.delay = _slot.delay or 0
+        _slot.random_deviation = _slot.random_deviation or 0
+      end
+    end
   end
 
   for _key, _value in pairs(_training_settings) do
@@ -1820,6 +1834,28 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
   if _stick == 1 and _button == 1 then return end
   if current_recording_state ~= 1 then return end
 
+  function handle_recording()
+    if button_gesture[_button] == "recording" then
+      local _slot_index = training_settings.current_recording_slot
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+        _slot_index = find_random_recording_slot()
+      end
+      _defender.counter.recording_slot = _slot_index
+
+      local _delay = recording_slots[_defender.counter.recording_slot].delay or 0
+      local _random_deviation = recording_slots[_defender.counter.recording_slot].random_deviation or 0
+      if _random_deviation <= 0 then
+        _random_deviation = math.ceil(math.random(_random_deviation - 1, 0))
+      else
+        _random_deviation = math.floor(math.random(0, _random_deviation + 1))
+      end
+      if _debug then
+        print(string.format("frame offset: %d", _delay + _random_deviation))
+      end
+      _defender.counter.attack_frame = _defender.counter.attack_frame + _delay + _random_deviation
+    end
+  end
+
   if _defender.has_just_parried then
     if _debug then
       print(frame_number.." - init ca (parry)")
@@ -1827,6 +1863,8 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     _defender.counter.attack_frame = frame_number + 15
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
+    handle_recording()
+
   elseif _attacker.has_just_hit or _attacker.has_just_been_blocked then
     if _debug then
       print(frame_number.." - init ca (hit/block)")
@@ -1835,6 +1873,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     clear_input_sequence(_defender)
     _defender.counter.attack_frame = -1
     _defender.counter.sequence = nil
+    _defender.counter.recording_slot = -1
   elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
     if _debug then
       print(frame_number.." - init ca (wake up)")
@@ -1842,6 +1881,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     _defender.counter.attack_frame = frame_number + _defender.wake_up_time
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
+    handle_recording()
   end
 
   if not _defender.counter.sequence then
@@ -1852,6 +1892,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       _defender.counter.attack_frame = frame_number + _defender.recovery_time + 2
       _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
       _defender.counter.ref_time = -1
+      handle_recording()
     end
   end
 
@@ -1869,13 +1910,20 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       _defender.counter.sequence = nil
       _defender.counter.attack_frame = -1
     end
-  elseif button_gesture[_button] == "recording" and _defender.counter.attack_frame > 0 and _defender.counter.attack_frame <= (frame_number + 1) - recording_slots[training_settings.current_recording_slot].delay then
-    if _debug then
-      print(frame_number.." - queue recording")
+  elseif button_gesture[_button] == "recording" and _defender.counter.recording_slot > 0 then
+    if _defender.counter.attack_frame <= (frame_number + 1) then
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+        override_replay_slot = _defender.counter.recording_slot
+      end
+      if _debug then
+        print(frame_number.." - queue recording")
+      end
+      _defender.counter.attack_frame = -1
+      _defender.counter.recording_slot = -1
+      set_recording_state(_input, 1)
+      set_recording_state(_input, 4)
+      override_replay_slot = -1
     end
-    _defender.counter.attack_frame = -1
-    set_recording_state(_input, 1)
-    set_recording_state(_input, 4)
   end
 end
 
@@ -2056,7 +2104,8 @@ p1_meter_gauge_item.is_disabled = function()
 end
 p2_meter_gauge_item.is_disabled = p1_meter_gauge_item.is_disabled
 
-counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -20, 20, false, 0)
+counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
+counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -40, 40, false, 0)
 
 menu = {
   {
@@ -2095,6 +2144,7 @@ menu = {
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
       list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
       counter_attack_delay_item,
+      counter_attack_random_deviation_item,
       button_menu_item("Clear slot", clear_slot),
       button_menu_item("Save slot to file", open_save_popup),
       button_menu_item("Load slot from file", open_load_popup),
@@ -2121,6 +2171,7 @@ end
 swap_characters = false
 current_recording_state = 1
 last_coin_input_frame = -1
+override_replay_slot = -1
 recording_states =
 {
   "none",
@@ -2168,6 +2219,21 @@ function can_play_recording()
     return recording_slots[training_settings.current_recording_slot].inputs ~= nil and #recording_slots[training_settings.current_recording_slot].inputs > 0
   end
   return false
+end
+
+function find_random_recording_slot()
+  -- random slot selection
+  local _recorded_slots = {}
+  for _i, _value in ipairs(recording_slots) do
+    if _value.inputs and #_value.inputs > 0 then
+      table.insert(_recorded_slots, _i)
+    end
+  end
+  if #_recorded_slots > 0 then
+    local _random_slot = math.ceil(math.random(#_recorded_slots))
+    return _recorded_slots[_random_slot]
+  end
+  return -1
 end
 
 function set_recording_state(_input, _state)
@@ -2221,21 +2287,19 @@ function set_recording_state(_input, _state)
     make_input_empty(_input)
     recording_slots[training_settings.current_recording_slot].inputs = {}
   elseif current_recording_state == 4 then
-    if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
-      -- random slot selection
-      local _recorded_slots = {}
-      for _i, _value in ipairs(recording_slots) do
-        if #_value.inputs > 0 then
-          table.insert(_recorded_slots, _i)
-        end
-      end
-      if #_recorded_slots > 0 then
-        local _random_slot = math.ceil(math.random(#_recorded_slots))
-        queue_input_sequence(dummy, recording_slots[_recorded_slots[_random_slot]].inputs)
-      end
+    local _replay_slot = -1
+    if override_replay_slot > 0 then
+      _replay_slot = override_replay_slot
     else
-      -- current slot selection
-      queue_input_sequence(dummy, recording_slots[training_settings.current_recording_slot].inputs)
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+        _replay_slot = find_random_recording_slot()
+      else
+        _replay_slot = training_settings.current_recording_slot
+      end
+    end
+
+    if _replay_slot > 0 then
+      queue_input_sequence(dummy, recording_slots[_replay_slot].inputs)
     end
   end
 end
@@ -2783,6 +2847,7 @@ function before_frame()
   end
 
   counter_attack_delay_item.object = recording_slots[training_settings.current_recording_slot]
+  counter_attack_random_deviation_item.object = recording_slots[training_settings.current_recording_slot]
 
   -- game
   read_game_vars()
