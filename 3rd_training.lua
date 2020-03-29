@@ -3247,6 +3247,7 @@ end
 character_specific.oro.additional_standing_states = { 3 } -- 3 is crouching
 character_specific.dudley.additional_standing_states = { 6 } -- 6 is crouching
 character_specific.makoto.additional_standing_states = { 7 } -- 7 happens during Oroshi
+character_specific.necro.additional_standing_states = { 13 } -- 13 happens during CrLK
 
 -- Charcters timed SA
 character_specific.oro.timed_sa[1] = true;
@@ -3964,3 +3965,35 @@ frame_data_meta["sean"].moves["ce5c"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["sean"].moves["d1dc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
 frame_data_meta["sean"].moves["d2bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
 frame_data_meta["sean"].moves["d39c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+-- NECRO
+frame_data_meta["necro"].moves["e18c"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["necro"].moves["e29c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["necro"].moves["e444"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["necro"].moves["7274"] = { hits = {{ type = 2 }}, hit_throw = true } -- Snake Fang L
+frame_data_meta["necro"].moves["7374"] = { hits = {{ type = 2 }}, hit_throw = true } -- Snake Fang L
+frame_data_meta["necro"].moves["7474"] = { hits = {{ type = 2 }}, hit_throw = true } -- Snake Fang L
+
+frame_data_meta["necro"].moves["7cf4"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["necro"].moves["7574"] = { hits = {{ type = 3 }} } -- Flying Viper L
+frame_data_meta["necro"].moves["7674"] = { hits = {{ type = 3 }} } -- Flying Viper M
+frame_data_meta["necro"].moves["7774"] = { hits = {{ type = 3 }} } -- Flying Viper H
+frame_data_meta["necro"].moves["7874"] = { hits = {{ type = 3 }, { type = 3 }} } -- Flying Viper EX
+frame_data_meta["necro"].moves["7d94"] = { hits = {{ type = 3 }} } -- Rising Cobra L
+frame_data_meta["necro"].moves["7f24"] = { hits = {{ type = 3 }} } -- Rising Cobra M
+frame_data_meta["necro"].moves["80b4"] = { hits = {{ type = 3 }} } -- Rising Cobra H
+frame_data_meta["necro"].moves["8244"] = { hits = {{ type = 3 }, { type = 3 }} } -- Rising Cobra EX
+
+frame_data_meta["necro"].moves["e954"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["necro"].moves["ec34"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["necro"].moves["ed74"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["necro"].moves["f224"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["necro"].moves["ec34"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["necro"].moves["ed74"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["necro"].moves["e5e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["necro"].moves["e6b4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["necro"].moves["e7a4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["necro"].moves["eef4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["necro"].moves["efa4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["necro"].moves["f084"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
