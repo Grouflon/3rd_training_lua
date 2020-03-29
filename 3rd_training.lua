@@ -4050,3 +4050,34 @@ frame_data_meta["yang"].moves["e17c"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["yang"].moves["e39c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive L
 frame_data_meta["yang"].moves["e5ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
 frame_data_meta["yang"].moves["e75c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
+
+-- YUN
+frame_data_meta["yun"].moves["53bc"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["yun"].moves["548c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["yun"].moves["a014"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["yun"].moves["5e50"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["yun"].moves["4d2c"] = { hits = {{ type = 3 }} } -- Forward MK
+
+frame_data_meta["yun"].moves["5b6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["yun"].moves["5cac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["yun"].moves["5dfc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["yun"].moves["61cc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["yun"].moves["63bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["yun"].moves["65bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["yun"].moves["580c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["yun"].moves["590c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["yun"].moves["59fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["yun"].moves["5efc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["yun"].moves["5ffc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["yun"].moves["60ec"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["yun"].moves["630c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive L
+frame_data_meta["yun"].moves["650c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
+frame_data_meta["yun"].moves["66bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
+
+frame_data_meta["yun"].moves["6b14"] = { force_recording = true,  hits = {{ type = 3 }} } -- Target Air HK
+frame_data_meta["yun"].moves["748c"] = { proxy = { id = "48bc", offset = 0 } } -- Target LK
+frame_data_meta["yun"].moves["75a4"] = { proxy = { id = "415c", offset = 0 } } -- Target MP
+frame_data_meta["yun"].moves["6c24"] = { force_recording = true } -- Target HP
+frame_data_meta["yun"].moves["9d14"] = { force_recording = true } -- Target HK
+frame_data_meta["yun"].moves["76a4"] = { force_recording = true } -- Target Cr HK
