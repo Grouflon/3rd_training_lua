@@ -3997,3 +3997,27 @@ frame_data_meta["necro"].moves["e7a4"] = { hits = {{ type = 3 }}, movement_type 
 frame_data_meta["necro"].moves["eef4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
 frame_data_meta["necro"].moves["efa4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
 frame_data_meta["necro"].moves["f084"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+-- DUDLEY
+frame_data_meta["dudley"].moves["48fc"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["dudley"].moves["49ec"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["dudley"].moves["4bf4"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["dudley"].moves["0a50"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["dudley"].moves["4394"] = { hits = {{ type = 3 }} } -- Forward HK
+
+frame_data_meta["dudley"].moves["51d4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["dudley"].moves["5314"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["dudley"].moves["5454"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["dudley"].moves["5884"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["dudley"].moves["59c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["dudley"].moves["5b04"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["dudley"].moves["4ed4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["dudley"].moves["4fb4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["dudley"].moves["50b4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["dudley"].moves["5584"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["dudley"].moves["5664"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["dudley"].moves["5764"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["dudley"].moves["656c"] = { proxy = { id = "3fd4", offset = 0 } } -- Target MK
+frame_data_meta["dudley"].moves["675c"] = { proxy = { id = "3914", offset = 0 } } -- Target MP
