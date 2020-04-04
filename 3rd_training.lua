@@ -1,6 +1,6 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.5")
-print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.7 emulator")
+print("  3rd_training.lua - v0.6")
+print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.0.7 emulator")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
 print("")
@@ -9,6 +9,7 @@ print("- Enter training menu by pressing \"Start\" while in game")
 print("- Enter/exit recording mode by double tapping \"Coin\"")
 print("- In recording mode, press \"Coin\" again to start/stop recording")
 print("- In normal mode, press \"Coin\" to start/stop replay")
+print("")
 
 -- FBA-RR Scripting reference:
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
@@ -16,15 +17,15 @@ print("- In normal mode, press \"Coin\" to start/stop replay")
 
 json = require ("lua_libs/dkjson")
 
+
 -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 advanced_mode = false
 
 saved_path = "saved/"
 framedata_path = "data/framedata/"
+saved_recordings_path = "saved/recordings/"
 training_settings_file = "training_settings.json"
 frame_data_file_ext = "_framedata.json"
-
-
 
 -- json tools
 function read_object_from_json_file(_file_path)
@@ -87,9 +88,16 @@ function make_player_object(_id, _base, _prefix)
       down = make_input_set(false),
       state_time = make_input_set(0),
     },
-    blocking = {},
+    blocking = {
+      last_attack_hit_id = 0,
+      next_attack_hit_id = 0,
+      wait_for_block_string = true,
+      block_string = false,
+    },
     counter = {
-      ref_time = -1
+      attack_frame = -1,
+      ref_time = -1,
+      recording_slot = -1,
     },
     throw = {},
     max_meter_gauge = 0,
@@ -444,6 +452,7 @@ blocking_mode =
 {
   "never",
   "always",
+  "first hit",
   "random",
 }
 
@@ -493,16 +502,22 @@ frame_data_movement_type = {
   "velocity"
 }
 
-recording_slots_names = {
-  "slot 1",
-  "slot 2",
-  "slot 3",
-  "slot 4",
-  "slot 5",
-  "slot 6",
-  "slot 7",
-  "slot 8",
-}
+function make_recording_slot()
+  return {
+    inputs = {},
+    delay = 0,
+    random_deviation = 0,
+  }
+end
+recording_slots = {}
+for _i = 1, 8 do
+  table.insert(recording_slots, make_recording_slot())
+end
+
+recording_slots_names = {}
+for _i = 1, #recording_slots do
+  table.insert(recording_slots_names, "slot ".._i)
+end
 
 slot_replay_mode = {
   "normal",
@@ -561,13 +576,220 @@ function meter_gauge_menu_item(_name, _object, _property_name, _player_obj)
     self.object[self.property_name] = math.min(self.object[self.property_name] + _bar_ratio, self.player_obj.max_meter_gauge * self.player_obj.max_meter_count)
   end
 
-  function _o:validate()
-  end
-
-  function _o:cancel()
+  function _o:reset()
     self.object[self.property_name] = 0
   end
 
+  function _o:legend()
+    return "MP: Reset to default"
+  end
+
+  return _o
+end
+
+available_characters = {
+  " ",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "X",
+  "Y",
+  "Z",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "-",
+  "_",
+}
+
+function textfield_menu_item(_name, _object, _property_name, _default_value, _max_length)
+  _default_value = _default_value or ""
+  _max_length = _max_length or 16
+  local _o = {}
+  _o.name = _name
+  _o.object = _object
+  _o.property_name = _property_name
+  _o.default_value = _default_value
+  _o.max_length = _max_length
+  _o.edition_index = 0
+  _o.is_in_edition = false
+  _o.content = {}
+
+  function _o:sync_to_var()
+    local _str = ""
+    for i = 1, #self.content do
+      _str = _str..available_characters[self.content[i]]
+    end
+    self.object[self.property_name] = _str
+  end
+
+  function _o:sync_from_var()
+    self.content = {}
+    for i = 1, #self.object[self.property_name] do
+      local _c = self.object[self.property_name]:sub(i,i)
+      for j = 1, #available_characters do
+        if available_characters[j] == _c then
+          table.insert(self.content, j)
+          break
+        end
+      end
+    end
+  end
+
+  function _o:crop_char_table()
+    local _last_empty_index = 0
+    for i = 1, #self.content do
+      if self.content[i] == 1 then
+        _last_empty_index = i
+      else
+        _last_empty_index = 0
+      end
+    end
+
+    if _last_empty_index > 0 then
+      for i = _last_empty_index, #self.content do
+        table.remove(self.content, _last_empty_index)
+      end
+    end
+  end
+
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix = ""
+    local _suffix = ""
+    if self.is_in_edition then
+      _c =  0xFFFF00FF
+    elseif _selected then
+      _c = text_selected_color
+    end
+
+    local _value = self.object[self.property_name]
+
+    if self.is_in_edition then
+      local _cycle = 100
+      if ((frame_number % _cycle) / _cycle) < 0.5 then
+        gui.text(_x + (#self.name + 3 + #self.content - 1) * 4, _y + 2, "_", _c, text_default_border_color)
+      end
+    end
+
+    gui.text(_x, _y, _prefix..self.name.." : ".._value.._suffix, _c, text_default_border_color)
+  end
+
+  function _o:left()
+    if self.is_in_edition then
+      self:reset()
+    end
+  end
+
+  function _o:right()
+    if self.is_in_edition then
+      self:validate()
+    end
+  end
+
+  function _o:up()
+    if self.is_in_edition then
+      self.content[self.edition_index] = self.content[self.edition_index] + 1
+      if self.content[self.edition_index] > #available_characters then
+        self.content[self.edition_index] = 1
+      end
+      self:sync_to_var()
+      return true
+    else
+      return false
+    end
+  end
+
+  function _o:down()
+    if self.is_in_edition then
+      self.content[self.edition_index] = self.content[self.edition_index] - 1
+      if self.content[self.edition_index] == 0 then
+        self.content[self.edition_index] = #available_characters
+      end
+      self:sync_to_var()
+      return true
+    else
+      return false
+    end
+  end
+
+  function _o:validate()
+    if not self.is_in_edition then
+      self:sync_from_var()
+      if #self.content < self.max_length then
+        table.insert(self.content, 1)
+      end
+      self.edition_index = #self.content
+      self.is_in_edition = true
+    else
+      if self.content[self.edition_index] ~= 1 then
+        if #self.content < self.max_length then
+          table.insert(self.content, 1)
+          self.edition_index = #self.content
+        end
+      end
+    end
+    self:sync_to_var()
+  end
+
+  function _o:reset()
+    if not self.is_in_edition then
+      _o.content = {}
+      self.edition_index = 0
+    else
+      if #self.content > 1 then
+        table.remove(self.content, #self.content)
+        self.edition_index = #self.content
+      else
+        self.content[1] = 1
+      end
+    end
+    self:sync_to_var()
+  end
+
+  function _o:cancel()
+    if self.is_in_edition then
+      self:crop_char_table()
+      self:sync_to_var()
+      self.is_in_edition = false
+    end
+  end
+
+  function _o:legend()
+    if self.is_in_edition then
+      return "LP/Right: Next   MP/Left: Previous   LK: Leave edition"
+    else
+      return "LP: Edit   MP: Reset to default"
+    end
+  end
+
+  _o:sync_from_var()
   return _o
 end
 
@@ -606,11 +828,12 @@ function checkbox_menu_item(_name, _object, _property_name, _default_value)
     self.object[self.property_name] = not self.object[self.property_name]
   end
 
-  function _o:validate()
+  function _o:reset()
+    self.object[self.property_name] = self.default_value
   end
 
-  function _o:cancel()
-    self.object[self.property_name] = self.default_value
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -651,11 +874,12 @@ function list_menu_item(_name, _object, _property_name, _list, _default_value)
     end
   end
 
-  function _o:validate()
+  function _o:reset()
+    self.object[self.property_name] = self.default_value
   end
 
-  function _o:cancel()
-    self.object[self.property_name] = self.default_value
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -707,11 +931,12 @@ function integer_menu_item(_name, _object, _property_name, _min, _max, _loop, _d
     end
   end
 
-  function _o:validate()
+  function _o:reset()
+    self.object[self.property_name] = self.default_value
   end
 
-  function _o:cancel()
-    self.object[self.property_name] = self.default_value
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -784,11 +1009,12 @@ function map_menu_item(_name, _object, _property_name, _map_object, _map_propert
     end
   end
 
-  function _o:validate()
+  function _o:reset()
+    training_settings[self.property_name] = ""
   end
 
-  function _o:cancel()
-    training_settings[self.property_name] = ""
+  function _o:legend()
+    return "MP: Reset to default"
   end
 
   return _o
@@ -813,25 +1039,34 @@ function button_menu_item(_name, _validate_function)
     gui.text(_x, _y,self.name, _c, text_default_border_color)
   end
 
-  function _o:left()
-  end
-
-  function _o:right()
-  end
-
   function _o:validate()
     self.last_frame_validated = frame_number
-    self.validate_function()
+    if self.validate_function then
+      self.validate_function()
+    end
   end
 
-  function _o:cancel()
+  function _o:legend()
+    return "LP: Validate"
   end
 
   return _o
 end
 
+function make_popup(_left, _top, _right, _bottom, _entries)
+  local _p = {}
+  _p.left = _left
+  _p.top = _top
+  _p.right = _right
+  _p.bottom = _bottom
+  _p.entries = _entries
+
+  return _p
+end
+
 -- save/load
 function save_training_data()
+  backup_recordings()
   if not write_object_to_json_file(training_settings, saved_path..training_settings_file) then
     print(string.format("Error: Failed to save training settings to \"%s\"", training_settings_file))
   end
@@ -840,12 +1075,58 @@ end
 function load_training_data()
   local _training_settings = read_object_from_json_file(saved_path..training_settings_file)
   if _training_settings == nil then
-    print(string.format("Error: Failed to load training settings from \"%s\"", training_settings_file))
     _training_settings = {}
+  end
+
+  -- update old versions data
+  if _training_settings.recordings then
+    for _key, _value in pairs(_training_settings.recordings) do
+      for _i, _slot in ipairs(_value) do
+        if _value[_i].inputs == nil then
+          _value[_i] = make_recording_slot()
+        else
+          _slot.delay = _slot.delay or 0
+          _slot.random_deviation = _slot.random_deviation or 0
+        end
+      end
+    end
   end
 
   for _key, _value in pairs(_training_settings) do
     training_settings[_key] = _value
+  end
+
+  restore_recordings()
+end
+
+function backup_recordings()
+  -- Init base table
+  if training_settings.recordings == nil then
+    training_settings.recordings = {}
+    for _key, _value in ipairs(characters) do
+      training_settings.recordings[_value] = {}
+      for _i = 1, #recording_slots do
+        table.insert(training_settings.recordings[_value], make_recording_slot())
+      end
+    end
+  end
+
+  if dummy.char_str ~= "" then
+    training_settings.recordings[dummy.char_str] = recording_slots
+  end
+end
+
+function restore_recordings()
+  local _char = player_objects[training_settings.dummy_player].char_str
+  if _char and _char ~= "" then
+    local _recording_count = #recording_slots
+    if training_settings.recordings then
+      recording_slots = training_settings.recordings[_char]
+    end
+    local _missing_slots = _recording_count - #recording_slots
+    for _i = 1, _missing_slots do
+      table.insert(recording_slots, make_recording_slot())
+    end
   end
 end
 
@@ -1353,6 +1634,25 @@ end
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
   local _debug = false
+  local _debug_block_string = false
+
+  if _dummy.blocking.block_string then
+    if _dummy.remaining_freeze_frames == 0 and _dummy.recovery_time == 0 and _dummy.previous_recovery_time == 1 then
+      _dummy.blocking.block_string = false
+      if _debug_block_string then
+        print(string.format("%d - ended block string (%d, %d, %d)", frame_number, _dummy.blocking.last_attack_hit_id, _dummy.blocking.next_attack_hit_id, _dummy.recovery_time))
+      end
+    end
+  elseif not _dummy.blocking.wait_for_block_string then
+    --print(string.format("%d - (%s, %s, %d)", frame_number, tostring(_dummy.blocking.last_attack_hit_id), tostring(_dummy.blocking.next_attack_hit_id), _dummy.idle_time))
+
+    if ((_dummy.blocking.next_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20) then
+      _dummy.blocking.wait_for_block_string = true
+      if _debug_block_string then
+        print(string.format("%d - wait for block string (%d, %d, %d)", frame_number, _dummy.blocking.next_attack_hit_id, _dummy.blocking.last_attack_hit_id, _dummy.idle_time))
+      end
+    end
+  end
 
   if current_recording_state ~= 1 then
     _dummy.blocking.listening = false
@@ -1389,18 +1689,18 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     return
   end
 
+  if _player.has_just_been_blocked or _player.has_just_been_parried then
+    _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
+    _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
+  end
+
   if _dummy.blocking.listening then
-
-    if _player.has_just_been_blocked or _player.has_just_been_parried then
-      _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
-      _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
-    end
-
     if _player.current_hit_id == 0 and _dummy.blocking.last_attack_hit_id > 0 and _player.remaining_freeze_frames == 0 then
       if _debug then
-        print(string.format("%d: reset last hit (%d, %d)", frame_number, _player.current_hit_id, _dummy.blocking.last_attack_hit_id))
+        print(string.format("%d - reset last hit (%d, %d)", frame_number, _player.current_hit_id, _dummy.blocking.last_attack_hit_id))
       end
       _dummy.blocking.last_attack_hit_id = 0
+      _dummy.blocking.next_attack_hit_id = 0
     end
 
     --print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
@@ -1428,15 +1728,36 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
             _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
+
+            if _mode == 3 then -- first hit
+              if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
+                _dummy.blocking.should_block = false
+              end
+            elseif _mode == 4 then -- random
+              if not _dummy.blocking.block_string then
+                if  math.random() > 0.5 then
+                  _dummy.blocking.should_block = false
+                  if _debug then
+                    print(string.format(" %d: next hit randomized out", frame_number))
+                  end
+                else
+                  _dummy.blocking.wait_for_block_string = true
+                end
+              end
+            end
+
+            if _dummy.blocking.wait_for_block_string then
+              _dummy.blocking.block_string = true
+              _dummy.blocking.wait_for_block_string = false
+              if _debug_block_string then
+                print(string.format("%d - start block string", frame_number))
+              end
+            end
+
             if _debug then
               print(string.format(" %d: next hit %d at frame %d (%d), last hit %d", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame, _dummy.blocking.last_attack_hit_id))
             end
-            if _mode == 3 and math.random() > 0.5 then
-              _dummy.blocking.should_block = false
-              if _debug then
-                print(string.format(" %d: next hit randomized out", frame_number))
-              end
-            end
+
             break
           end
         end
@@ -1515,6 +1836,28 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
   if _stick == 1 and _button == 1 then return end
   if current_recording_state ~= 1 then return end
 
+  function handle_recording()
+    if button_gesture[_button] == "recording" then
+      local _slot_index = training_settings.current_recording_slot
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+        _slot_index = find_random_recording_slot()
+      end
+      _defender.counter.recording_slot = _slot_index
+
+      local _delay = recording_slots[_defender.counter.recording_slot].delay or 0
+      local _random_deviation = recording_slots[_defender.counter.recording_slot].random_deviation or 0
+      if _random_deviation <= 0 then
+        _random_deviation = math.ceil(math.random(_random_deviation - 1, 0))
+      else
+        _random_deviation = math.floor(math.random(0, _random_deviation + 1))
+      end
+      if _debug then
+        print(string.format("frame offset: %d", _delay + _random_deviation))
+      end
+      _defender.counter.attack_frame = _defender.counter.attack_frame + _delay + _random_deviation
+    end
+  end
+
   if _defender.has_just_parried then
     if _debug then
       print(frame_number.." - init ca (parry)")
@@ -1522,6 +1865,8 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     _defender.counter.attack_frame = frame_number + 15
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
+    handle_recording()
+
   elseif _attacker.has_just_hit or _attacker.has_just_been_blocked then
     if _debug then
       print(frame_number.." - init ca (hit/block)")
@@ -1530,6 +1875,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     clear_input_sequence(_defender)
     _defender.counter.attack_frame = -1
     _defender.counter.sequence = nil
+    _defender.counter.recording_slot = -1
   elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
     if _debug then
       print(frame_number.." - init ca (wake up)")
@@ -1537,6 +1883,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     _defender.counter.attack_frame = frame_number + _defender.wake_up_time
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
+    handle_recording()
   end
 
   if not _defender.counter.sequence then
@@ -1547,6 +1894,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       _defender.counter.attack_frame = frame_number + _defender.recovery_time + 2
       _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
       _defender.counter.ref_time = -1
+      handle_recording()
     end
   end
 
@@ -1562,13 +1910,22 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       end
       queue_input_sequence(_defender, _defender.counter.sequence)
       _defender.counter.sequence = nil
+      _defender.counter.attack_frame = -1
     end
-  elseif button_gesture[_button] == "recording" and _defender.counter.attack_frame == (frame_number + 1) then
-    if _debug then
-      print(frame_number.." - queue recording")
+  elseif button_gesture[_button] == "recording" and _defender.counter.recording_slot > 0 then
+    if _defender.counter.attack_frame <= (frame_number + 1) then
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+        override_replay_slot = _defender.counter.recording_slot
+      end
+      if _debug then
+        print(frame_number.." - queue recording")
+      end
+      _defender.counter.attack_frame = -1
+      _defender.counter.recording_slot = -1
+      set_recording_state(_input, 1)
+      set_recording_state(_input, 4)
+      override_replay_slot = -1
     end
-    set_recording_state(_input, 1)
-    set_recording_state(_input, 4)
   end
 end
 
@@ -1618,6 +1975,95 @@ function update_tech_throws(_input, _attacker, _defender, _mode)
   end
 end
 
+-- RECORDING POPUS
+
+function clear_slot()
+  recording_slots[training_settings.current_recording_slot].inputs = {}
+  save_training_data()
+end
+
+function open_save_popup()
+  current_popup = save_recording_slot_popup
+  current_popup.selected_index = 1
+  save_file_name = string.gsub(dummy.char_str, "(.*)", string.upper).."_"
+end
+
+function open_load_popup()
+  current_popup = load_recording_slot_popup
+  current_popup.selected_index = 1
+
+  load_file_index = 1
+
+  local _cmd = "dir "..string.gsub(saved_recordings_path, "/", "\\")
+  local _f = io.popen(_cmd)
+  if _f == nil then
+    print(string.format("Error: Failed to execute command \"%s\"", _cmd))
+    return
+  end
+  local _str = _f:read("*all")
+  load_file_list = {}
+  for _file in string.gmatch(_str, "([%a%p]+\.json)") do
+    _file = _file:gsub("\.json", "")
+    table.insert(load_file_list, _file)
+  end
+  load_recording_slot_popup.entries[1].list = load_file_list
+end
+
+function close_popup()
+  current_popup = nil
+end
+
+function save_recording_slot_to_file()
+  if save_file_name == "" then
+    print(string.format("Error: Can't save to empty file name"))
+    return
+  end
+
+  local _path = string.format("%s%s.json",saved_recordings_path, save_file_name)
+  if not write_object_to_json_file(recording_slots[training_settings.current_recording_slot].inputs, _path) then
+    print(string.format("Error: Failed to save recording to \"%s\"", _path))
+  else
+    print(string.format("Saved slot %d to \"%s\"", training_settings.current_recording_slot, _path))
+  end
+
+  close_popup()
+end
+
+function load_recording_slot_from_file()
+  if #load_file_list == 0 or load_file_list[load_file_index] == nil then
+    print(string.format("Error: Can't load from empty file name"))
+    return
+  end
+
+  local _path = string.format("%s%s.json",saved_recordings_path, load_file_list[load_file_index])
+  local _recording = read_object_from_json_file(_path)
+  if not _recording then
+    print(string.format("Error: Failed to load recording from \"%s\"", _path))
+  else
+    recording_slots[training_settings.current_recording_slot].inputs = _recording
+    print(string.format("Loaded \"%s\" to slot %d", _path, training_settings.current_recording_slot))
+  end
+  save_training_data()
+  close_popup()
+end
+
+save_file_name = ""
+save_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
+{
+  textfield_menu_item("File Name", _G, "save_file_name", ""),
+  button_menu_item("Save", save_recording_slot_to_file),
+  button_menu_item("Cancel", close_popup),
+})
+
+load_file_list = {}
+load_file_index = 1
+load_recording_slot_popup = make_popup(71, 61, 312, 122, -- screen size 383,223
+{
+  list_menu_item("File", _G, "load_file_index", load_file_list),
+  button_menu_item("Load", load_recording_slot_from_file),
+  button_menu_item("Cancel", close_popup),
+})
+
 -- GUI DECLARATION
 
 training_settings = {
@@ -1643,6 +2089,8 @@ training_settings = {
   current_recording_slot = 1,
   replay_mode = 1,
   music_volume = 10,
+  life_refill_delay = 20,
+  meter_refill_delay = 20,
 }
 
 debug_settings = {
@@ -1652,13 +2100,23 @@ debug_settings = {
   debug_move = "",
 }
 
+life_refill_delay_item = integer_menu_item("Life refill delay", training_settings, "life_refill_delay", 1, 100, false, 20)
+life_refill_delay_item.is_disabled = function()
+  return training_settings.life_mode ~= 2
+end
+
 p1_meter_gauge_item = meter_gauge_menu_item("P1 meter", training_settings, "p1_meter", player_objects[1])
 p2_meter_gauge_item = meter_gauge_menu_item("P2 meter", training_settings, "p2_meter", player_objects[2])
+meter_refill_delay_item = integer_menu_item("Meter refill delay", training_settings, "meter_refill_delay", 1, 100, false, 20)
 
 p1_meter_gauge_item.is_disabled = function()
   return training_settings.meter_mode ~= 2
 end
 p2_meter_gauge_item.is_disabled = p1_meter_gauge_item.is_disabled
+meter_refill_delay_item.is_disabled = p1_meter_gauge_item.is_disabled
+
+counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
+counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -40, 40, false, 0)
 
 menu = {
   {
@@ -1679,10 +2137,12 @@ menu = {
     entries = {
       checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
       list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
+      life_refill_delay_item,
       checkbox_menu_item("Disable Stun", training_settings, "no_stun"),
       list_menu_item("Meter Refill Mode", training_settings, "meter_mode", meter_mode),
       p1_meter_gauge_item,
       p2_meter_gauge_item,
+      meter_refill_delay_item,
       checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
       checkbox_menu_item("Display Input", training_settings, "display_input"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
@@ -1696,7 +2156,11 @@ menu = {
       checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
       list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
+      counter_attack_delay_item,
+      counter_attack_random_deviation_item,
       button_menu_item("Clear slot", clear_slot),
+      button_menu_item("Save slot to file", open_save_popup),
+      button_menu_item("Load slot from file", open_load_popup),
     }
   },
 }
@@ -1720,22 +2184,13 @@ end
 swap_characters = false
 current_recording_state = 1
 last_coin_input_frame = -1
+override_replay_slot = -1
 recording_states =
 {
   "none",
   "waiting",
   "recording",
   "playing",
-}
-recording_slots = {
-  {},
-  {},
-  {},
-  {},
-  {},
-  {},
-  {},
-  {},
 }
 
 function stick_input_to_sequence_input(_player_obj, _input)
@@ -1766,6 +2221,34 @@ function stick_input_to_sequence_input(_player_obj, _input)
   return ""
 end
 
+function can_play_recording()
+  if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+    for _i, _value in ipairs(recording_slots) do
+      if #_value.inputs > 0 then
+        return true
+      end
+    end
+  else
+    return recording_slots[training_settings.current_recording_slot].inputs ~= nil and #recording_slots[training_settings.current_recording_slot].inputs > 0
+  end
+  return false
+end
+
+function find_random_recording_slot()
+  -- random slot selection
+  local _recorded_slots = {}
+  for _i, _value in ipairs(recording_slots) do
+    if _value.inputs and #_value.inputs > 0 then
+      table.insert(_recorded_slots, _i)
+    end
+  end
+  if #_recorded_slots > 0 then
+    local _random_slot = math.ceil(math.random(#_recorded_slots))
+    return _recorded_slots[_random_slot]
+  end
+  return -1
+end
+
 function set_recording_state(_input, _state)
   if (_state == current_recording_state) then
     return
@@ -1780,7 +2263,7 @@ function set_recording_state(_input, _state)
     if training_settings.auto_crop_recording then
       local _first_input = 1
       local _last_input = 1
-      for _i, _value in ipairs(recording_slots[training_settings.current_recording_slot]) do
+      for _i, _value in ipairs(recording_slots[training_settings.current_recording_slot].inputs) do
         if #_value > 0 then
           _last_input = _i
         elseif _first_input == _i then
@@ -1789,14 +2272,16 @@ function set_recording_state(_input, _state)
       end
 
       -- cropping end of animation is actually not a good idea if we want to repeat sequences
-      _last_input = #recording_slots[training_settings.current_recording_slot]
+      _last_input = #recording_slots[training_settings.current_recording_slot].inputs
 
       local _cropped_sequence = {}
       for _i = _first_input, _last_input do
-        table.insert(_cropped_sequence, recording_slots[training_settings.current_recording_slot][_i])
+        table.insert(_cropped_sequence, recording_slots[training_settings.current_recording_slot].inputs[_i])
       end
-      recording_slots[training_settings.current_recording_slot] = _cropped_sequence
+      recording_slots[training_settings.current_recording_slot].inputs = _cropped_sequence
     end
+
+    save_training_data()
 
     swap_characters = false
   elseif current_recording_state == 4 then
@@ -1813,23 +2298,21 @@ function set_recording_state(_input, _state)
   elseif current_recording_state == 3 then
     swap_characters = true
     make_input_empty(_input)
-    recording_slots[training_settings.current_recording_slot] = {}
+    recording_slots[training_settings.current_recording_slot].inputs = {}
   elseif current_recording_state == 4 then
-    if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
-      -- random slot selection
-      local _recorded_slots = {}
-      for _i, _value in ipairs(recording_slots) do
-        if #_value > 0 then
-          table.insert(_recorded_slots, _i)
-        end
-      end
-      if #_recorded_slots > 0 then
-        local _random_slot = math.ceil(math.random(#_recorded_slots))
-        queue_input_sequence(dummy, recording_slots[_recorded_slots[_random_slot]])
-      end
+    local _replay_slot = -1
+    if override_replay_slot > 0 then
+      _replay_slot = override_replay_slot
     else
-      -- current slot selection
-      queue_input_sequence(dummy, recording_slots[training_settings.current_recording_slot])
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+        _replay_slot = find_random_recording_slot()
+      else
+        _replay_slot = training_settings.current_recording_slot
+      end
+    end
+
+    if _replay_slot > 0 then
+      queue_input_sequence(dummy, recording_slots[_replay_slot].inputs)
     end
   end
 end
@@ -1861,7 +2344,9 @@ function update_recording(_input)
 
       -- single tap
       if current_recording_state == 1 then
-        set_recording_state(_input, 4)
+        if can_play_recording() then
+          set_recording_state(_input, 4)
+        end
       elseif current_recording_state == 2 then
         set_recording_state(_input, 3)
       elseif current_recording_state == 3 then
@@ -1893,11 +2378,11 @@ function update_recording(_input)
         end
       end
 
-      table.insert(recording_slots[training_settings.current_recording_slot], _frame)
+      table.insert(recording_slots[training_settings.current_recording_slot].inputs, _frame)
     elseif current_recording_state == 4 then
       if dummy.pending_input_sequence == nil then
         set_recording_state(_input, 1)
-        if training_settings.replay_mode == 3 or training_settings.replay_mode == 4 then
+        if can_play_recording() and (training_settings.replay_mode == 3 or training_settings.replay_mode == 4) then
           set_recording_state(_input, 4)
         end
       end
@@ -1905,10 +2390,6 @@ function update_recording(_input)
   end
 
   previous_recording_state = current_recording_state
-end
-
-function clear_slot()
-  recording_slots[training_settings.current_recording_slot] = {}
 end
 
 -- PROGRAM
@@ -1982,14 +2463,27 @@ function read_player_vars(_player_obj)
 
   local _previous_remaining_freeze_frames = _player_obj.remaining_freeze_frames or 0
 
+  local _previous_char_str = _player_obj.char_str or ""
   _player_obj.char_str = characters[_player_obj.char_id]
+  if _player_obj == player_objects[training_settings.dummy_player] and _previous_char_str ~= _player_obj.char_str then
+    restore_recordings()
+  end
+
   _player_obj.is_attacking_ext = memory.readbyte(_player_obj.base + 0x429) > 0
   _player_obj.input_capacity = memory.readword(_player_obj.base + 0x46C)
   _player_obj.action = memory.readdword(_player_obj.base + 0xAC)
   _player_obj.action_ext = memory.readdword(_player_obj.base + 0x12C)
-  _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
+  _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
+  if _player_obj.previous_recovery_time == _player_obj.recovery_time then -- if we take a hit during recovery, it will get stuck (ie. Ibuki's close HK's second hit) so we reset it manually
+    memory.writebyte(_player_obj.base + 0x187, 0)
+    _player_obj.recovery_time = 0
+  end
+
+  local _previous_is_blocking = _player_obj.is_blocking or false
+  _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
+  if _debug_state_variables and not _previous_is_blocking and _player_obj.is_blocking then print(string.format("%d - %s blocked", frame_number, _player_obj.prefix)) end
 
   --local _gauge_ui = nil
   if _player_obj.id == 1 then
@@ -2085,6 +2579,8 @@ function read_player_vars(_player_obj)
     not _player_obj.is_blocking and
     not _player_obj.is_waking_up and
     not _player_obj.is_fast_waking_up and
+    _player_obj.recovery_time == 0 and
+    _player_obj.remaining_freeze_frames == 0 and
     _player_obj.input_capacity > 0
   )
 
@@ -2289,7 +2785,7 @@ function write_player_vars(_player_obj)
   if is_in_match and not is_menu_open then
     local _life = memory.readbyte(_player_obj.base + 0x9F)
     if training_settings.life_mode == 2 then
-      if _player_obj.is_idle and _player_obj.idle_time > 20 then
+      if _player_obj.is_idle and _player_obj.idle_time > training_settings.life_refill_delay then
         local _refill_rate = 6
         _life = math.min(_life + _refill_rate, 160)
       end
@@ -2307,7 +2803,7 @@ function write_player_vars(_player_obj)
         memory.writebyte(_addr, _player_obj.max_meter_count)
       end
     elseif training_settings.meter_mode == 2 then
-      if _player_obj.is_idle and _player_obj.idle_time > 20 then
+      if _player_obj.is_idle and _player_obj.idle_time > training_settings.meter_refill_delay then
         local _meter = memory.readbyte(_player_obj.gauge_addr) + _player_obj.max_meter_gauge * memory.readbyte(_player_obj.meter_addr[1])
         if _meter > _wanted_meter then
           _meter = _meter - 6
@@ -2362,6 +2858,9 @@ function before_frame()
     debug_move_menu_item.map_property = debug_settings.debug_character
     debug_settings.debug_move = ""
   end
+
+  counter_attack_delay_item.object = recording_slots[training_settings.current_recording_slot]
+  counter_attack_random_deviation_item.object = recording_slots[training_settings.current_recording_slot]
 
   -- game
   read_game_vars()
@@ -2424,6 +2923,7 @@ is_menu_open = false
 main_menu_selected_index = 1
 is_main_menu_selected = true
 sub_menu_selected_index = 1
+current_popup = nil
 
 function on_gui()
 
@@ -2440,8 +2940,8 @@ function on_gui()
   if is_in_match and current_recording_state ~= 1 then
     local _y = 35
     local _current_recording_size = 0
-    if (recording_slots[training_settings.current_recording_slot]) then
-      _current_recording_size = #recording_slots[training_settings.current_recording_slot]
+    if (recording_slots[training_settings.current_recording_slot].inputs) then
+      _current_recording_size = #recording_slots[training_settings.current_recording_slot].inputs
     end
 
     if current_recording_state == 2 then
@@ -2467,13 +2967,15 @@ function on_gui()
   if is_in_match then
     if P1.input.pressed.start or P2.input.pressed.start then
       is_menu_open = (not is_menu_open)
+      if current_popup ~= nil then
+        close_popup()
+      end
     end
   else
     is_menu_open = false
   end
 
   if is_menu_open then
-
     function check_input_down_autofire(_input, _autofire_rate, _autofire_time)
       _autofire_rate = _autofire_rate or 4
       _autofire_time = _autofire_time or 23
@@ -2485,28 +2987,35 @@ function on_gui()
       return false
     end
 
+    local _current_entry = menu[main_menu_selected_index].entries[sub_menu_selected_index]
+
+    if current_popup then
+      _current_entry = current_popup.entries[current_popup.selected_index]
+    end
     local _horizontal_autofire_rate = 4
     local _vertical_autofire_rate = 4
     if not is_main_menu_selected then
-      if menu[main_menu_selected_index].entries[sub_menu_selected_index].autofire_rate then
-        _horizontal_autofire_rate = menu[main_menu_selected_index].entries[sub_menu_selected_index].autofire_rate
+      if _current_entry.autofire_rate then
+        _horizontal_autofire_rate = _current_entry.autofire_rate
       end
     end
 
     function _sub_menu_down()
       sub_menu_selected_index = sub_menu_selected_index + 1
+      _current_entry = menu[main_menu_selected_index].entries[sub_menu_selected_index]
       if sub_menu_selected_index > #menu[main_menu_selected_index].entries then
         is_main_menu_selected = true
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled ~= nil and menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled() then
+      elseif _current_entry.is_disabled ~= nil and _current_entry.is_disabled() then
         _sub_menu_down()
       end
     end
 
     function _sub_menu_up()
       sub_menu_selected_index = sub_menu_selected_index - 1
+      _current_entry = menu[main_menu_selected_index].entries[sub_menu_selected_index]
       if sub_menu_selected_index == 0 then
         is_main_menu_selected = true
-      elseif menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled ~= nil and menu[main_menu_selected_index].entries[sub_menu_selected_index].is_disabled() then
+      elseif _current_entry.is_disabled ~= nil and _current_entry.is_disabled() then
         _sub_menu_up()
       end
     end
@@ -2516,6 +3025,13 @@ function on_gui()
         is_main_menu_selected = false
         sub_menu_selected_index = 0
         _sub_menu_down()
+      elseif _current_entry.down and _current_entry:down() then
+        save_training_data()
+      elseif current_popup then
+        current_popup.selected_index = current_popup.selected_index + 1
+        if current_popup.selected_index > #current_popup.entries then
+          current_popup.selected_index = 1
+        end
       else
         _sub_menu_down()
       end
@@ -2526,6 +3042,13 @@ function on_gui()
         is_main_menu_selected = false
         sub_menu_selected_index = #menu[main_menu_selected_index].entries + 1
         _sub_menu_up()
+      elseif _current_entry.up and _current_entry:up() then
+          save_training_data()
+      elseif current_popup then
+        current_popup.selected_index = current_popup.selected_index - 1
+        if current_popup.selected_index == 0 then
+          current_popup.selected_index = #current_popup.entries
+        end
       else
         _sub_menu_up()
       end
@@ -2537,8 +3060,8 @@ function on_gui()
         if main_menu_selected_index == 0 then
           main_menu_selected_index = #menu
         end
-      else
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:left()
+      elseif _current_entry.left then
+        _current_entry:left()
         save_training_data()
       end
     end
@@ -2549,34 +3072,48 @@ function on_gui()
         if main_menu_selected_index > #menu then
           main_menu_selected_index = 1
         end
-      else
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:right()
+      elseif _current_entry.right then
+        _current_entry:right()
         save_training_data()
       end
     end
 
     if P1.input.pressed.LP or P2.input.pressed.LP then
       if is_main_menu_selected then
-      else
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:validate()
+      elseif _current_entry.validate then
+        _current_entry:validate()
+        save_training_data()
+      end
+    end
+
+    if P1.input.pressed.MP or P2.input.pressed.MP then
+      if is_main_menu_selected then
+      elseif _current_entry.reset then
+        _current_entry:reset()
         save_training_data()
       end
     end
 
     if P1.input.pressed.LK or P2.input.pressed.LK then
       if is_main_menu_selected then
-      else
-        menu[main_menu_selected_index].entries[sub_menu_selected_index]:cancel()
+      elseif _current_entry.cancel then
+        _current_entry:cancel()
         save_training_data()
       end
     end
 
     -- screen size 383,223
-    gui.box(23,40,360,180, 0x293139FF, 0x840000FF)
+    local _gui_box_bg_color = 0x293139FF
+    local _gui_box_outline_color = 0x840000FF
+    local _menu_box_left = 23
+    local _menu_box_top = 20
+    local _menu_box_right = 360
+    local _menu_box_bottom = 180
+    gui.box(_menu_box_left, _menu_box_top, _menu_box_right, _menu_box_bottom, _gui_box_bg_color, _gui_box_outline_color)
     --gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
 
-    local _bar_x = 41
-    local _bar_y = 46
+    local _bar_x = _menu_box_left + 18
+    local _bar_y = _menu_box_top + 6
     for i = 1, #menu do
       local _offset = 0
       local _c = text_disabled_color
@@ -2592,24 +3129,48 @@ function on_gui()
     end
 
 
-    local _menu_x = 33
-    local _menu_y = 63
+    local _menu_x = _menu_box_left + 10
+    local _menu_y = _menu_box_top + 23
     local _menu_y_interval = 10
     local _draw_index = 0
     for i = 1, #menu[main_menu_selected_index].entries do
       if menu[main_menu_selected_index].entries[i].is_disabled == nil or not menu[main_menu_selected_index].entries[i].is_disabled() then
-        menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * _draw_index, not is_main_menu_selected and sub_menu_selected_index == i)
+        menu[main_menu_selected_index].entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * _draw_index, not is_main_menu_selected and not current_popup and sub_menu_selected_index == i)
         _draw_index = _draw_index + 1
       end
     end
 
     -- recording slots special display
     if main_menu_selected_index == 3 then
-      local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot])
-      gui.text(106,83, _t, text_disabled_color, text_default_border_color)
+      local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot].inputs)
+      gui.text(_menu_box_left + 83, _menu_y + 2 * _menu_y_interval, _t, text_disabled_color, text_default_border_color)
     end
 
-    gui.text(33, 168, "LK: Reset value to default", text_disabled_color, text_default_border_color)
+    if not is_main_menu_selected then
+      if menu[main_menu_selected_index].entries[sub_menu_selected_index].legend then
+        gui.text(_menu_x, _menu_box_bottom - 12, menu[main_menu_selected_index].entries[sub_menu_selected_index]:legend(), text_disabled_color, text_default_border_color)
+      end
+    end
+
+    -- popup
+    if current_popup then
+      gui.box(current_popup.left, current_popup.top, current_popup.right, current_popup.bottom, _gui_box_bg_color, _gui_box_outline_color)
+
+      _menu_x = current_popup.left + 10
+      _menu_y = current_popup.top + 9
+      _draw_index = 0
+
+      for i = 1, #current_popup.entries do
+        if current_popup.entries[i].is_disabled == nil or not current_popup.entries[i].is_disabled() then
+          current_popup.entries[i]:draw(_menu_x, _menu_y + _menu_y_interval * _draw_index, current_popup.selected_index == i)
+          _draw_index = _draw_index + 1
+        end
+      end
+
+      if current_popup.entries[current_popup.selected_index].legend then
+        gui.text(_menu_x, current_popup.bottom - 12, current_popup.entries[current_popup.selected_index]:legend(), text_disabled_color, text_default_border_color)
+      end
+    end
 
   else
     gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
@@ -2688,6 +3249,7 @@ end
 character_specific.oro.additional_standing_states = { 3 } -- 3 is crouching
 character_specific.dudley.additional_standing_states = { 6 } -- 6 is crouching
 character_specific.makoto.additional_standing_states = { 7 } -- 7 happens during Oroshi
+character_specific.necro.additional_standing_states = { 13 } -- 13 happens during CrLK
 
 -- Charcters timed SA
 character_specific.oro.timed_sa[1] = true;
@@ -3206,3 +3768,318 @@ frame_data_meta["ken"].moves["1214"] = { force_recording = true } -- SA 1
 frame_data_meta["ken"].moves["15b4"] = { force_recording = true } -- SA 2
 frame_data_meta["ken"].moves["1834"] = { force_recording = true } -- SA 3
 frame_data_meta["ken"].moves["1d24"] = { force_recording = true } -- SA 3
+
+-- ELENA
+frame_data_meta["elena"].moves["bde0"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["elena"].moves["bf88"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["elena"].moves["c1d8"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["elena"].moves["c440"] = { hits = {{ type = 2 }} } -- Cr Forward HK
+frame_data_meta["elena"].moves["63d4"] = { hits = {{ type = 2 }, { type = 1 }} } -- Taunt
+
+frame_data_meta["elena"].moves["6354"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["elena"].moves["ab98"] = { hits = {{ type = 3 }} } -- Forward MP
+frame_data_meta["elena"].moves["b430"] = { hits = {{ type = 3 }} } -- Forward MK
+
+frame_data_meta["elena"].moves["e370"] = { proxy = { id = "b560", offset = 0 }} -- Target HK
+frame_data_meta["elena"].moves["e068"] = { proxy = { id = "d798", offset = 0 }} -- Target Air MK
+frame_data_meta["elena"].moves["e1f8"] = { proxy = { id = "d448", offset = 6 }} -- Target Air HP
+
+frame_data_meta["elena"].moves["cba0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["elena"].moves["cda0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["elena"].moves["cef0"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["elena"].moves["d608"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["elena"].moves["d798"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["elena"].moves["d958"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- Air HK
+
+frame_data_meta["elena"].moves["c690"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["elena"].moves["c820"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["elena"].moves["c9e0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["elena"].moves["d0f8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["elena"].moves["d288"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["elena"].moves["d448"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["elena"].moves["094c"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash L
+frame_data_meta["elena"].moves["0cec"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash M
+frame_data_meta["elena"].moves["0eac"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash H
+frame_data_meta["elena"].moves["fde4"] = { hits = {{ type = 3 }, { type = 3 }} } -- Mallet Smash EX
+
+frame_data_meta["elena"].moves["83cc"] = { hits = {{ type = 2 }, { type = 2 }} } -- Scratch Wheel L
+frame_data_meta["elena"].moves["858c"] = { hits = {{ type = 2 }, { type = 2 }} } -- Scratch Wheel M
+frame_data_meta["elena"].moves["874c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }, { type = 2 }} } -- Scratch Wheel H
+frame_data_meta["elena"].moves["89fc"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }, { type = 2 }, { type = 1 }} } -- Scratch Wheel EX
+
+frame_data_meta["elena"].moves["4dc4"] = { force_recording = true, hits = {{ type = 1 }, { type = 1 }, { type = 2 }} } -- SA 2
+frame_data_meta["elena"].moves["5074"] = { force_recording = true, hits = {{ type = 1 }, { type = 2 }, { type = 1 }, { type = 2 }, { type = 2 }} } -- SA 2
+
+-- Q
+frame_data_meta["q"].moves["e684"] = { hits = {{ type = 2 }} } -- Cr HP
+frame_data_meta["q"].moves["e7e4"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["q"].moves["e8b4"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["q"].moves["ea14"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["q"].moves["9074"] = { hits = {{ type = 3 }} } -- UOH
+
+frame_data_meta["q"].moves["eea4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["q"].moves["ef94"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["q"].moves["f074"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["q"].moves["ec04"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["q"].moves["eca4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["q"].moves["eda4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["q"].moves["f194"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["q"].moves["f234"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["q"].moves["f334"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["q"].moves["5cdc"] = { hits = {{ type = 3 }} } -- OH Dash punch L
+frame_data_meta["q"].moves["5f44"] = { hits = {{ type = 3 }} } -- OH Dash punch M
+frame_data_meta["q"].moves["61ac"] = { hits = {{ type = 3 }} } -- OH Dash punch H
+
+frame_data_meta["q"].moves["518c"] = { hits = {{ type = 2 }} } -- Low Dash punch L
+frame_data_meta["q"].moves["5454"] = { hits = {{ type = 2 }} } -- Low Dash punch M
+frame_data_meta["q"].moves["5734"] = { hits = {{ type = 2 }} } -- Low Dash punch H
+frame_data_meta["q"].moves["5a2c"] = { hits = {{ type = 2 }, { type = 2 }} } -- Low Dash punch EX
+
+frame_data_meta["q"].moves["8304"] = { hits = {{ type = 2 }} } -- SA1
+frame_data_meta["q"].moves["8464"] = { force_recording = true } -- SA2
+
+-- RYU
+frame_data_meta["ryu"].moves["2304"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["ryu"].moves["23a4"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["ryu"].moves["2474"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["ryu"].moves["80dc"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["ryu"].moves["1984"] = { hits = {{ type = 3 }, { type = 3 }} } -- Forward MP
+
+frame_data_meta["ryu"].moves["27e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["ryu"].moves["28f4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["ryu"].moves["29c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["ryu"].moves["2d64"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["ryu"].moves["2e44"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["ryu"].moves["2f24"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["ryu"].moves["2564"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["ryu"].moves["2644"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["ryu"].moves["2724"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["ryu"].moves["2aa4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["ryu"].moves["2b84"] = { hits = {{ type = 3 }, { type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["ryu"].moves["2c84"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["ryu"].moves["7cbc"] = { movement_type = 2 } -- Air tatsu L
+frame_data_meta["ryu"].moves["7dfc"] = { movement_type = 2 } -- Air tatsu M
+frame_data_meta["ryu"].moves["7edc"] = { movement_type = 2 } -- Air tatsu H
+
+frame_data_meta["ryu"].moves["894c"] = { force_recording = true } -- SA2
+frame_data_meta["ryu"].moves["8be4"] = { force_recording = true } -- SA2
+
+-- REMY
+frame_data_meta["remy"].moves["ab20"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["remy"].moves["abf0"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["remy"].moves["acc0"] = { hits = {{ type = 2 }, { type = 2 }} } -- Cr HK
+
+frame_data_meta["remy"].moves["ff48"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["remy"].moves["a4b0"] = { hits = {{ type = 3 }} } -- Forward MP
+
+frame_data_meta["remy"].moves["b270"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["remy"].moves["b370"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["remy"].moves["b450"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["remy"].moves["af40"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["remy"].moves["b040"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["remy"].moves["b140"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+-- TWELVE
+frame_data_meta["twelve"].moves["462c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["twelve"].moves["46fc"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["twelve"].moves["480c"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["twelve"].moves["e1b4"] = { hits = {{ type = 3 }} } -- UOH
+
+frame_data_meta["twelve"].moves["4ccc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["twelve"].moves["4d9c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["twelve"].moves["4e9c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["twelve"].moves["522c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["twelve"].moves["52fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["twelve"].moves["53fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["twelve"].moves["4a2c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["twelve"].moves["4aec"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["twelve"].moves["4bac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["twelve"].moves["4f8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["twelve"].moves["504c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["twelve"].moves["510c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["twelve"].moves["a9dc"] = { hits = {{ type = 3 }} } -- Air QCB LK
+frame_data_meta["twelve"].moves["ad34"] = { hits = {{ type = 3 }} } -- Air QCB MK
+frame_data_meta["twelve"].moves["af94"] = { hits = {{ type = 3 }} } -- Air QCB HK
+frame_data_meta["twelve"].moves["b1f4"] = { hits = {{ type = 3 }} } -- Air QCB EX
+
+-- CHUNLI
+frame_data_meta["chunli"].moves["cac4"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["chunli"].moves["cbb4"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["chunli"].moves["cce4"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["chunli"].moves["c804"] = { hits = {{ type = 2 }} } -- Cr MP
+
+frame_data_meta["chunli"].moves["6a3c"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["chunli"].moves["ce8c"] = { hits = {{ type = 3 }} } -- Cr Forward HK
+
+frame_data_meta["chunli"].moves["d38c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["chunli"].moves["d49c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["chunli"].moves["d5ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["chunli"].moves["dbbc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["chunli"].moves["dc5c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["chunli"].moves["debc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["chunli"].moves["cfdc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["chunli"].moves["d0ec"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["chunli"].moves["d1fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["chunli"].moves["d68c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["chunli"].moves["d72c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["chunli"].moves["d7dc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["chunli"].moves["dd4c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air Down MK
+
+frame_data_meta["chunli"].moves["6aec"] = { hits = {{ type = 3 }} } -- HCB LK
+frame_data_meta["chunli"].moves["6e5c"] = { hits = {{ type = 3 }} } -- HCB MK
+frame_data_meta["chunli"].moves["71cc"] = { hits = {{ type = 3 }} } -- HCB HK
+frame_data_meta["chunli"].moves["753c"] = { hits = {{ type = 3 }} } -- HCB EXK
+
+-- SEAN
+frame_data_meta["sean"].moves["ca3c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["sean"].moves["cadc"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["sean"].moves["cbac"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["sean"].moves["1ef0"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF LP
+frame_data_meta["sean"].moves["2060"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF MP
+frame_data_meta["sean"].moves["2130"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF HP
+frame_data_meta["sean"].moves["2200"] = { hits = {{ type = 2 }}, hit_throw = true } -- HCF EXP
+
+frame_data_meta["sean"].moves["dad4"] = { force_recording = true } -- Target HK
+
+frame_data_meta["sean"].moves["3e50"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["sean"].moves["c25c"] = { hits = {{ type = 3 }, { type = 3 }} } -- Forward HP
+frame_data_meta["sean"].moves["dc7c"] = { proxy = { id = "c25c", offset = 0 } } -- Target Forward HP
+
+frame_data_meta["sean"].moves["28c0"] = { hits = {{ type = 3 }} } -- QCF K
+frame_data_meta["sean"].moves["2a10"] = { hits = {{ type = 3 }, { type = 3 }, { type = 3 }} } -- QCF EXK
+
+frame_data_meta["sean"].moves["cf1c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["sean"].moves["d02c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["sean"].moves["d0fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["sean"].moves["d47c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["sean"].moves["d55c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["sean"].moves["d63c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["sean"].moves["cc9c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["sean"].moves["cd7c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["sean"].moves["ce5c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["sean"].moves["d1dc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["sean"].moves["d2bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["sean"].moves["d39c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+-- NECRO
+frame_data_meta["necro"].moves["e18c"] = { hits = {{ type = 2 }} } -- Cr LK
+frame_data_meta["necro"].moves["e29c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["necro"].moves["e444"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["necro"].moves["7274"] = { hits = {{ type = 2 }}, hit_throw = true } -- Snake Fang L
+frame_data_meta["necro"].moves["7374"] = { hits = {{ type = 2 }}, hit_throw = true } -- Snake Fang L
+frame_data_meta["necro"].moves["7474"] = { hits = {{ type = 2 }}, hit_throw = true } -- Snake Fang L
+
+frame_data_meta["necro"].moves["7cf4"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["necro"].moves["7574"] = { hits = {{ type = 3 }} } -- Flying Viper L
+frame_data_meta["necro"].moves["7674"] = { hits = {{ type = 3 }} } -- Flying Viper M
+frame_data_meta["necro"].moves["7774"] = { hits = {{ type = 3 }} } -- Flying Viper H
+frame_data_meta["necro"].moves["7874"] = { hits = {{ type = 3 }, { type = 3 }} } -- Flying Viper EX
+frame_data_meta["necro"].moves["7d94"] = { hits = {{ type = 3 }} } -- Rising Cobra L
+frame_data_meta["necro"].moves["7f24"] = { hits = {{ type = 3 }} } -- Rising Cobra M
+frame_data_meta["necro"].moves["80b4"] = { hits = {{ type = 3 }} } -- Rising Cobra H
+frame_data_meta["necro"].moves["8244"] = { hits = {{ type = 3 }, { type = 3 }} } -- Rising Cobra EX
+
+frame_data_meta["necro"].moves["e954"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["necro"].moves["ec34"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["necro"].moves["ed74"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["necro"].moves["f224"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["necro"].moves["ec34"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["necro"].moves["ed74"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["necro"].moves["e5e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["necro"].moves["e6b4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["necro"].moves["e7a4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["necro"].moves["eef4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["necro"].moves["efa4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["necro"].moves["f084"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+-- DUDLEY
+frame_data_meta["dudley"].moves["48fc"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["dudley"].moves["49ec"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["dudley"].moves["4bf4"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["dudley"].moves["0a50"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["dudley"].moves["4394"] = { hits = {{ type = 3 }} } -- Forward HK
+
+frame_data_meta["dudley"].moves["51d4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["dudley"].moves["5314"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["dudley"].moves["5454"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["dudley"].moves["5884"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["dudley"].moves["59c4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["dudley"].moves["5b04"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["dudley"].moves["4ed4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["dudley"].moves["4fb4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["dudley"].moves["50b4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["dudley"].moves["5584"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["dudley"].moves["5664"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["dudley"].moves["5764"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["dudley"].moves["656c"] = { proxy = { id = "3fd4", offset = 0 } } -- Target MK
+frame_data_meta["dudley"].moves["675c"] = { proxy = { id = "3914", offset = 0 } } -- Target MP
+
+-- YANG
+frame_data_meta["yang"].moves["d45c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["yang"].moves["d52c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["yang"].moves["d6a4"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["yang"].moves["d1c4"] = { hits = {{ type = 2 }} } -- Cr MP
+
+frame_data_meta["yang"].moves["dd18"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["yang"].moves["caa4"] = { hits = {{ type = 3 }} } -- Forward MK
+
+frame_data_meta["yang"].moves["f50c"] = { force_recording = true } -- Target HK
+frame_data_meta["yang"].moves["ef0c"] = { proxy = { id = "c4c4", offset = 0 } } -- Target HP
+frame_data_meta["yang"].moves["f0fc"] = { force_recording = true } -- Target Back HP
+
+frame_data_meta["yang"].moves["dbfc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["yang"].moves["dd3c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["yang"].moves["de8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["yang"].moves["e25c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["yang"].moves["e44c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["yang"].moves["e65c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["yang"].moves["d8ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["yang"].moves["d99c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["yang"].moves["da8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["yang"].moves["df8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["yang"].moves["e08c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["yang"].moves["e17c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["yang"].moves["e39c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive L
+frame_data_meta["yang"].moves["e5ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
+frame_data_meta["yang"].moves["e75c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
+
+-- YUN
+frame_data_meta["yun"].moves["53bc"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["yun"].moves["548c"] = { hits = {{ type = 2 }} } -- Cr MK
+frame_data_meta["yun"].moves["a014"] = { hits = {{ type = 2 }} } -- Cr HK
+
+frame_data_meta["yun"].moves["5e50"] = { hits = {{ type = 3 }} } -- UOH
+frame_data_meta["yun"].moves["4d2c"] = { hits = {{ type = 3 }} } -- Forward MK
+
+frame_data_meta["yun"].moves["5b6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["yun"].moves["5cac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["yun"].moves["5dfc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
+frame_data_meta["yun"].moves["61cc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["yun"].moves["63bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["yun"].moves["65bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["yun"].moves["580c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["yun"].moves["590c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["yun"].moves["59fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HP
+frame_data_meta["yun"].moves["5efc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["yun"].moves["5ffc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["yun"].moves["60ec"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["yun"].moves["630c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive L
+frame_data_meta["yun"].moves["650c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
+frame_data_meta["yun"].moves["66bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
+
+frame_data_meta["yun"].moves["6b14"] = { force_recording = true,  hits = {{ type = 3 }} } -- Target Air HK
+frame_data_meta["yun"].moves["748c"] = { proxy = { id = "48bc", offset = 0 } } -- Target LK
+frame_data_meta["yun"].moves["75a4"] = { proxy = { id = "415c", offset = 0 } } -- Target MP
+frame_data_meta["yun"].moves["6c24"] = { force_recording = true } -- Target HP
+frame_data_meta["yun"].moves["9d14"] = { force_recording = true } -- Target HK
+frame_data_meta["yun"].moves["76a4"] = { force_recording = true } -- Target Cr HK
