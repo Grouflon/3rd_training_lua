@@ -47,7 +47,7 @@ This training mode is still in development and you may encounter bugs or missing
 If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
 
 ## Changelog
-### v0.6 ()
+### v0.6 (04/04/2020)
 - Can save/load recorded sequences to/from files
 - Keep recordings between sessions (saved per character inside training_settings.json)
 - Added counter-attack delay and maximum random deviation to recording slots
