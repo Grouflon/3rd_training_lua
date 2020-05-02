@@ -507,6 +507,7 @@ function make_recording_slot()
     inputs = {},
     delay = 0,
     random_deviation = 0,
+    weight = 1,
   }
 end
 recording_slots = {}
@@ -2105,6 +2106,45 @@ life_refill_delay_item.is_disabled = function()
   return training_settings.life_mode ~= 2
 end
 
+recording_slot_weight_item = {
+  name = "weight",
+  min = 0,
+  max = 100,
+  default = 1,
+}
+
+function recording_slot_weight_item:draw(_x, _y, _selected)
+  local _c = text_default_color
+  local _prefix = ""
+  local _suffix = ""
+  if _selected then
+    _c = text_selected_color
+    _prefix = "< "
+    _suffix = " >"
+  end
+  gui.text(_x, _y, _prefix.."weight : "..recording_slots[training_settings.current_recording_slot].weight.._suffix, _c, text_default_border_color)
+end
+
+function recording_slot_weight_item:left()
+  if recording_slots[training_settings.current_recording_slot].weight > self.min then
+    recording_slots[training_settings.current_recording_slot].weight = recording_slots[training_settings.current_recording_slot].weight - 1
+  end
+end
+
+function recording_slot_weight_item:right()
+  if recording_slots[training_settings.current_recording_slot].weight < self.max then
+    recording_slots[training_settings.current_recording_slot].weight = recording_slots[training_settings.current_recording_slot].weight + 1
+  end
+end
+
+function recording_slot_weight_item:reset()
+  recording_slots[training_settings.current_recording_slot].weight = self.default
+end
+
+function recording_slot_weight_item:legend()
+  return "MP: Reset to default"
+end
+
 p1_meter_gauge_item = meter_gauge_menu_item("P1 meter", training_settings, "p1_meter", player_objects[1])
 p2_meter_gauge_item = meter_gauge_menu_item("P2 meter", training_settings, "p2_meter", player_objects[2])
 meter_refill_delay_item = integer_menu_item("Meter refill delay", training_settings, "meter_refill_delay", 1, 100, false, 20)
@@ -2156,6 +2196,7 @@ menu = {
       checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
       list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
+      recording_slot_weight_item,
       counter_attack_delay_item,
       counter_attack_random_deviation_item,
       button_menu_item("Clear slot", clear_slot),
@@ -2243,7 +2284,20 @@ function find_random_recording_slot()
     end
   end
   if #_recorded_slots > 0 then
-    local _random_slot = math.ceil(math.random(#_recorded_slots))
+    local _total_weight = 0
+    for _i, _value in pairs(_recorded_slots) do
+      _total_weight = _total_weight + recording_slots[_value].weight
+    end
+    local _random_slot_weight = math.ceil(math.random(_total_weight))
+    local _random_slot = 1
+    local _weight_i = 0
+    for _i, _value in ipairs(_recorded_slots) do
+      if _weight_i <= _random_slot_weight and _weight_i + recording_slots[_value].weight >= _random_slot_weight then
+        _random_slot = _value
+        break
+      end
+      _weight_i = _weight_i + recording_slots[_value].weight
+    end
     return _recorded_slots[_random_slot]
   end
   return -1
