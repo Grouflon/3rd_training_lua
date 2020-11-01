@@ -2476,10 +2476,12 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
-  if _player_obj.previous_recovery_time == _player_obj.recovery_time then -- if we take a hit during recovery, it will get stuck (ie. Ibuki's close HK's second hit) so we reset it manually
-    memory.writebyte(_player_obj.base + 0x187, 0)
-    _player_obj.recovery_time = 0
-  end
+
+  -- NOTE: This piece of code is altering the normal behavior of both dummy and player. I don't how it is wrong, but this should never have been in "read_player_vars" in the first place anyway. Let's deactivate it for now.
+  --if _player_obj.previous_recovery_time == _player_obj.recovery_time then -- if we take a hit during recovery, it will get stuck (ie. Ibuki's close HK's second hit) so we reset it manually
+  --  memory.writebyte(_player_obj.base + 0x187, 0)
+  --  _player_obj.recovery_time = 0
+  --end
 
   local _previous_is_blocking = _player_obj.is_blocking or false
   _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
