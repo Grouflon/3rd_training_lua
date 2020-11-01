@@ -17,7 +17,6 @@ print("")
 
 json = require ("lua_libs/dkjson")
 
-
 -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 advanced_mode = false
 
@@ -40,15 +39,16 @@ function read_object_from_json_file(_file_path)
   _f:close()
 
   if (err) then
-    print(string.format("Failed to json file \"%s\" : %s", _file_path, _err))
+    print(string.format("Failed to read json file \"%s\" : %s", _file_path, _err))
   end
 
   return _object
 end
 
 function write_object_to_json_file(_object, _file_path)
-  local _f = io.open(_file_path, "w")
+  local _f, _error, _code = io.open(_file_path, "w")
   if _f == nil then
+    --print(string.format("Error %d: %s", _code, _error))
     return false
   end
 
