@@ -26,6 +26,33 @@ saved_recordings_path = "saved/recordings/"
 training_settings_file = "training_settings.json"
 frame_data_file_ext = "_framedata.json"
 
+-- Images
+require "gd"
+img_1_dir = gd.createFromPng("images/1_dir.png"):gdStr()
+img_2_dir = gd.createFromPng("images/2_dir.png"):gdStr()
+img_3_dir = gd.createFromPng("images/3_dir.png"):gdStr()
+img_4_dir = gd.createFromPng("images/4_dir.png"):gdStr()
+img_5_dir = gd.createFromPng("images/5_dir.png"):gdStr()
+img_6_dir = gd.createFromPng("images/6_dir.png"):gdStr()
+img_7_dir = gd.createFromPng("images/7_dir.png"):gdStr()
+img_8_dir = gd.createFromPng("images/8_dir.png"):gdStr()
+img_9_dir = gd.createFromPng("images/9_dir.png"):gdStr()
+img_L_button = gd.createFromPng("images/L_button.png"):gdStr()
+img_M_button = gd.createFromPng("images/M_button.png"):gdStr()
+img_H_button = gd.createFromPng("images/H_button.png"):gdStr()
+img_no_button = gd.createFromPng("images/no_button.png"):gdStr()
+img_dir = {
+  img_1_dir,
+  img_2_dir,
+  img_3_dir,
+  img_4_dir,
+  img_5_dir,
+  img_6_dir,
+  img_7_dir,
+  img_8_dir,
+  img_9_dir
+}
+
 -- json tools
 function read_object_from_json_file(_file_path)
   local _f = io.open(_file_path, "r")
@@ -409,6 +436,139 @@ function make_input_sequence(_stick, _button)
 
   return _sequence
 end
+
+-- History
+input_history_size_max = 12
+input_history = {
+  {},
+  {}
+}
+
+function make_input_history_entry(_prefix, _input)
+  local _up = _input[_prefix.." Up"]
+  local _down = _input[_prefix.." Down"]
+  local _left = _input[_prefix.." Left"]
+  local _right = _input[_prefix.." Right"]
+  local _direction = 5
+  if _down then
+    if _left then _direction = 1
+    elseif _right then _direction = 3
+    else _direction = 2 end
+  elseif _up then
+    if _left then _direction = 7
+    elseif _right then _direction = 9
+    else _direction = 8 end
+  else
+    if _left then _direction = 4
+    elseif _right then _direction = 6
+    else _direction = 5 end
+  end
+
+  return {
+    frame = frame_number,
+    direction = _direction,
+    buttons = {
+      _input[_prefix.." Weak Punch"],
+      _input[_prefix.." Medium Punch"],
+      _input[_prefix.." Strong Punch"],
+      _input[_prefix.." Weak Kick"],
+      _input[_prefix.." Medium Kick"],
+      _input[_prefix.." Strong Kick"]
+    }
+  }
+end
+
+function is_input_history_entry_equal(_a, _b)
+  if (_a.direction ~= _b.direction) then return false end
+  if (_a.buttons[1] ~= _b.buttons[1]) then return false end
+  if (_a.buttons[2] ~= _b.buttons[2]) then return false end
+  if (_a.buttons[3] ~= _b.buttons[3]) then return false end
+  if (_a.buttons[4] ~= _b.buttons[4]) then return false end
+  if (_a.buttons[5] ~= _b.buttons[5]) then return false end
+  if (_a.buttons[6] ~= _b.buttons[6]) then return false end
+  return true
+end
+
+function update_input_history(_history, _prefix, _input)
+  local _entry = make_input_history_entry(_prefix, _input)
+
+  if #_history == 0 then
+    table.insert(_history, _entry)
+  else
+    local _last_entry = _history[#_history]
+    if _last_entry.frame ~= frame_number and not is_input_history_entry_equal(_entry, _last_entry) then
+      table.insert(_history, _entry)
+    end
+  end
+
+  while #_history > input_history_size_max do
+    table.remove(_history, 1)
+  end
+end
+
+function draw_input_history_entry(_entry, _x, _y)
+  gui.image(_x, _y, img_dir[_entry.direction])
+
+  local _img_LP = img_no_button
+  local _img_MP = img_no_button
+  local _img_HP = img_no_button
+  local _img_LK = img_no_button
+  local _img_MK = img_no_button
+  local _img_HK = img_no_button
+  if _entry.buttons[1] then _img_LP = img_L_button end
+  if _entry.buttons[2] then _img_MP = img_M_button end
+  if _entry.buttons[3] then _img_HP = img_H_button end
+  if _entry.buttons[4] then _img_LK = img_L_button end
+  if _entry.buttons[5] then _img_MK = img_M_button end
+  if _entry.buttons[6] then _img_HK = img_H_button end
+
+  gui.image(_x + 13, _y, _img_LP)
+  gui.image(_x + 18, _y, _img_MP)
+  gui.image(_x + 23, _y, _img_HP)
+  gui.image(_x + 13, _y + 5, _img_LK)
+  gui.image(_x + 18, _y + 5, _img_MK)
+  gui.image(_x + 23, _y + 5, _img_HK)
+end
+
+function draw_input_history(_history, _x, _y, _is_left)
+  local _step_y = 12
+  local _j = 0
+  for _i = #_history, 1, -1 do
+    local _current_y = _y + _j * _step_y
+    local _entry = _history[_i]
+
+    local _entry_offset = 0
+    if _is_left then _entry_offset = 13 end
+    draw_input_history_entry(_entry, _x + _entry_offset, _current_y)
+
+    local _next_frame = frame_number
+    if _i < #_history then
+      _next_frame = _history[_i + 1].frame
+    end
+    local _frame_diff = _next_frame - _entry.frame
+    local _text = "-"
+    if (_frame_diff < 999) then
+      _text = string.format("%d", _frame_diff)
+    end
+
+    local _offset = 0
+    if _is_left then
+      _offset = 8
+      if (_frame_diff < 999) then
+        if (_frame_diff >= 100) then _offset = 0
+        elseif (_frame_diff >= 10) then _offset = 4 end
+      end
+    else
+      _offset = 33
+    end
+
+    gui.text(_x + _offset, _current_y + 2, _text, 0xd6e3efff, 0x101000ff)
+
+    _j = _j + 1
+  end
+end
+
+-- !History
 
 characters =
 {
@@ -2084,6 +2244,8 @@ training_settings = {
   infinite_sa_time = false,
   no_stun = true,
   display_input = true,
+  display_p1_input_history = false,
+  display_p2_input_history = false,
   display_hitboxes = false,
   auto_crop_recording = false,
   current_recording_slot = 1,
@@ -2144,7 +2306,9 @@ menu = {
       p2_meter_gauge_item,
       meter_refill_delay_item,
       checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
-      checkbox_menu_item("Display Input", training_settings, "display_input"),
+      checkbox_menu_item("Display Controllers", training_settings, "display_input"),
+      checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
+      checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
       integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
       --list_menu_item("Dummy Player", training_settings, "dummy_player", players),
@@ -2919,6 +3083,15 @@ function before_frame()
   process_pending_input_sequence(player_objects[2])
 
   update_framedata_recording(player_objects[1])
+
+  if is_in_match then
+    local _j = joypad.get()
+    update_input_history(input_history[1], "P1", _j)
+    update_input_history(input_history[2], "P2", _j)
+  else
+    input_history[1] = {}
+    input_history[2] = {}
+  end
 end
 
 is_menu_open = false
@@ -2930,13 +3103,20 @@ current_popup = nil
 function on_gui()
 
   if is_in_match then
+    if training_settings.display_p1_input_history then draw_input_history(input_history[1], 4, 50, true) end
+    if training_settings.display_p2_input_history then draw_input_history(input_history[2], 335, 50, false) end
+  end
+
+  if is_in_match then
     update_draw_hitboxes()
   end
 
   if is_in_match and training_settings.display_input then
-    local i = joypad.get()
-    draw_input(45, 190, i, "P1 ")
-    draw_input(280, 190, i, "P2 ")
+    local _i = joypad.get()
+    local _p1 = make_input_history_entry("P1", _i)
+    local _p2 = make_input_history_entry("P2", _i)
+    draw_input_history_entry(_p1, 44, 34)
+    draw_input_history_entry(_p2, 310, 34)
   end
 
   if is_in_match and current_recording_state ~= 1 then
