@@ -1,6 +1,6 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.6")
-print("  Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.0.7 emulator")
+print("  3rd_training.lua - v0.7")
+print("  Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade 2's FBNeo emulator")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
 print("")
@@ -75,7 +75,7 @@ end
 function write_object_to_json_file(_object, _file_path)
   local _f, _error, _code = io.open(_file_path, "w")
   if _f == nil then
-    --print(string.format("Error %d: %s", _code, _error))
+    print(string.format("Error %d: %s", _code, _error))
     return false
   end
 
@@ -198,7 +198,7 @@ function queue_input_sequence(_player_obj, _sequence)
   _player_obj.pending_input_sequence = _seq
 end
 
-function process_pending_input_sequence(_player_obj)
+function process_pending_input_sequence(_player_obj, _input)
   if _player_obj.pending_input_sequence == nil then
     return
   end
@@ -208,6 +208,18 @@ function process_pending_input_sequence(_player_obj)
   if not is_in_match then
     return
   end
+
+  -- Cancel all input
+  _input[_player_obj.prefix.." Up"] = false
+  _input[_player_obj.prefix.." Down"] = false
+  _input[_player_obj.prefix.." Left"] = false
+  _input[_player_obj.prefix.." Right"] = false
+  _input[_player_obj.prefix.." Weak Punch"] = false
+  _input[_player_obj.prefix.." Medium Punch"] = false
+  _input[_player_obj.prefix.." Strong Punch"] = false
+  _input[_player_obj.prefix.." Weak Kick"] = false
+  _input[_player_obj.prefix.." Medium Kick"] = false
+  _input[_player_obj.prefix.." Strong Kick"] = false
 
   -- Charge moves memory locations
   -- P1
@@ -233,7 +245,6 @@ function process_pending_input_sequence(_player_obj)
   local _gauges_offsets = { 0x0, 0x1C, 0x38, 0x54, 0x70 }
 
   local _s = ""
-  local _input = {}
   local _current_frame_input = _player_obj.pending_input_sequence.sequence[_player_obj.pending_input_sequence.current_frame]
   for i = 1, #_current_frame_input do
     local _input_name = _player_obj.prefix.." "
@@ -290,7 +301,6 @@ function process_pending_input_sequence(_player_obj)
     _input[_input_name] = true
     _s = _s.._input_name
   end
-  joypad.set(_input)
 
   --print(_s)
 
@@ -1293,12 +1303,10 @@ function restore_recordings()
 end
 
 -- swap inputs
-function swap_inputs(_in_input_table, _out_input_table)
+function swap_inputs(_out_input_table)
   function swap(_input)
-    local carry = _in_input_table["P1 ".._input]
-    _out_input_table["P1 ".._input] = nil
-
-    --_out_input_table["P1 ".._input] = _in_input_table["P2 ".._input]
+    local carry = _out_input_table["P1 ".._input]
+    _out_input_table["P1 ".._input] = _out_input_table["P2 ".._input]
     _out_input_table["P2 ".._input] = carry
   end
 
@@ -1682,7 +1690,7 @@ end
 
 function update_pose(_input, _player_obj, _pose)
 
-if current_recording_state ~= 1 then
+if current_recording_state == 4 then -- Replaying
   return
 end
 
@@ -1816,7 +1824,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     end
   end
 
-  if current_recording_state ~= 1 then
+  if current_recording_state == 4 then
     _dummy.blocking.listening = false
     _dummy.blocking.blocked_hit_count = 0
     return
@@ -1996,10 +2004,10 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
 
   if not is_in_match then return end
   if _stick == 1 and _button == 1 then return end
-  if current_recording_state ~= 1 then return end
+  if current_recording_state == 4 then return end
 
   function handle_recording()
-    if button_gesture[_button] == "recording" then
+    if button_gesture[_button] == "recording" and dummy.id == 2 then
       local _slot_index = training_settings.current_recording_slot
       if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
         _slot_index = find_random_recording_slot()
@@ -2350,6 +2358,7 @@ end
 
 -- RECORDING
 swap_characters = false
+-- 1: Default Mode, 2: Wait for recording, 3: Recording, 4: Replaying
 current_recording_state = 1
 last_coin_input_frame = -1
 override_replay_slot = -1
@@ -2505,7 +2514,7 @@ function update_recording(_input)
   if is_in_match and not is_menu_open then
 
     -- manage input
-    if player.input.pressed.coin then
+    if player.input.pressed.coin or dummy.input.pressed.coin then
       if frame_number < (last_coin_input_frame + _input_buffer_length) then
         last_coin_input_frame = -1
 
@@ -2544,15 +2553,14 @@ function update_recording(_input)
     elseif current_recording_state == 2 then
     elseif current_recording_state == 3 then
       local _frame = {}
-      local _joypad = joypad.get()
 
-      for _key, _value in pairs(_joypad) do
+      for _key, _value in pairs(_input) do
         local _prefix = _key:sub(1, #player.prefix)
         if (_prefix == player.prefix) then
           local _input_name = _key:sub(1 + #player.prefix + 1)
           if (_input_name ~= "Coin" and _input_name ~= "Start") then
             if (_value) then
-              local _sequence_input_name = stick_input_to_sequence_input(dummy, _input_name)
+              local _sequence_input_name = stick_input_to_sequence_input(player, _input_name)
               --print(_input_name.." ".._sequence_input_name)
               table.insert(_frame, _sequence_input_name)
             end
@@ -3018,11 +3026,6 @@ function write_player_vars(_player_obj)
     memory.writebyte(_player_obj.stun_base, 0); -- Stun timer
     memory.writedword(_player_obj.stun_base + 0x2, 0); -- Stun bar
   end
-
-  -- character swap
-  local _disable_input = swap_characters and training_settings.dummy_player ~= _player_obj.id
-  memory.writebyte(_player_obj.base + 0x8, to_bit(_disable_input))
-
 end
 
 function on_load_state()
@@ -3058,17 +3061,18 @@ function before_frame()
   write_player_vars(player_objects[1])
   write_player_vars(player_objects[2])
 
-  if training_settings.dummy_player == 2 then
-    player = player_objects[1]
-    dummy = player_objects[2]
-  elseif training_settings.dummy_player == 1 then
-    player = player_objects[2]
-    dummy = player_objects[1]
+  -- input
+  local _input = joypad.get()
+  if is_in_match and not is_menu_open and swap_characters then
+    swap_inputs(_input)
   end
 
-  local _input = {}
-  if is_in_match and not is_menu_open and swap_characters then
-    swap_inputs(joypad.get(), _input)
+  if not swap_characters then
+    player = player_objects[1]
+    dummy = player_objects[2]
+  else
+    player = player_objects[2]
+    dummy = player_objects[1]
   end
 
   -- pose
@@ -3078,7 +3082,7 @@ function before_frame()
   update_blocking(_input, player, dummy, training_settings.blocking_mode, training_settings.blocking_style, training_settings.red_parry_hit_count)
 
   -- fast recovery
-  if is_in_match and training_settings.fast_recovery_mode ~= 1 and current_recording_state == 1 then
+  if is_in_match and training_settings.fast_recovery_mode ~= 1 and current_recording_state ~= 4 then
     if dummy.previous_standing_state ~= 0x00 and dummy.standing_state == 0x00 then
       local _r = math.random()
       if training_settings.fast_recovery_mode ~= 3 or _r > 0.5 then
@@ -3096,21 +3100,22 @@ function before_frame()
   -- recording
   update_recording(_input)
 
-  joypad.set(_input)
-
-  process_pending_input_sequence(player_objects[1])
-  process_pending_input_sequence(player_objects[2])
-
-  update_framedata_recording(player_objects[1])
+  process_pending_input_sequence(player_objects[1], _input)
+  process_pending_input_sequence(player_objects[2], _input)
 
   if is_in_match then
-    local _j = joypad.get()
-    update_input_history(input_history[1], "P1", _j)
-    update_input_history(input_history[2], "P2", _j)
+    update_input_history(input_history[1], "P1", _input)
+    update_input_history(input_history[2], "P2", _input)
   else
     input_history[1] = {}
     input_history[2] = {}
   end
+
+  joypad.set(_input)
+
+  update_framedata_recording(player_objects[1])
+
+
 end
 
 is_menu_open = false
@@ -3134,8 +3139,8 @@ function on_gui()
     local _i = joypad.get()
     local _p1 = make_input_history_entry("P1", _i)
     local _p2 = make_input_history_entry("P2", _i)
-    draw_input_history_entry(_p1, 44, 34)
-    draw_input_history_entry(_p2, 310, 34)
+    draw_input_history_entry(_p1, 134, 195)
+    draw_input_history_entry(_p2, 225, 195)
   end
 
   if is_in_match and current_recording_state ~= 1 then
@@ -4278,9 +4283,10 @@ frame_data_meta["yun"].moves["630c"] = { hits = {{ type = 3 }}, movement_type = 
 frame_data_meta["yun"].moves["650c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
 frame_data_meta["yun"].moves["66bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
 
-frame_data_meta["yun"].moves["6b14"] = { force_recording = true,  hits = {{ type = 3 }} } -- Target Air HK
+frame_data_meta["yun"].moves["6b14"] = { force_recording = true,  hits = {{ type = 3 }} } -- Target Air HP
 frame_data_meta["yun"].moves["748c"] = { proxy = { id = "48bc", offset = 0 } } -- Target LK
 frame_data_meta["yun"].moves["75a4"] = { proxy = { id = "415c", offset = 0 } } -- Target MP
-frame_data_meta["yun"].moves["6c24"] = { force_recording = true } -- Target HP
+frame_data_meta["yun"].moves["6c24"] = { force_recording = false } -- Target HP
+frame_data_meta["yun"].moves["6e14"] = { force_recording = true } -- Target Back HP
 frame_data_meta["yun"].moves["9d14"] = { force_recording = true } -- Target HK
 frame_data_meta["yun"].moves["76a4"] = { force_recording = true } -- Target Cr HK
