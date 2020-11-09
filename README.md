@@ -51,6 +51,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 ## Changelog
 ### v0.7 (???)
 - [Feature] Added input history display for both players
+- [Feature] Added a weight to each replay slot to control randomness (Contribution of @BoredKittenz)
 - Redesigned controller display
 - [Bugfix] [issue#8](https://github.com/Grouflon/3rd_training_lua/issues/8) Cannot Link moves into super
 

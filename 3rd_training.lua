@@ -667,6 +667,7 @@ function make_recording_slot()
     inputs = {},
     delay = 0,
     random_deviation = 0,
+    weight = 1,
   }
 end
 recording_slots = {}
@@ -1247,6 +1248,7 @@ function load_training_data()
         else
           _slot.delay = _slot.delay or 0
           _slot.random_deviation = _slot.random_deviation or 0
+          _slot.weight = _slot.weight or 1
         end
       end
     end
@@ -2277,6 +2279,7 @@ end
 p2_meter_gauge_item.is_disabled = p1_meter_gauge_item.is_disabled
 meter_refill_delay_item.is_disabled = p1_meter_gauge_item.is_disabled
 
+slot_weight_item = integer_menu_item("Weight", nil, "weight", 0, 100, false, 10)
 counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
 counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -40, 40, false, 0)
 
@@ -2320,6 +2323,7 @@ menu = {
       checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
       list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
+      slot_weight_item,
       counter_attack_delay_item,
       counter_attack_random_deviation_item,
       button_menu_item("Clear slot", clear_slot),
@@ -2406,8 +2410,22 @@ function find_random_recording_slot()
       table.insert(_recorded_slots, _i)
     end
   end
+
   if #_recorded_slots > 0 then
-    local _random_slot = math.ceil(math.random(#_recorded_slots))
+    local _total_weight = 0
+    for _i, _value in pairs(_recorded_slots) do
+      _total_weight = _total_weight + recording_slots[_value].weight
+    end
+    local _random_slot_weight = math.ceil(math.random(_total_weight))
+    local _random_slot = 1
+    local _weight_i = 0
+    for _i, _value in ipairs(_recorded_slots) do
+      if _weight_i <= _random_slot_weight and _weight_i + recording_slots[_value].weight >= _random_slot_weight then
+        _random_slot = _value
+        break
+      end
+      _weight_i = _weight_i + recording_slots[_value].weight
+    end
     return _recorded_slots[_random_slot]
   end
   return -1
@@ -3025,6 +3043,7 @@ function before_frame()
     debug_settings.debug_move = ""
   end
 
+  slot_weight_item.object = recording_slots[training_settings.current_recording_slot]
   counter_attack_delay_item.object = recording_slots[training_settings.current_recording_slot]
   counter_attack_random_deviation_item.object = recording_slots[training_settings.current_recording_slot]
 
