@@ -1,7 +1,7 @@
 # 3rd_training_lua
-Training mode for Street Fighter III 3rd Strike (USA 990512), on FBA-RR v0.0.7 emulator
+Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade 2's FBNeo emulator
 
-The right version of FBA-RR can be downloaded [here](http://tasvideos.org/EmulatorResources/Fbarr.html)
+The right version of Fightcade can be downloaded [here](https://www.fightcade.com/)
 
 ## Main features
 - Can set dummy to counter-attack with any move on frame 1 after any hit / block / parry / wake-up
@@ -12,12 +12,12 @@ The right version of FBA-RR can be downloaded [here](http://tasvideos.org/Emulat
 - Can display input history for both players
 
 ## How to use
-* Download emulator from [here](http://tasvideos.org/EmulatorResources/Fbarr.html) and find the proper roms
-* Download script from [here](https://github.com/Grouflon/3rd_training_lua/archive/master.zip) or clone repository
-* Extract script anywhere on your computer
+* Download emulator from [here](https://www.fightcade.com/) and find the proper roms
+* Download the archive from [here](https://github.com/Grouflon/3rd_training_lua/archive/master.zip) or clone repository
+* Extract the archive anywhere on your computer
 * Start the emulator, load the rom, start a match with P1 and P2 (you will need to map input for both players)
 * Go to Game->Lua Scripting->New Lua Script Window and run the script **3rd_training.lua** from here
-* Follow instructions from Output Console
+* Follow instructions from the Output Console
 
 ## Troubleshooting
 **Q: Missing rom, zip file not found**
@@ -50,6 +50,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 
 ## Changelog
 ### v0.7 (???)
+- Changed main supported emulator from FBA-rr to Fightcade's FBNeo fork
 - [Feature] Added input history display for both players
 - [Feature] Added a weight to each replay slot to control randomness (Contribution of @BoredKittenz)
 - Redesigned controller display
