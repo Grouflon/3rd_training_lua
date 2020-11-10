@@ -3174,12 +3174,12 @@ function on_gui()
     local _i = joypad.get()
     local _p1 = make_input_history_entry("P1", _i)
     local _p2 = make_input_history_entry("P2", _i)
-    draw_input_history_entry(_p1, 134, 195)
-    draw_input_history_entry(_p2, 225, 195)
+    draw_input_history_entry(_p1, 44, 34)
+    draw_input_history_entry(_p2, 310, 34)
   end
 
   if is_in_match and current_recording_state ~= 1 then
-    local _y = 35
+    local _y = 5
     local _current_recording_size = 0
     if (recording_slots[training_settings.current_recording_slot].inputs) then
       _current_recording_size = #recording_slots[training_settings.current_recording_slot].inputs
@@ -3187,18 +3187,18 @@ function on_gui()
 
     if current_recording_state == 2 then
       local _text = string.format("%s: Wait for recording (%d)", recording_slots_names[training_settings.current_recording_slot], _current_recording_size)
-      gui.text(212, _y, _text, text_default_color, text_default_border_color)
+      gui.text(250, _y, _text, text_default_color, text_default_border_color)
     elseif current_recording_state == 3 then
       local _text = string.format("%s: Recording... (%d)", recording_slots_names[training_settings.current_recording_slot], _current_recording_size)
-      gui.text(236, _y, _text, text_default_color, text_default_border_color)
+      gui.text(274, _y, _text, text_default_color, text_default_border_color)
     elseif current_recording_state == 4 and dummy.pending_input_sequence and dummy.pending_input_sequence.sequence then
       local _text = ""
       local _x = 0
       if training_settings.replay_mode == 1 or training_settings.replay_mode == 3 then
-        _x = 270
+        _x = 308
         _text = string.format("Playing (%d/%d)", dummy.pending_input_sequence.current_frame, #dummy.pending_input_sequence.sequence)
       else
-        _x = 300
+        _x = 338
         _text = "Playing..."
       end
       gui.text(_x, _y, _text, text_default_color, text_default_border_color)
@@ -3347,11 +3347,10 @@ function on_gui()
     local _gui_box_bg_color = 0x293139FF
     local _gui_box_outline_color = 0x840000FF
     local _menu_box_left = 23
-    local _menu_box_top = 20
+    local _menu_box_top = 15
     local _menu_box_right = 360
-    local _menu_box_bottom = 180
+    local _menu_box_bottom = 195
     gui.box(_menu_box_left, _menu_box_top, _menu_box_right, _menu_box_bottom, _gui_box_bg_color, _gui_box_outline_color)
-    --gui.box(0, 0, 383, 17, 0x000000AA, 0x000000AA)
 
     local _bar_x = _menu_box_left + 18
     local _bar_y = _menu_box_top + 6
