@@ -142,12 +142,14 @@ function reset_player_objects()
   P2 = player_objects[2]
 
   P1.gauge_addr = 0x020695B5
-  P1.meter_addr = { 0x020286AB, 0x020695BF }
+  P1.meter_addr = { 0x020286AB, 0x020695BF } -- 2nd address is the master variable
   P1.stun_base = 0x020695FD
+  P1.meter_update_flag = 0x020157C8
 
   P2.gauge_addr = 0x020695E1
-  P2.meter_addr = { 0x020286DF, 0x020695EB}
+  P2.meter_addr = { 0x020286DF, 0x020695EB} -- 2nd address is the master variable
   P2.stun_base = 0x02069611
+  P2.meter_update_flag = 0x020157C9
 end
 reset_player_objects()
 
@@ -2667,12 +2669,6 @@ function read_player_vars(_player_obj)
   _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
 
-  -- NOTE: This piece of code is altering the normal behavior of both dummy and player. I don't how it is wrong, but this should never have been in "read_player_vars" in the first place anyway. Let's deactivate it for now.
-  --if _player_obj.previous_recovery_time == _player_obj.recovery_time then -- if we take a hit during recovery, it will get stuck (ie. Ibuki's close HK's second hit) so we reset it manually
-  --  memory.writebyte(_player_obj.base + 0x187, 0)
-  --  _player_obj.recovery_time = 0
-  --end
-
   local _previous_is_blocking = _player_obj.is_blocking or false
   _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
   if _debug_state_variables and not _previous_is_blocking and _player_obj.is_blocking then print(string.format("%d - %s blocked", frame_number, _player_obj.prefix)) end
@@ -2771,7 +2767,7 @@ function read_player_vars(_player_obj)
     not _player_obj.is_blocking and
     not _player_obj.is_waking_up and
     not _player_obj.is_fast_waking_up and
-    _player_obj.recovery_time == 0 and
+    _player_obj.recovery_time == _player_obj.previous_recovery_time and
     _player_obj.remaining_freeze_frames == 0 and
     _player_obj.input_capacity > 0
   )
@@ -2989,25 +2985,64 @@ function write_player_vars(_player_obj)
 
   -- METER
   if is_in_match and not is_menu_open and not _player_obj.is_in_timed_sa then
+    -- If the SA is a timed SA, the gauge won't go back to 0 when it reaches max. We have to make special cases for it
+    local _is_timed_sa = character_specific[_player_obj.char_str].timed_sa[_player_obj.selected_sa]
+
     if training_settings.meter_mode == 3 then
-      memory.writebyte(_player_obj.gauge_addr, _player_obj.max_meter_gauge)
-      for _, _addr in ipairs(_player_obj.meter_addr) do
-        memory.writebyte(_addr, _player_obj.max_meter_count)
+      local _previous_meter_count = memory.readbyte(_player_obj.meter_addr[2])
+      local _previous_meter_count_slave = memory.readbyte(_player_obj.meter_addr[1])
+      if _previous_meter_count ~= _player_obj.max_meter_count and _previous_meter_count_slave ~= _player_obj.max_meter_count then
+        local _gauge_value = 0
+        if _is_timed_sa then
+          _gauge_value = _player_obj.max_meter_gauge
+        end
+        memory.writebyte(_player_obj.gauge_addr, _gauge_value)
+        memory.writebyte(_player_obj.meter_addr[2], _player_obj.max_meter_count)
+        memory.writebyte(_player_obj.meter_update_flag, 0x01)
       end
     elseif training_settings.meter_mode == 2 then
       if _player_obj.is_idle and _player_obj.idle_time > training_settings.meter_refill_delay then
-        local _meter = memory.readbyte(_player_obj.gauge_addr) + _player_obj.max_meter_gauge * memory.readbyte(_player_obj.meter_addr[1])
-        if _meter > _wanted_meter then
-          _meter = _meter - 6
-          _meter = math.max(_meter, _wanted_meter)
-        elseif _meter < _wanted_meter then
-          _meter = _meter + 6
-          _meter = math.min(_meter, _wanted_meter)
-        end
+        local _previous_gauge = memory.readbyte(_player_obj.gauge_addr)
+        local _previous_meter_count = memory.readbyte(_player_obj.meter_addr[2])
+        local _previous_meter_count_slave = memory.readbyte(_player_obj.meter_addr[1])
 
-        memory.writebyte(_player_obj.gauge_addr, _meter % _player_obj.max_meter_gauge)
-        for _, _addr in ipairs(_player_obj.meter_addr) do
-          memory.writebyte(_addr, math.floor(_meter / _player_obj.max_meter_gauge))
+        if _previous_meter_count == _previous_meter_count_slave then
+          local _meter = 0
+          -- If the SA is a timed SA, the gauge won't go back to 0 when it reaches max
+          if _is_timed_sa then
+            _meter = _previous_gauge
+          else
+             _meter = _previous_gauge + _player_obj.max_meter_gauge * _previous_meter_count
+          end
+
+          if _meter > _wanted_meter then
+            _meter = _meter - 6
+            _meter = math.max(_meter, _wanted_meter)
+          elseif _meter < _wanted_meter then
+            _meter = _meter + 6
+            _meter = math.min(_meter, _wanted_meter)
+          end
+
+          local _wanted_gauge = _meter % _player_obj.max_meter_gauge
+          local _wanted_meter_count = math.floor(_meter / _player_obj.max_meter_gauge)
+          local _previous_meter_count = memory.readbyte(_player_obj.meter_addr[2])
+          local _previous_meter_count_slave = memory.readbyte(_player_obj.meter_addr[1])
+
+          if character_specific[_player_obj.char_str].timed_sa[_player_obj.selected_sa] and _wanted_meter_count == 1 and _wanted_gauge == 0 then
+            _wanted_gauge = _player_obj.max_meter_gauge
+          end
+
+          --if _player_obj.id == 1 then
+          --  print(string.format("%d: %d/%d/%d (%d/%d)", _wanted_meter, _wanted_gauge, _wanted_meter_count, _player_obj.max_meter_gauge, _previous_gauge, _previous_meter_count))
+          --end
+
+          if _wanted_gauge ~= _previous_gauge then
+            memory.writebyte(_player_obj.gauge_addr, _wanted_gauge)
+          end
+          if _previous_meter_count ~= _wanted_meter_count then
+            memory.writebyte(_player_obj.meter_addr[2], _wanted_meter_count)
+            memory.writebyte(_player_obj.meter_update_flag, 0x01)
+          end
         end
       end
     end
