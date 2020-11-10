@@ -55,6 +55,7 @@ If you wish to contribute or give any feedback, feel free to get in touch with m
 - [Feature] Added a weight to each replay slot to control randomness (Contribution of @BoredKittenz)
 - Redesigned controller display
 - [Bugfix] [issue#8](https://github.com/Grouflon/3rd_training_lua/issues/8) Cannot Link moves into super
+- [Bugfix] [issue#15](https://github.com/Grouflon/3rd_training_lua/issues/15) Time based super like geneijin not consistent with their meter usage
 
 ### v0.6 (04/04/2020)
 - Can save/load recorded sequences to/from files
