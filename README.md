@@ -20,8 +20,9 @@ The right version of Fightcade can be downloaded [here](https://www.fightcade.co
 * Follow instructions from the Output Console
 
 ## Bug reporting / Contribute
+If you want to be informed when a new version come out and/or discuss the current bugs and features, you can join the [Discord server](https://discord.gg/F8vaCr4S) of the project.
 This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues)
-If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
+If you wish to contribute or give any feedback, feel free to get in touch or submit pull requests.
 
 ## Troubleshooting
 **Q: Missing rom, zip file not found**
@@ -48,6 +49,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 ## Changelog
 ### v0.7 (12/04/2020)
 - Changed main supported emulator from FBA-rr to Fightcade's FBNeo fork
+- [Feature] Main player now acts as the training dummy during recording and pre-recording
 - [Feature] Added input history display for both players
 - [Feature] Added a weight to each replay slot to control randomness (Contribution of @BoredKittenz)
 - Redesigned controller display
