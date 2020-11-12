@@ -55,6 +55,9 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - Redesigned controller display
 - [Bugfix] [issue#8](https://github.com/Grouflon/3rd_training_lua/issues/8) Cannot Link moves into super
 - [Bugfix] [issue#15](https://github.com/Grouflon/3rd_training_lua/issues/15) Time based super like geneijin not consistent with their meter usage
+- [Bugfix] [issue#19](https://github.com/Grouflon/3rd_training_lua/issues/19) Error: Failed to save training settings to training settings.json
+- [Bugfix] [issue#18](https://github.com/Grouflon/3rd_training_lua/issues/18) Another Big Issue: Constant Negative Edge While Recording
+- [Bugfix] [issue#17](https://github.com/Grouflon/3rd_training_lua/issues/17) Large issue : P2 cannot do EX moves even if they have meter
 
 ### v0.6 (04/04/2020)
 - Can save/load recorded sequences to/from files
