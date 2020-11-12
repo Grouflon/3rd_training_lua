@@ -21,7 +21,9 @@ The right version of Fightcade can be downloaded [here](https://www.fightcade.co
 
 ## Bug reporting / Contribute
 If you want to be informed when a new version come out and/or discuss the current bugs and features, you can join the [Discord server](https://discord.gg/F8vaCr4S) of the project.
+
 This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues)
+
 If you wish to contribute or give any feedback, feel free to get in touch or submit pull requests.
 
 ## Troubleshooting
