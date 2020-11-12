@@ -1,5 +1,5 @@
 # 3rd_training_lua
-Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade 2's FBNeo emulator
+Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade v2.0.91
 
 The right version of Fightcade can be downloaded [here](https://www.fightcade.com/)
 
@@ -18,6 +18,10 @@ The right version of Fightcade can be downloaded [here](https://www.fightcade.co
 * Start the emulator, load the rom, start a match with P1 and P2 (you will need to map input for both players)
 * Go to Game->Lua Scripting->New Lua Script Window and run the script **3rd_training.lua** from here
 * Follow instructions from the Output Console
+
+## Bug reporting / Contribute
+This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues)
+If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
 
 ## Troubleshooting
 **Q: Missing rom, zip file not found**
@@ -41,15 +45,8 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 ## Roadmap
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
-## Missing features
-Automatic blocking needs some manual setup to be done by character in order to work correctly, so a lot of characters do not support this feature yet. Every missing character is mentioned on the Roadmap though and will be added at some point.
-
-## Bug reporting / Contribute
-This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues)
-If you wish to contribute or give any feedback, feel free to get in touch with me or submit pull requests.
-
 ## Changelog
-### v0.7 (???)
+### v0.7 (12/04/2020)
 - Changed main supported emulator from FBA-rr to Fightcade's FBNeo fork
 - [Feature] Added input history display for both players
 - [Feature] Added a weight to each replay slot to control randomness (Contribution of @BoredKittenz)

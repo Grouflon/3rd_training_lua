@@ -1,6 +1,6 @@
 print("-----------------------------")
 print("  3rd_training.lua - v0.7")
-print("  Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade 2's FBNeo emulator")
+print("  Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade v2.0.91")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
 print("")
