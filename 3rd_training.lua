@@ -2045,6 +2045,10 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
         _slot_index = find_random_recording_slot()
       end
+      if _slot_index < 0 then
+        return
+      end
+
       _defender.counter.recording_slot = _slot_index
 
       local _delay = recording_slots[_defender.counter.recording_slot].delay or 0
