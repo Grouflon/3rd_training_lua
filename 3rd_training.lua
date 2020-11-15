@@ -2427,12 +2427,13 @@ function find_random_recording_slot()
     for _i, _value in pairs(_recorded_slots) do
       _total_weight = _total_weight + recording_slots[_value].weight
     end
+
     local _random_slot_weight = math.ceil(math.random(_total_weight))
     local _random_slot = 1
     local _weight_i = 0
     for _i, _value in ipairs(_recorded_slots) do
       if _weight_i <= _random_slot_weight and _weight_i + recording_slots[_value].weight >= _random_slot_weight then
-        _random_slot = _value
+        _random_slot = _i
         break
       end
       _weight_i = _weight_i + recording_slots[_value].weight

@@ -49,6 +49,9 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
 ## Changelog
+### v0.8 (???)
+- [Bugfix] Fixed incorrect index causing error when using random replay and weights
+
 ### v0.7 (12/04/2020)
 - Changed main supported emulator from FBA-rr to Fightcade's FBNeo fork
 - [Feature] Main player now acts as the training dummy during recording and pre-recording
