@@ -2000,6 +2000,37 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   end
 end
 
+function update_fast_recovery(_input, _player, _dummy, _mode)
+  if is_in_match and _mode ~= 1 and current_recording_state ~= 4 then
+    local _should_tap_down = false
+    -- Special case for Hugo's 360
+    if _player.char_id == 6 and _player.animation == "0470" then
+      local _tech_timing = 10
+      if character_specific[_dummy.char_str].hugo_360_tech_timing ~= nil then
+        _tech_timing = character_specific[_dummy.char_str].hugo_360_tech_timing
+      end
+      if _player.animation_frame == _tech_timing  then
+        _should_tap_down = true
+        is_in_special_recovery = true
+      end
+    -- General case
+    elseif not is_in_special_recovery and _dummy.previous_standing_state ~= 0x00 and _dummy.standing_state == 0x00 then
+      _should_tap_down = true
+    end
+
+    if _dummy.previous_standing_state == 0x00 and _dummy.standing_state ~= 0x00 then
+      is_in_special_recovery = false
+    end
+
+    if _should_tap_down then
+      local _r = math.random()
+      if _mode ~= 3 or _r > 0.5 then
+        _input[dummy.prefix..' Down'] = true
+      end
+    end
+  end
+end
+
 function update_counter_attack(_input, _attacker, _defender, _stick, _button)
 
   local _debug = false
@@ -3122,14 +3153,7 @@ function before_frame()
   update_blocking(_input, player, dummy, training_settings.blocking_mode, training_settings.blocking_style, training_settings.red_parry_hit_count)
 
   -- fast recovery
-  if is_in_match and training_settings.fast_recovery_mode ~= 1 and current_recording_state ~= 4 then
-    if dummy.previous_standing_state ~= 0x00 and dummy.standing_state == 0x00 then
-      local _r = math.random()
-      if training_settings.fast_recovery_mode ~= 3 or _r > 0.5 then
-        _input[dummy.prefix..' Down'] = true
-      end
-    end
-  end
+  update_fast_recovery(_input, player, dummy, training_settings.fast_recovery_mode)
 
   -- tech throws
   update_tech_throws(_input, player, dummy, training_settings.tech_throws_mode)
@@ -3154,8 +3178,6 @@ function before_frame()
   joypad.set(_input)
 
   update_framedata_recording(player_objects[1])
-
-
 end
 
 is_menu_open = false
@@ -3627,7 +3649,7 @@ character_specific.q.fast_wake_ups = {
   { animation = "6e68", length = 31 },
   { animation = "6c98", length = 32 },
 }
-
+character_specific.q.hugo_360_tech_timing = 15
 
 character_specific.oro.wake_ups = {
   { animation = "b928", length = 56 },
