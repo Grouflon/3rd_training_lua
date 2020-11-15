@@ -2459,7 +2459,10 @@ function find_random_recording_slot()
       _total_weight = _total_weight + recording_slots[_value].weight
     end
 
-    local _random_slot_weight = math.ceil(math.random(_total_weight))
+    local _random_slot_weight = 0
+    if _total_weight > 0 then
+      math.ceil(math.random(_total_weight))
+    end
     local _random_slot = 1
     local _weight_i = 0
     for _i, _value in ipairs(_recorded_slots) do
