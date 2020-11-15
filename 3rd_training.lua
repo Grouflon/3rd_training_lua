@@ -3684,6 +3684,7 @@ character_specific.makoto.wake_ups = {
   { animation = "9ca4", length = 72 },
   { animation = "9d94", length = 89 },
   { animation = "9fb4", length = 85 },
+  { animation = "c000", length = 35 },
 }
 character_specific.makoto.fast_wake_ups = {
   { animation = "c650", length = 31 },
