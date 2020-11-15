@@ -3066,6 +3066,10 @@ end
 
 function on_load_state()
   reset_player_objects()
+  read_player_vars(player_objects[1])
+  read_player_vars(player_objects[2])
+  input_history[1] = {}
+  input_history[2] = {}
 end
 
 function on_start()
