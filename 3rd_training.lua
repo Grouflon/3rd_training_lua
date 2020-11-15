@@ -3773,6 +3773,8 @@ character_specific.ken.wake_ups = {
   { animation = "efd4", length = 71 },
   { animation = "efd4", length = 71 },
   { animation = "f1a4", length = 68 },
+  { animation = "f0a4", length = 72 },
+  { animation = "5a60", length = 80 },
 }
 character_specific.ken.fast_wake_ups = {
   { animation = "3e7c", length = 29 },
