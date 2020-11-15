@@ -51,6 +51,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 ## Changelog
 ### v0.8 (???)
 - [Bugfix] Fixed incorrect index causing error when using random replay and weights
+- [Bugfix] [issue#21](https://github.com/Grouflon/3rd_training_lua/issues/21) When the game is paused and hitboxes are enabled, an error occurs when loading a savestate
 
 ### v0.7 (12/04/2020)
 - Changed main supported emulator from FBA-rr to Fightcade's FBNeo fork
