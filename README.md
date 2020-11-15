@@ -50,9 +50,12 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 
 ## Changelog
 ### v0.8 (???)
-- [Bugfix] Fixed incorrect index causing error when using random replay and weights
+- [Bugfix] Fixed incorrect index causing errors when using random replay and weights
 - [Bugfix] [issue#21](https://github.com/Grouflon/3rd_training_lua/issues/21) When the game is paused and hitboxes are enabled, an error occurs when loading a savestate
 - [Bugfix] [issue#29](https://github.com/Grouflon/3rd_training_lua/issues/29) If you make a recording and rename it with lower case or space in its name, it won't launch
+- [Bugfix] Input flipping is now decided upon character position diff instead of sprite flip (should fix wrong manipulations occuring after some moves)
+- [FrameData] Added Makoto some missing wake up data
+- [FrameData] Added Ken some missing wake up data
 
 ### v0.7 (12/04/2020)
 - Changed main supported emulator from FBA-rr to Fightcade's FBNeo fork
