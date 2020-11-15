@@ -237,7 +237,6 @@ function process_pending_input_sequence(_player_obj, _input)
   -- 0x02026030
   -- 0x0202604C
   -- 0x02026068
-
   local _gauges_base = 0
   if _player_obj.id == 1 then
     _gauges_base = 0x020259D8
@@ -251,9 +250,9 @@ function process_pending_input_sequence(_player_obj, _input)
   for i = 1, #_current_frame_input do
     local _input_name = _player_obj.prefix.." "
     if _current_frame_input[i] == "forward" then
-      if _player_obj.flip_x == 1 then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
+      if _player_obj.delayed_flip_input then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
     elseif _current_frame_input[i] == "back" then
-      if _player_obj.flip_x == 1 then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
+      if _player_obj.delayed_flip_input then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
     elseif _current_frame_input[i] == "up" then
       _input_name = _input_name.."Up"
     elseif _current_frame_input[i] == "down" then
@@ -1488,6 +1487,8 @@ function update_game_object(_obj)
 
   _obj.friends = memory.readbyte(_obj.base + 0x1)
   _obj.flip_x = memory.readbytesigned(_obj.base + 0x0A) -- sprites are facing left by default
+  _obj.previous_pos_x = _obj.pos_x or 0
+  _obj.previous_pos_y = _obj.pos_y or 0
   _obj.pos_x = memory.readwordsigned(_obj.base + 0x64)
   _obj.pos_y = memory.readwordsigned(_obj.base + 0x68)
   _obj.char_id = memory.readword(_obj.base + 0x3C0)
@@ -1961,7 +1962,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             print(string.format("%d - %s blocking", frame_number, _dummy.prefix))
           end
 
-          if _dummy.flip_x == 0 then
+          if not _dummy.flip_input then
             _input[_dummy.prefix..' Right'] = true
             _input[_dummy.prefix..' Left'] = false
           else
@@ -1991,8 +1992,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
           if _parry_low then
             _input[_dummy.prefix..' Down'] = true
           else
-            _input[_dummy.prefix..' Right'] = _dummy.flip_x ~= 0
-            _input[_dummy.prefix..' Left'] = _dummy.flip_x == 0
+            _input[_dummy.prefix..' Right'] = _dummy.flip_input
+            _input[_dummy.prefix..' Left'] = not _dummy.flip_input
           end
         end
       end
@@ -2996,6 +2997,39 @@ function read_player_vars(_player_obj)
   end
 end
 
+function update_flip_input(_player, _other_player)
+  local _debug = false
+  if _player.flip_input == nil then
+    _player.flip_input = _other_player.pos_x >= _player.pos_x
+    _player.delayed_flip_input = _player.flip_input
+    _player.last_flip_input_switch_frame = frame_number
+    return
+  end
+
+  local _previous_flip_input = _player.flip_input
+  local _flip_hysteresis = 0
+  local _diff = _other_player.pos_x - _player.pos_x
+  if math.abs(_diff) > _flip_hysteresis then
+    _player.flip_input = _other_player.pos_x >= _player.pos_x
+  end
+
+  if _previous_flip_input ~= _player.flip_input then
+    _player.last_flip_input_switch_frame = frame_number
+    if _debug then
+      print(string.format("%d - %s flip input: %s", frame_number, _player.prefix, tostring(_player.flip_input)))
+    end
+  end
+
+  -- Delayed input flip is useful to avoid the dummy fucking up manipulations on wake up when being crossed up for instance
+  local _input_flip_delay = 0 -- It seems that even when the input is swapped in the middle of the manipulation, everything works. Let's put it to 0 but keep the code just in case
+  if _player.flip_input ~= _player.delayed_flip_input and (frame_number - _player.last_flip_input_switch_frame) > _input_flip_delay then
+    _player.delayed_flip_input = _player.flip_input
+    if _debug then
+      print(string.format("%d - %s delayed flip input: %s", frame_number, _player.prefix, tostring(_player.delayed_flip_input)))
+    end
+  end
+end
+
 function write_player_vars(_player_obj)
 
   -- P1: 0x02068C6C
@@ -3135,6 +3169,8 @@ function before_frame()
   -- players
   read_player_vars(player_objects[1])
   read_player_vars(player_objects[2])
+  update_flip_input(player_objects[1], player_objects[2])
+  update_flip_input(player_objects[2], player_objects[1])
 
   write_player_vars(player_objects[1])
   write_player_vars(player_objects[2])
