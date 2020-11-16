@@ -3169,8 +3169,11 @@ function before_frame()
   -- players
   read_player_vars(player_objects[1])
   read_player_vars(player_objects[2])
-  update_flip_input(player_objects[1], player_objects[2])
-  update_flip_input(player_objects[2], player_objects[1])
+
+  if is_in_match then
+    update_flip_input(player_objects[1], player_objects[2])
+    update_flip_input(player_objects[2], player_objects[1])
+  end
 
   write_player_vars(player_objects[1])
   write_player_vars(player_objects[2])
