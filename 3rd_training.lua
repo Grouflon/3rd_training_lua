@@ -2210,9 +2210,11 @@ function open_load_popup()
   end
   local _str = _f:read("*all")
   load_file_list = {}
-  for _file in string.gmatch(_str, "([^\r\n]+\.json)") do -- Split all lines that have ".json" in them
-    _file = _file:sub(37) -- File path always starts at this index
-    table.insert(load_file_list, _file)
+  for _line in string.gmatch(_str, '([^\r\n]+)') do -- Split all lines that have ".json" in them
+    if string.find(_line, ".json") ~= nil then
+      local _file = _line:sub(37) -- File path always starts at this index
+      table.insert(load_file_list, _file)
+    end
   end
   load_recording_slot_popup.entries[1].list = load_file_list
 end
