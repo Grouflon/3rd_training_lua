@@ -1,5 +1,5 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.7")
+print("  3rd_training.lua - v0.8")
 print("  Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade v2.0.91")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
@@ -145,6 +145,14 @@ function reset_player_objects()
   P1.meter_addr = { 0x020286AB, 0x020695BF } -- 2nd address is the master variable
   P1.stun_base = 0x020695FD
   P1.meter_update_flag = 0x020157C8
+  P1.parry_forward_validity_time_addr = 0x02026335
+  P1.parry_forward_cooldown_time_addr = 0x02025731
+  P1.parry_down_validity_time_addr = 0x02026337
+  P1.parry_down_cooldown_time_addr = 0x0202574D
+  P1.parry_air_validity_time_addr = 0x02026339
+  P1.parry_air_cooldown_time_addr = 0x02025769
+  P1.parry_antiair_validity_time_addr = 0x02026347
+  P1.parry_antiair_cooldown_time_addr = 0x0202582D
 
   P2.gauge_addr = 0x020695E1
   P2.meter_addr = { 0x020286DF, 0x020695EB} -- 2nd address is the master variable
@@ -673,6 +681,11 @@ frame_data_movement_type = {
   "velocity"
 }
 
+special_training_mode = {
+  "none",
+  "parry"
+}
+
 function make_recording_slot()
   return {
     inputs = {},
@@ -1182,7 +1195,7 @@ function map_menu_item(_name, _object, _property_name, _map_object, _map_propert
   end
 
   function _o:reset()
-    training_settings[self.property_name] = ""
+    self.object[self.property_name] = ""
   end
 
   function _o:legend()
@@ -2312,6 +2325,17 @@ debug_settings = {
   debug_move = "",
 }
 
+special_training_settings = {
+  current_mode = 2,
+  follow_character = true,
+  parry = {
+    forward_on = true,
+    down_on = true,
+    air_on = true,
+    antiair_on = true
+  }
+}
+
 life_refill_delay_item = integer_menu_item("Life refill delay", training_settings, "life_refill_delay", 1, 100, false, 20)
 life_refill_delay_item.is_disabled = function()
   return training_settings.life_mode ~= 2
@@ -2331,9 +2355,19 @@ slot_weight_item = integer_menu_item("Weight", nil, "weight", 0, 100, false, 10)
 counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
 counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -40, 40, false, 0)
 
+parry_forward_on_item = checkbox_menu_item("Forward Parry Helper", special_training_settings.parry, "forward_on")
+parry_forward_on_item.is_disabled = function() return special_training_settings.current_mode ~= 2 end
+parry_down_on_item = checkbox_menu_item("Down Parry Helper", special_training_settings.parry, "down_on")
+parry_down_on_item.is_disabled = parry_forward_on_item.is_disabled
+parry_air_on_item = checkbox_menu_item("Air Parry Helper", special_training_settings.parry, "air_on")
+parry_air_on_item.is_disabled = parry_forward_on_item.is_disabled
+parry_antiair_on_item = checkbox_menu_item("Anti-Air Parry Helper", special_training_settings.parry, "antiair_on")
+parry_antiair_on_item.is_disabled = parry_forward_on_item.is_disabled
+
+
 menu = {
   {
-    name = "Dummy Settings",
+    name = "Dummy",
     entries = {
       list_menu_item("Pose", training_settings, "pose", pose),
       list_menu_item("Blocking Style", training_settings, "blocking_style", blocking_style),
@@ -2346,7 +2380,7 @@ menu = {
     }
   },
   {
-    name = "Training Settings",
+    name = "Rules",
     entries = {
       checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
       list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
@@ -2357,16 +2391,10 @@ menu = {
       p2_meter_gauge_item,
       meter_refill_delay_item,
       checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
-      checkbox_menu_item("Display Controllers", training_settings, "display_input"),
-      checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
-      checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history"),
-      checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
-      integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
-      --list_menu_item("Dummy Player", training_settings, "dummy_player", players),
     }
   },
   {
-    name = "Recording Settings",
+    name = "Recording",
     entries = {
       checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
       list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
@@ -2379,12 +2407,33 @@ menu = {
       button_menu_item("Load slot from file", open_load_popup),
     }
   },
+  {
+    name = "Display",
+    entries = {
+      checkbox_menu_item("Display Controllers", training_settings, "display_input"),
+      checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
+      checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history"),
+      checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
+      integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
+    }
+  },
+  {
+    name = "Special Training",
+    entries = {
+      list_menu_item("Mode", special_training_settings, "current_mode", special_training_mode),
+      checkbox_menu_item("Follow Character", special_training_settings, "follow_character"),
+      parry_forward_on_item,
+      parry_down_on_item,
+      parry_air_on_item,
+      parry_antiair_on_item
+    }
+  },
 }
 
 debug_move_menu_item = map_menu_item("Debug Move", debug_settings, "debug_move", frame_data, nil)
 if advanced_mode then
   local _debug_settings_menu = {
-    name = "Debug Settings",
+    name = "Debug",
     entries = {
       checkbox_menu_item("Show Predicted Hitboxes", debug_settings, "show_predicted_hitbox"),
       checkbox_menu_item("Record Frame Data", debug_settings, "record_framedata"),
@@ -2696,6 +2745,7 @@ function read_player_vars(_player_obj)
   update_game_object(_player_obj)
 
   local _previous_remaining_freeze_frames = _player_obj.remaining_freeze_frames or 0
+  local _previous_movement_type = _player_obj.movement_type or 0
 
   local _previous_char_str = _player_obj.char_str or ""
   _player_obj.char_str = characters[_player_obj.char_id]
@@ -2710,6 +2760,7 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
+  _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x027)
 
   local _previous_is_blocking = _player_obj.is_blocking or false
   _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
@@ -2997,6 +3048,57 @@ function read_player_vars(_player_obj)
   else
     _player_obj.is_in_timed_sa = false
   end
+
+  -- PARRY BUFFERS
+  -- only p1 is supported until I find the adresses for p2
+  if _player_obj.id == 1 then
+    -- global game consts
+    _player_obj.parry_forward = _player_obj.parry_forward or { name = "FORWARD", max_validity = 10, max_cooldown = 23 }
+    _player_obj.parry_down = _player_obj.parry_down or { name = "DOWN", max_validity = 10, max_cooldown = 23 }
+    _player_obj.parry_air = _player_obj.parry_air or { name = "AIR", max_validity = 7, max_cooldown = 20 }
+    _player_obj.parry_antiair = _player_obj.parry_antiair or { name = "ANTI-AIR", max_validity = 5, max_cooldown = 18 }
+
+    function read_parry_state(_parry_object, _validity_addr, _cooldown_addr)
+        -- read data
+        _parry_object.last_validity_start_frame = _parry_object.last_validity_start_frame or 0
+        local _previous_validity_time = _parry_object.validity_time or 0
+        _parry_object.validity_time = memory.readbyte(_validity_addr)
+        _parry_object.cooldown_time = memory.readbyte(_cooldown_addr)
+        if _parry_object.cooldown_time == 0xFF then _parry_object.cooldown_time = 0 end
+        if _previous_validity_time == 0 and _parry_object.validity_time ~= 0 then
+          _parry_object.last_validity_start_frame = frame_number
+          _parry_object.success_delta = nil
+          _parry_object.miss_delta = nil
+        end
+
+        -- check success/miss
+        if frame_number - _parry_object.last_validity_start_frame < 100 then
+          if _player_obj.has_just_parried then
+            _parry_object.success_delta = _parry_object.last_validity_start_frame + _parry_object.max_validity - frame_number
+            _parry_object.miss_delta = nil
+            --print(string.format("%s: success %d", _parry_object.name, _parry_object.success_delta))
+          elseif _previous_movement_type ~= 1 and _player_obj.movement_type == 1 then
+            local _delta = _parry_object.last_validity_start_frame + _parry_object.max_validity - frame_number
+            if _delta >= -30 then
+              _parry_object.miss_delta = _parry_object.last_validity_start_frame + _parry_object.max_validity - frame_number
+            end
+            _parry_object.success_delta = nil
+            --print(string.format("%s: miss %d", _parry_object.name, _parry_object.miss_delta))
+          end
+        else
+          if _parry_object.success_delta or _parry_object.miss_delta then
+            --print(string.format("%s: reset", _parry_object.name))
+          end
+          _parry_object.success_delta = nil
+          _parry_object.miss_delta = nil
+        end
+    end
+
+    read_parry_state(_player_obj.parry_forward, _player_obj.parry_forward_validity_time_addr, _player_obj.parry_forward_cooldown_time_addr)
+    read_parry_state(_player_obj.parry_down, _player_obj.parry_down_validity_time_addr, _player_obj.parry_down_cooldown_time_addr)
+    read_parry_state(_player_obj.parry_air, _player_obj.parry_air_validity_time_addr, _player_obj.parry_air_cooldown_time_addr)
+    read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
+  end
 end
 
 function update_flip_input(_player, _other_player)
@@ -3253,6 +3355,93 @@ function on_gui()
     draw_input_history_entry(_p2, 310, 34)
   end
 
+  if is_in_match and special_training_mode[special_training_settings.current_mode] == "parry" then
+
+    local _player = P1
+    local _x = 65
+    local _y = 48
+    local _flip_gauge = false
+    local _gauge_x_scale = 4
+
+    if special_training_settings.follow_character then
+      local _px = _player.pos_x - screen_x + emu.screenwidth()/2
+      local _py = emu.screenheight() - (_player.pos_y - screen_y) - ground_offset
+
+      _x = _px - 23 * _gauge_x_scale * 0.5
+      _y = _py - 100
+    end
+
+    local _y_offset = 0
+    local _group_y_margin = 6
+
+    function draw_parry_gauge_group(_x, _y, _flip, _name, _validity_time, _cooldown_time, _max_validity_time, _max_cooldown_time, _text_color)
+       _text_color = _text_color or text_default_color
+      local _gauge_height = 4
+      local _gauge_group_height = _gauge_height * 2 + 15
+      --local _gauge_background_color = 0x101008FF
+      local _gauge_background_color = 0xD6E7EF77
+      local _gauge_valid_fill_color = 0x08CF00FF
+      local _gauge_cooldown_fill_color = 0xFF7939FF
+
+      local _validity_gauge_width = _max_validity_time * _gauge_x_scale
+      local _cooldown_gauge_width = _max_cooldown_time * _gauge_x_scale
+      local _validity_time_text = string.format("%d", _validity_time)
+      local _cooldown_time_text = string.format("%d", _cooldown_time)
+
+      if _flip then
+        gui.text(_x - get_text_with(_name), _y, _name, text_default_color, text_default_border_color)
+        draw_gauge(_x - _validity_gauge_width - 2, _y + 8, _validity_gauge_width, _gauge_height, _validity_time / _max_validity_time, _gauge_valid_fill_color, _gauge_background_color)
+        draw_gauge(_x - _cooldown_gauge_width - 2, _y + 8 + _gauge_height + 1, _cooldown_gauge_width, _gauge_height, _cooldown_time / _max_cooldown_time, _gauge_cooldown_fill_color, _gauge_background_color)
+        gui.text(_x - _validity_gauge_width - 3 - get_text_with(_validity_time_text), _y + 6, _validity_time_text, _text_color, text_default_border_color)
+        gui.text(_x - _cooldown_gauge_width - 3 - get_text_with(_cooldown_time_text), _y + 12, _cooldown_time_text, text_default_color, text_default_border_color)
+      else
+        gui.text(_x + 1, _y, _name, text_default_color, text_default_border_color)
+        draw_gauge(_x, _y + 8, _validity_gauge_width, _gauge_height, _validity_time / _max_validity_time, _gauge_valid_fill_color, _gauge_background_color)
+        draw_gauge(_x, _y + 8 + _gauge_height + 1, _cooldown_gauge_width, _gauge_height, _cooldown_time / _max_cooldown_time, _gauge_cooldown_fill_color, _gauge_background_color)
+        gui.text(_x + 4 + _max_validity_time * _gauge_x_scale, _y + 6, _validity_time_text, _text_color, text_default_border_color)
+        gui.text(_x + 4 + _max_cooldown_time * _gauge_x_scale, _y + 12, _cooldown_time_text, text_default_color, text_default_border_color)
+      end
+
+      return 8 + 3 + (_gauge_height * 2)
+    end
+
+    local _parry_array = {
+      {
+        object = _player.parry_forward,
+        enabled = special_training_settings.parry.forward_on
+      },
+      {
+        object = _player.parry_down,
+        enabled = special_training_settings.parry.down_on
+      },
+      {
+        object = _player.parry_air,
+        enabled = special_training_settings.parry.air_on
+      },
+      {
+        object = _player.parry_antiair,
+        enabled = special_training_settings.parry.antiair_on
+      }
+    }
+
+    for _i, _parry in ipairs(_parry_array) do
+      local _success_color = 0x10FB00FF
+      local _miss_color = 0xE70000FF
+      if _parry.enabled then
+        local _frame_text_color = nil
+        local _validity_time = _parry.object.validity_time
+        if _parry.object.success_delta then
+          _validity_time = _parry.object.success_delta
+          _frame_text_color = _success_color
+        elseif _parry.object.miss_delta then
+          _validity_time = _parry.object.miss_delta
+          _frame_text_color = _miss_color
+        end
+        _y_offset = _y_offset + _group_y_margin + draw_parry_gauge_group(_x, _y + _y_offset, _flip_gauge, _parry.object.name, _validity_time, _parry.object.cooldown_time, _parry.object.max_validity, _parry.object.max_cooldown, _frame_text_color)
+      end
+    end
+  end
+
   if is_in_match and current_recording_state ~= 1 then
     local _y = 5
     local _current_recording_size = 0
@@ -3427,20 +3616,24 @@ function on_gui()
     local _menu_box_bottom = 195
     gui.box(_menu_box_left, _menu_box_top, _menu_box_right, _menu_box_bottom, _gui_box_bg_color, _gui_box_outline_color)
 
-    local _bar_x = _menu_box_left + 18
+    local _bar_x = _menu_box_left + 10
     local _bar_y = _menu_box_top + 6
+    local _base_offset = 0
     for i = 1, #menu do
       local _offset = 0
       local _c = text_disabled_color
       local _t = menu[i].name
       if is_main_menu_selected and i == main_menu_selected_index then
         _t = "< ".._t.." >"
-        _offset = -8
         _c = text_selected_color
       elseif i == main_menu_selected_index then
         _c = text_default_color
+        _offset = 8
+      else
+        _offset = 8
       end
-      gui.text(_bar_x + _offset + (i - 1) * 85, _bar_y, _t, _c, text_default_border_color)
+      gui.text(_bar_x + _offset + _base_offset, _bar_y, _t, _c, text_default_border_color)
+      _base_offset = _base_offset + (#menu[i].name + 5) * 4
     end
 
 
@@ -3501,6 +3694,18 @@ function to_bit(_bool)
   end
 end
 
+function clamp01(_number)
+  return math.max(math.min(_number, 1.0), 0.0)
+end
+
+function get_text_with(_text)
+  if #_text == 0 then
+    return 0
+  end
+
+  return #_text * 4
+end
+
 function draw_input(_x, _y, _input, _prefix)
   local up = _input[_prefix.."Up"]
   local down = _input[_prefix.."Down"]
@@ -3534,6 +3739,17 @@ function draw_input(_x, _y, _input, _prefix)
   gui.text(_x + 55, _y + 10, "C", col(coin), text_default_border_color)
 end
 
+function draw_gauge(_x, _y, _width, _height, _fill_ratio, _fill_color, _bg_color, _border_color)
+  _bg_color = _bg_color or 0x00000000
+  _border_color = _border_color or 0xFFFFFFFF
+
+  _width = _width + 1
+  _height = _height + 1
+
+  gui.box(_x, _y, _x + _width, _y + _height, _bg_color, _border_color)
+  gui.box(_x, _y, _x + _width * clamp01(_fill_ratio), _y + _height, _fill_color, 0x00000000)
+end
+
 function string:split(sep)
    local sep, fields = sep or ":", {}
    local pattern = string.format("([^%s]+)", sep)
@@ -3559,6 +3775,47 @@ character_specific = {}
 for i = 1, #characters do
   character_specific[characters[i]] = { timed_sa = {false, false, false} }
 end
+
+-- Character Dimensions
+character_specific.alex.half_width = 45
+character_specific.chunli.half_width = 39
+character_specific.dudley.half_width = 29
+character_specific.elena.half_width = 44
+character_specific.gouki.half_width = 33
+character_specific.hugo.half_width = 43
+character_specific.ibuki.half_width = 34
+character_specific.ken.half_width = 30
+character_specific.makoto.half_width = 42
+character_specific.necro.half_width = 26
+character_specific.oro.half_width = 40
+character_specific.q.half_width = 25
+character_specific.remy.half_width = 32
+character_specific.ryu.half_width = 31
+character_specific.sean.half_width = 29
+character_specific.twelve.half_width = 33
+character_specific.urien.half_width = 36
+character_specific.yang.half_width = 41
+character_specific.yun.half_width = 37
+
+character_specific.alex.height = 104
+character_specific.chunli.height = 97
+character_specific.dudley.height = 109
+character_specific.elena.height = 88
+character_specific.gouki.height = 107
+character_specific.hugo.height = 137
+character_specific.ibuki.height = 92
+character_specific.ken.height = 107
+character_specific.makoto.height = 90
+character_specific.necro.height = 89
+character_specific.oro.height = 88
+character_specific.q.height = 130
+character_specific.remy.height = 114
+character_specific.ryu.height = 101
+character_specific.sean.height = 103
+character_specific.twelve.height = 91
+character_specific.urien.height = 121
+character_specific.yang.height = 89
+character_specific.yun.height = 89
 
 -- Characters standing states
 character_specific.oro.additional_standing_states = { 3 } -- 3 is crouching
