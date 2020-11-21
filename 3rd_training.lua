@@ -2326,7 +2326,7 @@ debug_settings = {
 }
 
 special_training_settings = {
-  current_mode = 2,
+  current_mode = 1,
   follow_character = true,
   parry = {
     forward_on = true,
