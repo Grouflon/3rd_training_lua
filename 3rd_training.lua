@@ -2760,7 +2760,12 @@ function read_player_vars(_player_obj)
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
-  _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x027)
+  _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
+
+  _player_obj.last_movement_type_change_frame = _player_obj.last_movement_type_change_frame or 0
+  if _player_obj.movement_type ~= _previous_movement_type then
+    _player_obj.last_movement_type_change_frame = frame_number
+  end
 
   local _previous_is_blocking = _player_obj.is_blocking or false
   _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
@@ -3067,30 +3072,37 @@ function read_player_vars(_player_obj)
         if _parry_object.cooldown_time == 0xFF then _parry_object.cooldown_time = 0 end
         if _previous_validity_time == 0 and _parry_object.validity_time ~= 0 then
           _parry_object.last_validity_start_frame = frame_number
-          _parry_object.success_delta = nil
-          _parry_object.miss_delta = nil
+          _parry_object.delta = nil
+          _parry_object.success = nil
         end
 
         -- check success/miss
         if frame_number - _parry_object.last_validity_start_frame < 100 then
           if _player_obj.has_just_parried then
-            _parry_object.success_delta = _parry_object.last_validity_start_frame + _parry_object.max_validity - frame_number
-            _parry_object.miss_delta = nil
-            --print(string.format("%s: success %d", _parry_object.name, _parry_object.success_delta))
-          elseif _previous_movement_type ~= 1 and _player_obj.movement_type == 1 then
+            -- right
+            _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
+            _parry_object.success = true
+            --print(string.format("%s: success %d", _parry_object.name, _parry_object.delta))
+          elseif (_player_obj.movement_type == 1 or _player_obj.movement_type == 6) and _parry_object.last_validity_start_frame == frame_number then
+            -- late
+            _parry_object.delta = _player_obj.last_movement_type_change_frame - frame_number
+            _parry_object.success = false
+            --print(string.format("%s: late %d", _parry_object.name, _parry_object.delta))
+          elseif (_previous_movement_type ~= _player_obj.movement_type and (_player_obj.movement_type == 1 or _player_obj.movement_type == 6)) then
             local _delta = _parry_object.last_validity_start_frame + _parry_object.max_validity - frame_number
+            -- early
             if _delta >= -30 then
-              _parry_object.miss_delta = _parry_object.last_validity_start_frame + _parry_object.max_validity - frame_number
+              _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
+              _parry_object.success = false
+              --print(string.format("%s: early %d", _parry_object.name, _parry_object.delta))
             end
-            _parry_object.success_delta = nil
-            --print(string.format("%s: miss %d", _parry_object.name, _parry_object.miss_delta))
           end
         else
-          if _parry_object.success_delta or _parry_object.miss_delta then
+          if _parry_object.delta then
             --print(string.format("%s: reset", _parry_object.name))
           end
-          _parry_object.success_delta = nil
-          _parry_object.miss_delta = nil
+          _parry_object.delta = nil
+          _parry_object.success = nil
         end
     end
 
@@ -3374,35 +3386,58 @@ function on_gui()
     local _y_offset = 0
     local _group_y_margin = 6
 
-    function draw_parry_gauge_group(_x, _y, _flip, _name, _validity_time, _cooldown_time, _max_validity_time, _max_cooldown_time, _text_color)
-       _text_color = _text_color or text_default_color
+    function draw_parry_gauge_group(_x, _y, _parry_object)
       local _gauge_height = 4
-      local _gauge_group_height = _gauge_height * 2 + 15
       --local _gauge_background_color = 0x101008FF
       local _gauge_background_color = 0xD6E7EF77
       local _gauge_valid_fill_color = 0x08CF00FF
       local _gauge_cooldown_fill_color = 0xFF7939FF
+      local _success_color = 0x10FB00FF
+      local _miss_color = 0xE70000FF
 
-      local _validity_gauge_width = _max_validity_time * _gauge_x_scale
-      local _cooldown_gauge_width = _max_cooldown_time * _gauge_x_scale
-      local _validity_time_text = string.format("%d", _validity_time)
-      local _cooldown_time_text = string.format("%d", _cooldown_time)
-
-      if _flip then
-        gui.text(_x - get_text_with(_name), _y, _name, text_default_color, text_default_border_color)
-        draw_gauge(_x - _validity_gauge_width - 2, _y + 8, _validity_gauge_width, _gauge_height, _validity_time / _max_validity_time, _gauge_valid_fill_color, _gauge_background_color)
-        draw_gauge(_x - _cooldown_gauge_width - 2, _y + 8 + _gauge_height + 1, _cooldown_gauge_width, _gauge_height, _cooldown_time / _max_cooldown_time, _gauge_cooldown_fill_color, _gauge_background_color)
-        gui.text(_x - _validity_gauge_width - 3 - get_text_with(_validity_time_text), _y + 6, _validity_time_text, _text_color, text_default_border_color)
-        gui.text(_x - _cooldown_gauge_width - 3 - get_text_with(_cooldown_time_text), _y + 12, _cooldown_time_text, text_default_color, text_default_border_color)
-      else
-        gui.text(_x + 1, _y, _name, text_default_color, text_default_border_color)
-        draw_gauge(_x, _y + 8, _validity_gauge_width, _gauge_height, _validity_time / _max_validity_time, _gauge_valid_fill_color, _gauge_background_color)
-        draw_gauge(_x, _y + 8 + _gauge_height + 1, _cooldown_gauge_width, _gauge_height, _cooldown_time / _max_cooldown_time, _gauge_cooldown_fill_color, _gauge_background_color)
-        gui.text(_x + 4 + _max_validity_time * _gauge_x_scale, _y + 6, _validity_time_text, _text_color, text_default_border_color)
-        gui.text(_x + 4 + _max_cooldown_time * _gauge_x_scale, _y + 12, _cooldown_time_text, text_default_color, text_default_border_color)
+      local _validity_gauge_width = _parry_object.max_validity * _gauge_x_scale
+      local _cooldown_gauge_width = _parry_object.max_cooldown * _gauge_x_scale
+      local _validity_gauge_left = math.floor(_x + (_cooldown_gauge_width - _validity_gauge_width) * 0.5)
+      local _validity_gauge_right = _validity_gauge_left + _validity_gauge_width + 1
+      local _cooldown_gauge_left = _x
+      local _cooldown_gauge_right = _cooldown_gauge_left + _cooldown_gauge_width + 1
+      local _validity_time_text = string.format("%d", _parry_object.validity_time)
+      local _cooldown_time_text = string.format("%d", _parry_object.cooldown_time)
+      local _validity_text_color = text_default_color
+      local _validity_outline_color = text_default_border_color
+      if _parry_object.delta then
+        if _parry_object.success then
+          _validity_text_color = _success_color
+          _validity_outline_color = 0x00A200FF
+        else
+          _validity_text_color = _miss_color
+          _validity_outline_color = 0x840000FF
+        end
+        if _parry_object.delta > 0 then
+          _validity_time_text = string.format("+%d", _parry_object.delta)
+        else
+          _validity_time_text = string.format("%d", _parry_object.delta)
+        end
       end
 
-      return 8 + 3 + (_gauge_height * 2)
+      gui.text(_x + 1, _y, _parry_object.name, text_default_color, text_default_border_color)
+      gui.box(_cooldown_gauge_left + 1, _y + 11, _validity_gauge_left, _y + 11, 0x00000000, 0xFFFFFF77)
+      gui.box(_cooldown_gauge_left, _y + 10, _cooldown_gauge_left, _y + 12, 0x00000000, 0xFFFFFF77)
+      gui.box(_validity_gauge_right, _y + 11, _cooldown_gauge_right - 1, _y + 11, 0x00000000, 0xFFFFFF77)
+      gui.box(_cooldown_gauge_right, _y + 10, _cooldown_gauge_right, _y + 12, 0x00000000, 0xFFFFFF77)
+      draw_gauge(_validity_gauge_left, _y + 8, _validity_gauge_width, _gauge_height + 1, _parry_object.validity_time / _parry_object.max_validity, _gauge_valid_fill_color, _gauge_background_color)
+      draw_gauge(_cooldown_gauge_left, _y + 8 + _gauge_height + 2, _cooldown_gauge_width, _gauge_height, _parry_object.cooldown_time / _parry_object.max_cooldown, _gauge_cooldown_fill_color, _gauge_background_color)
+
+      if _parry_object.delta then
+        local _marker_x = _validity_gauge_right - _parry_object.delta * _gauge_x_scale
+        _marker_x = math.min(math.max(_marker_x, _x), _cooldown_gauge_right)
+        gui.box(_marker_x, _y + 7, _marker_x + _gauge_x_scale, _y + 8 + _gauge_height + 2, _validity_text_color, _validity_outline_color)
+      end
+
+      gui.text(_cooldown_gauge_right + 4, _y + 7, _validity_time_text, _validity_text_color, text_default_border_color)
+      gui.text(_cooldown_gauge_right + 4, _y + 13, _cooldown_time_text, text_default_color, text_default_border_color)
+
+      return 8 + 5 + (_gauge_height * 2)
     end
 
     local _parry_array = {
@@ -3425,19 +3460,9 @@ function on_gui()
     }
 
     for _i, _parry in ipairs(_parry_array) do
-      local _success_color = 0x10FB00FF
-      local _miss_color = 0xE70000FF
+
       if _parry.enabled then
-        local _frame_text_color = nil
-        local _validity_time = _parry.object.validity_time
-        if _parry.object.success_delta then
-          _validity_time = _parry.object.success_delta
-          _frame_text_color = _success_color
-        elseif _parry.object.miss_delta then
-          _validity_time = _parry.object.miss_delta
-          _frame_text_color = _miss_color
-        end
-        _y_offset = _y_offset + _group_y_margin + draw_parry_gauge_group(_x, _y + _y_offset, _flip_gauge, _parry.object.name, _validity_time, _parry.object.cooldown_time, _parry.object.max_validity, _parry.object.max_cooldown, _frame_text_color)
+        _y_offset = _y_offset + _group_y_margin + draw_parry_gauge_group(_x, _y + _y_offset, _parry.object)
       end
     end
   end
