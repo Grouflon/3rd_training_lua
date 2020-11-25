@@ -2322,6 +2322,14 @@ training_settings = {
   music_volume = 10,
   life_refill_delay = 20,
   meter_refill_delay = 20,
+
+  -- special training
+  special_training_current_mode = 1,
+  special_training_follow_character = true,
+  special_training_parry_forward_on = true,
+  special_training_parry_down_on = true,
+  special_training_parry_air_on = true,
+  special_training_parry_antiair_on = true,
 }
 
 debug_settings = {
@@ -2329,17 +2337,6 @@ debug_settings = {
   record_framedata = false,
   debug_character = "",
   debug_move = "",
-}
-
-special_training_settings = {
-  current_mode = 1,
-  follow_character = true,
-  parry = {
-    forward_on = true,
-    down_on = true,
-    air_on = true,
-    antiair_on = true
-  }
 }
 
 life_refill_delay_item = integer_menu_item("Life refill delay", training_settings, "life_refill_delay", 1, 100, false, 20)
@@ -2361,13 +2358,13 @@ slot_weight_item = integer_menu_item("Weight", nil, "weight", 0, 100, false, 10)
 counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
 counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -40, 40, false, 0)
 
-parry_forward_on_item = checkbox_menu_item("Forward Parry Helper", special_training_settings.parry, "forward_on")
-parry_forward_on_item.is_disabled = function() return special_training_settings.current_mode ~= 2 end
-parry_down_on_item = checkbox_menu_item("Down Parry Helper", special_training_settings.parry, "down_on")
+parry_forward_on_item = checkbox_menu_item("Forward Parry Helper", training_settings, "special_training_parry_forward_on")
+parry_forward_on_item.is_disabled = function() return training_settings.special_training_current_mode ~= 2 end
+parry_down_on_item = checkbox_menu_item("Down Parry Helper", training_settings, "special_training_parry_down_on")
 parry_down_on_item.is_disabled = parry_forward_on_item.is_disabled
-parry_air_on_item = checkbox_menu_item("Air Parry Helper", special_training_settings.parry, "air_on")
+parry_air_on_item = checkbox_menu_item("Air Parry Helper", training_settings, "special_training_parry_air_on")
 parry_air_on_item.is_disabled = parry_forward_on_item.is_disabled
-parry_antiair_on_item = checkbox_menu_item("Anti-Air Parry Helper", special_training_settings.parry, "antiair_on")
+parry_antiair_on_item = checkbox_menu_item("Anti-Air Parry Helper", training_settings, "special_training_parry_antiair_on")
 parry_antiair_on_item.is_disabled = parry_forward_on_item.is_disabled
 
 
@@ -2426,8 +2423,8 @@ menu = {
   {
     name = "Special Training",
     entries = {
-      list_menu_item("Mode", special_training_settings, "current_mode", special_training_mode),
-      checkbox_menu_item("Follow Character", special_training_settings, "follow_character"),
+      list_menu_item("Mode", training_settings, "special_training_current_mode", special_training_mode),
+      checkbox_menu_item("Follow Character", training_settings, "special_training_follow_character"),
       parry_forward_on_item,
       parry_down_on_item,
       parry_air_on_item,
@@ -3373,7 +3370,7 @@ function on_gui()
     draw_input_history_entry(_p2, 310, 34)
   end
 
-  if is_in_match and special_training_mode[special_training_settings.current_mode] == "parry" then
+  if is_in_match and special_training_mode[training_settings.special_training_current_mode] == "parry" then
 
     local _player = P1
     local _x = 65
@@ -3381,7 +3378,7 @@ function on_gui()
     local _flip_gauge = false
     local _gauge_x_scale = 4
 
-    if special_training_settings.follow_character then
+    if training_settings.special_training_follow_character then
       local _px = _player.pos_x - screen_x + emu.screenwidth()/2
       local _py = emu.screenheight() - (_player.pos_y - screen_y) - ground_offset
 
@@ -3449,19 +3446,19 @@ function on_gui()
     local _parry_array = {
       {
         object = _player.parry_forward,
-        enabled = special_training_settings.parry.forward_on
+        enabled = training_settings.special_training_parry_forward_on
       },
       {
         object = _player.parry_down,
-        enabled = special_training_settings.parry.down_on
+        enabled = training_settings.special_training_parry_down_on
       },
       {
         object = _player.parry_air,
-        enabled = special_training_settings.parry.air_on
+        enabled = training_settings.special_training_parry_air_on
       },
       {
         object = _player.parry_antiair,
-        enabled = special_training_settings.parry.antiair_on
+        enabled = training_settings.special_training_parry_antiair_on
       }
     }
 
