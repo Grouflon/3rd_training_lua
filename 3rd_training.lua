@@ -2517,7 +2517,7 @@ function find_random_recording_slot()
 
     local _random_slot_weight = 0
     if _total_weight > 0 then
-      math.ceil(math.random(_total_weight))
+      _random_slot_weight = math.ceil(math.random(_total_weight))
     end
     local _random_slot = 1
     local _weight_i = 0
