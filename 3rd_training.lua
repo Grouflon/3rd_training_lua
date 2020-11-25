@@ -1822,6 +1822,12 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   local _debug = false
   local _debug_block_string = false
 
+  -- ensure variables
+  _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count or 0
+  _dummy.blocking.next_attack_animation_hit_frame = _dummy.blocking.next_attack_animation_hit_frame or 0
+  _dummy.blocking.next_attack_hit_id = _dummy.blocking.next_attack_hit_id or 0
+  _dummy.blocking.last_attack_hit_id = _dummy.blocking.last_attack_hit_id or 0
+
   if _dummy.blocking.block_string then
     if _dummy.remaining_freeze_frames == 0 and _dummy.recovery_time == 0 and _dummy.previous_recovery_time == 1 then
       _dummy.blocking.block_string = false
