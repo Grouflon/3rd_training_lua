@@ -17,8 +17,24 @@ print("")
 
 json = require ("lua_libs/dkjson")
 
+recording_slot_count = 8
 -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 advanced_mode = false
+assert_enabled = false
+history_enabled = false
+history_categories_shown =
+{
+  input = false,
+  fight = false,
+  parry_training_FORWARD = false,
+}
+
+function t_assert(_condition, _msg)
+  _msg = _msg or "Assertion failed"
+  if assert_enabled and not _condition then
+    error(_msg, 2)
+  end
+end
 
 saved_path = "saved/"
 framedata_path = "data/framedata/"
@@ -145,6 +161,7 @@ function reset_player_objects()
   P1.meter_addr = { 0x020286AB, 0x020695BF } -- 2nd address is the master variable
   P1.stun_base = 0x020695FD
   P1.meter_update_flag = 0x020157C8
+  P1.score_addr = 0x020113A2
   P1.parry_forward_validity_time_addr = 0x02026335
   P1.parry_forward_cooldown_time_addr = 0x02025731
   P1.parry_down_validity_time_addr = 0x02026337
@@ -158,6 +175,7 @@ function reset_player_objects()
   P2.meter_addr = { 0x020286DF, 0x020695EB} -- 2nd address is the master variable
   P2.stun_base = 0x02069611
   P2.meter_update_flag = 0x020157C9
+  P2.score_addr = 0x020113AE
 end
 reset_player_objects()
 
@@ -190,6 +208,15 @@ function update_input(_player_obj)
   update_player_input(_player_obj.input, "LK", _local_input[_player_obj.prefix.." Weak Kick"])
   update_player_input(_player_obj.input, "MK", _local_input[_player_obj.prefix.." Medium Kick"])
   update_player_input(_player_obj.input, "HK", _local_input[_player_obj.prefix.." Strong Kick"])
+end
+
+function check_input_down_autofire(_player_object, _input, _autofire_rate, _autofire_time)
+  _autofire_rate = _autofire_rate or 4
+  _autofire_time = _autofire_time or 23
+  if _player_object.input.pressed[_input] or (_player_object.input.down[_input] and _player_object.input.state_time[_input] > _autofire_time and (_player_object.input.state_time[_input] % _autofire_rate) == 0) then
+    return true
+  end
+  return false
 end
 
 function queue_input_sequence(_player_obj, _sequence)
@@ -695,7 +722,7 @@ function make_recording_slot()
   }
 end
 recording_slots = {}
-for _i = 1, 8 do
+for _i = 1, recording_slot_count do
   table.insert(recording_slots, make_recording_slot())
 end
 
@@ -1334,6 +1361,165 @@ function swap_inputs(_out_input_table)
   swap("Weak Kick")
   swap("Medium Kick")
   swap("Strong Kick")
+end
+-- HISTORY
+history = {}
+history_sections = {
+  global = 1,
+  P1 = 2,
+  P2 = 3,
+}
+history_categories = {}
+history_recording_on = false
+history_category_count = 0
+current_entry = 1
+history_size_max = 40
+history_line_count_max = 25
+history_line_offset = 0
+function history_add_entry(_section_name, _category_name, _event_name)
+  if not history_enabled then return end
+  if not history_recording_on then return end
+
+  _event_name = _event_name or ""
+  _category_name = _category_name or ""
+  _section_name = _section_name or "global"
+  if history_sections[_section_name] == nil then _section_name = "global" end
+
+  if not history_categories_shown[_category_name] then return end
+
+  -- Add category if it does not exists
+  if history_categories[_category_name] == nil then
+    history_categories[_category_name] = history_category_count
+    history_category_count = history_category_count + 1
+  end
+
+  -- Insert frame if it does not exists
+  if #history == 0 or history[#history].frame ~= frame_number then
+    table.insert(history, {
+      frame = frame_number,
+      events = {}
+    })
+  end
+
+  -- Remove overflowing history frame
+  while #history > history_size_max do
+    table.remove(history, 1)
+  end
+
+  local _current_frame = history[#history]
+  table.insert(_current_frame.events, {
+    name = _event_name,
+    section = _section_name,
+    category = _category_name,
+    color = string_to_color(_event_name)
+  })
+end
+
+history_filtered = {}
+history_start_locked = false
+function history_update()
+  history_filtered = {}
+  if not history_enabled then return end
+
+  -- compute filtered history
+  for _i = 1, #history do
+    local _frame = history[_i]
+    local _filtered_frame = { frame = _frame.frame, events = {}}
+    for _j, _event in ipairs(_frame.events) do
+      if history_categories_shown[_event.category] then
+        table.insert(_filtered_frame.events, _event)
+      end
+    end
+
+    if #_filtered_frame.events > 0 then
+      table.insert(history_filtered, _filtered_frame)
+    end
+  end
+
+  -- process input
+  if player.input.down.start then
+    if player.input.pressed.HP then
+      history_start_locked = true
+      history_recording_on = not history_recording_on
+      if history_recording_on then
+        history_line_offset = 0
+      end
+    end
+    if player.input.pressed.HK then
+      history_start_locked = true
+      history_line_offset = 0
+      history = {}
+    end
+
+    if check_input_down_autofire(player, "up", 4) then
+      history_start_locked = true
+      history_line_offset = history_line_offset - 1
+      history_line_offset = math.max(history_line_offset, 0)
+    end
+    if check_input_down_autofire(player, "down", 4) then
+      history_start_locked = true
+      history_line_offset = history_line_offset + 1
+      history_line_offset = math.min(history_line_offset, math.max(#history_filtered - history_line_count_max - 1, 0))
+    end
+  end
+
+  if not player.input.down.start and not player.input.released.start then
+    history_start_locked = false
+  end
+end
+
+function history_draw()
+  local _history = history_filtered
+
+  if #_history == 0 then return end
+
+  local _line_background = { 0x333333CC, 0x555555CC }
+  local _separator_color = 0xAAAAAAFF
+  local _width = emu.screenwidth() - 10
+  local _height = emu.screenheight() - 10
+  local _x_start = 5
+  local _y_start = 5
+  local _line_height = 8
+  local _current_line = 0
+  local _columns_start = { 0, 20, 200 }
+  local _box_size = 6
+  local _box_margin = 2
+  gui.box(_x_start, _y_start , _x_start + _width, _y_start, 0x00000000, _separator_color)
+  local _last_displayed_frame = 0
+  for _i = 0, history_line_count_max do
+    local _frame_index = #_history - (_i + history_line_offset)
+    if _frame_index < 1 then
+      break
+    end
+    local _frame = _history[_frame_index]
+    local _events = {{}, {}, {}}
+    for _j, _event in ipairs(_frame.events) do
+      if history_categories_shown[_event.category] then
+        table.insert(_events[history_sections[_event.section]], _event)
+      end
+    end
+
+    local _y = _y_start + _current_line * _line_height
+    gui.box(_x_start, _y, _x_start + _width, _y + _line_height, _line_background[(_i % 2) + 1], 0x00000000)
+    for _section_i = 1, 3 do
+      local _box_x = _x_start + _columns_start[_section_i]
+      local _box_y = _y + 1
+      for _j, _event in ipairs(_events[_section_i]) do
+        gui.box(_box_x, _box_y, _box_x + _box_size, _box_y + _box_size, _event.color, 0x00000000)
+        gui.box(_box_x + 1, _box_y + 1, _box_x + _box_size - 1, _box_y + _box_size - 1, 0x00000000, 0x00000022)
+        gui.text(_box_x + _box_size + _box_margin, _box_y, _event.name, text_default_color, 0x00000000)
+        _box_x = _box_x + _box_size + _box_margin + get_text_with(_event.name) + _box_margin
+      end
+    end
+
+    if _frame_index > 1 then
+      local _frame_diff = _frame.frame - _history[_frame_index - 1].frame
+      gui.text(_x_start + 2, _y + 1, string.format("%d", _frame_diff), text_default_color, 0x00000000)
+    end
+    gui.box(_x_start, _y + _line_height, _x_start + _width, _y + _line_height, 0x00000000, _separator_color)
+    _current_line = _current_line + 1
+    _last_displayed_frame = _frame_index
+  end
 end
 
 -- game data
@@ -2747,7 +2933,6 @@ function read_player_vars(_player_obj)
 
   update_game_object(_player_obj)
 
-  local _previous_remaining_freeze_frames = _player_obj.remaining_freeze_frames or 0
   local _previous_movement_type = _player_obj.movement_type or 0
 
   local _previous_char_str = _player_obj.char_str or ""
@@ -2756,23 +2941,82 @@ function read_player_vars(_player_obj)
     restore_recordings()
   end
 
+  local _previous_remaining_freeze_frames = _player_obj.remaining_freeze_frames or 0
+  _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
+  _player_obj.freeze_type = 0
+  if _player_obj.remaining_freeze_frames ~= 0 then
+    if _player_obj.remaining_freeze_frames < 127 then
+      -- inflicted freeze I guess (when the opponent parry you for instance)
+      _player_obj.freeze_type = 1
+      _player_obj.remaining_freeze_frames = _player_obj.remaining_freeze_frames
+    else
+      _player_obj.freeze_type = 2
+      _player_obj.remaining_freeze_frames = 256 - _player_obj.remaining_freeze_frames
+    end
+  end
+  local _remaining_freeze_frame_diff = _player_obj.remaining_freeze_frames - _previous_remaining_freeze_frames
+  if _remaining_freeze_frame_diff ~= 0 then
+    --print(string.format("%d: %d(%d)",  _player_obj.id, _player_obj.remaining_freeze_frames, _player_obj.freeze_type))
+  end
+
   _player_obj.is_attacking_ext = memory.readbyte(_player_obj.base + 0x429) > 0
   _player_obj.input_capacity = memory.readword(_player_obj.base + 0x46C)
   _player_obj.action = memory.readdword(_player_obj.base + 0xAC)
   _player_obj.action_ext = memory.readdword(_player_obj.base + 0x12C)
-  _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
   _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
+  _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
+
+  local _previous_total_received_hit_count = _player_obj.total_received_hit_count or nil
+  _player_obj.total_received_hit_count = memory.readword(_player_obj.base + 0x33E)
+  local _total_received_hit_count_diff = 0
+  if _previous_total_received_hit_count then
+    if _previous_total_received_hit_count == 0xFFFF then
+      _total_received_hit_count_diff = 1
+    else
+      _total_received_hit_count_diff = _player_obj.total_received_hit_count - _previous_total_received_hit_count
+    end
+  end
+
+  local _previous_received_connection_marker = _player_obj.received_connection_marker or 0
+  _player_obj.received_connection_marker = memory.readword(_player_obj.base + 0x32E)
+  _player_obj.received_connection = _previous_received_connection_marker == 0 and _player_obj.received_connection_marker ~= 0
 
   _player_obj.last_movement_type_change_frame = _player_obj.last_movement_type_change_frame or 0
   if _player_obj.movement_type ~= _previous_movement_type then
     _player_obj.last_movement_type_change_frame = frame_number
   end
 
-  local _previous_is_blocking = _player_obj.is_blocking or false
-  _player_obj.is_blocking = memory.readbyte(_player_obj.base + 0x3D3) > 0
-  if _debug_state_variables and not _previous_is_blocking and _player_obj.is_blocking then print(string.format("%d - %s blocked", frame_number, _player_obj.prefix)) end
+  -- is blocking/has just blocked/has just been hit/has_just_parried
+  _player_obj.blocking_id = memory.readbyte(_player_obj.base + 0x3D3)
+  _player_obj.has_just_blocked = false
+  if _player_obj.received_connection and _player_obj.received_connection_marker ~= 0xFFF1 and _total_received_hit_count_diff == 0 then --0xFFF1 is parry
+    _player_obj.has_just_blocked = true
+    history_add_entry(_player_obj.prefix, "fight", "block")
+    if _debug_state_variables then
+      print(string.format("%d - %s blocked", frame_number, _player_obj.prefix))
+    end
+  end
+  _player_obj.is_blocking = _player_obj.blocking_id > 0 and _player_obj.blocking_id < 5 or _player_obj.has_just_blocked
+
+  if _player_obj.has_just_blocked then
+
+  end
+
+  _player_obj.has_just_been_hit = false
+  if _total_received_hit_count_diff > 0 then
+    _player_obj.has_just_been_hit = true
+    history_add_entry(_player_obj.prefix, "fight", "hit")
+  end
+
+  _player_obj.has_just_parried = false
+  if _player_obj.received_connection and _player_obj.received_connection_marker == 0xFFF1 and _total_received_hit_count_diff == 0 then
+    _player_obj.has_just_parried = true
+    history_add_entry(_player_obj.prefix, "fight", "parry")
+    if _debug_state_variables then print(string.format("%d - %s parried", frame_number, _player_obj.prefix)) end
+  end
+
 
   --local _gauge_ui = nil
   if _player_obj.id == 1 then
@@ -2836,7 +3080,12 @@ function read_player_vars(_player_obj)
   local _previous_hit_count = _player_obj.hit_count or 0
   _player_obj.hit_count = memory.readbyte(_player_obj.base + 0x189)
   _player_obj.has_just_hit = _player_obj.hit_count > _previous_hit_count
-  if _debug_state_variables and _player_obj.has_just_hit then print(string.format("%d - %s hit (%d > %d)", frame_number, _player_obj.prefix, _previous_hit_count, _player_obj.hit_count)) end
+  if _player_obj.has_just_hit then
+    history_add_entry(_player_obj.prefix, "fight", "has hit")
+    if _debug_state_variables then
+      print(string.format("%d - %s hit (%d > %d)", frame_number, _player_obj.prefix, _previous_hit_count, _player_obj.hit_count))
+    end
+  end
 
   -- BLOCKS
   local _previous_connected_action_count = _player_obj.connected_action_count or 0
@@ -2852,13 +3101,6 @@ function read_player_vars(_player_obj)
   _player_obj.has_just_landed = is_state_on_ground(_player_obj.standing_state, _player_obj) and not is_state_on_ground(_player_obj.previous_standing_state, _player_obj)
   if _debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
   if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
-
-  -- PARRY
-  _player_obj.has_just_parried = false
-  if _player_obj.remaining_freeze_frames == 241 and (_previous_remaining_freeze_frames == 0 or _previous_remaining_freeze_frames > _player_obj.remaining_freeze_frames) then
-    _player_obj.has_just_parried = true
-  end
-  if _debug_state_variables and _player_obj.has_just_parried then print(string.format("%d - %s parried", frame_number, _player_obj.prefix)) end
 
   -- IS IDLE
   _player_obj.idle_time = _player_obj.idle_time or 0
@@ -3067,46 +3309,55 @@ function read_player_vars(_player_obj)
     _player_obj.parry_antiair = _player_obj.parry_antiair or { name = "ANTI-AIR", max_validity = 5, max_cooldown = 18 }
 
     function read_parry_state(_parry_object, _validity_addr, _cooldown_addr)
-        -- read data
-        _parry_object.last_validity_start_frame = _parry_object.last_validity_start_frame or 0
-        local _previous_validity_time = _parry_object.validity_time or 0
-        _parry_object.validity_time = memory.readbyte(_validity_addr)
-        _parry_object.cooldown_time = memory.readbyte(_cooldown_addr)
-        if _parry_object.cooldown_time == 0xFF then _parry_object.cooldown_time = 0 end
-        if _previous_validity_time == 0 and _parry_object.validity_time ~= 0 then
-          _parry_object.last_validity_start_frame = frame_number
-          _parry_object.delta = nil
-          _parry_object.success = nil
-        end
+      -- read data
+      _parry_object.last_hit_or_block_frame =  _parry_object.last_hit_or_block_frame or 0
+      if _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
+        _parry_object.last_hit_or_block_frame = frame_number
+      end
+      _parry_object.last_validity_start_frame = _parry_object.last_validity_start_frame or 0
+      local _previous_validity_time = _parry_object.validity_time or 0
+      _parry_object.validity_time = memory.readbyte(_validity_addr)
+      _parry_object.cooldown_time = memory.readbyte(_cooldown_addr)
+      if _parry_object.cooldown_time == 0xFF then _parry_object.cooldown_time = 0 end
+      if _previous_validity_time == 0 and _parry_object.validity_time ~= 0 then
+        _parry_object.last_validity_start_frame = frame_number
+        _parry_object.delta = nil
+        _parry_object.success = nil
+        _parry_object.armed = true
+        history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "armed")
+      end
 
-        -- check success/miss
-        if frame_number - _parry_object.last_validity_start_frame < 100 then
-          if _player_obj.has_just_parried then
-            -- right
-            _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
-            _parry_object.success = true
-            --print(string.format("%s: success %d", _parry_object.name, _parry_object.delta))
-          elseif (_player_obj.movement_type == 1 or _player_obj.movement_type == 6) and _parry_object.last_validity_start_frame == frame_number then
-            -- late
-            _parry_object.delta = _player_obj.last_movement_type_change_frame - frame_number
-            _parry_object.success = false
-            --print(string.format("%s: late %d", _parry_object.name, _parry_object.delta))
-          elseif (_previous_movement_type ~= _player_obj.movement_type and (_player_obj.movement_type == 1 or _player_obj.movement_type == 6)) then
-            local _delta = _parry_object.last_validity_start_frame + _parry_object.max_validity - frame_number
-            -- early
-            if _delta >= -30 then
-              _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
-              _parry_object.success = false
-              --print(string.format("%s: early %d", _parry_object.name, _parry_object.delta))
-            end
-          end
-        else
-          if _parry_object.delta then
-            --print(string.format("%s: reset", _parry_object.name))
-          end
-          _parry_object.delta = nil
-          _parry_object.success = nil
+      -- check success/miss
+      if _parry_object.armed then
+        if _player_obj.has_just_parried then
+          -- right
+          _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
+          _parry_object.success = true
+          _parry_object.armed = false
+          _parry_object.last_hit_or_block_frame = 0
+          history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "success")
+        elseif _parry_object.last_validity_start_frame == frame_number - 1 and (frame_number - _parry_object.last_hit_or_block_frame) < 20 then
+          _parry_object.delta = _parry_object.last_hit_or_block_frame - frame_number + 1
+          _parry_object.success = false
+          _parry_object.armed = false
+          _parry_object.last_hit_or_block_frame = 0
+          history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "late")
+        elseif _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
+          _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
+          _parry_object.success = false
+          _parry_object.armed = false
+          _parry_object.last_hit_or_block_frame = 0
+          history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "early")
         end
+      end
+      if frame_number - _parry_object.last_validity_start_frame > 30 and _parry_object.armed then
+
+        --_parry_object.delta = nil
+        --_parry_object.success = nil
+        _parry_object.armed = false
+        _parry_object.last_hit_or_block_frame = 0
+        history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "reset")
+      end
     end
 
     read_parry_state(_player_obj.parry_forward, _player_obj.parry_forward_validity_time_addr, _player_obj.parry_forward_cooldown_time_addr)
@@ -3340,6 +3591,8 @@ function before_frame()
     input_history[2] = {}
   end
 
+  history_update()
+
   joypad.set(_input)
 
   update_framedata_recording(player_objects[1])
@@ -3381,8 +3634,10 @@ function on_gui()
     if training_settings.special_training_follow_character then
       local _px = _player.pos_x - screen_x + emu.screenwidth()/2
       local _py = emu.screenheight() - (_player.pos_y - screen_y) - ground_offset
-
-      _x = _px - 23 * _gauge_x_scale * 0.5
+      local _half_width = 23 * _gauge_x_scale * 0.5
+      _x = _px - _half_width
+      _x = math.max(_x, 4)
+      _x = math.min(_x, emu.screenwidth() - (_half_width * 2.0 + 14))
       _y = _py - 100
     end
 
@@ -3416,10 +3671,10 @@ function on_gui()
           _validity_text_color = _miss_color
           _validity_outline_color = 0x840000FF
         end
-        if _parry_object.delta > 0 then
-          _validity_time_text = string.format("+%d", _parry_object.delta)
+        if _parry_object.delta >= 0 then
+          _validity_time_text = string.format("%d", -_parry_object.delta)
         else
-          _validity_time_text = string.format("%d", _parry_object.delta)
+          _validity_time_text = string.format("+%d", -_parry_object.delta)
         end
       end
 
@@ -3428,11 +3683,13 @@ function on_gui()
       gui.box(_cooldown_gauge_left, _y + 10, _cooldown_gauge_left, _y + 12, 0x00000000, 0xFFFFFF77)
       gui.box(_validity_gauge_right, _y + 11, _cooldown_gauge_right - 1, _y + 11, 0x00000000, 0xFFFFFF77)
       gui.box(_cooldown_gauge_right, _y + 10, _cooldown_gauge_right, _y + 12, 0x00000000, 0xFFFFFF77)
-      draw_gauge(_validity_gauge_left, _y + 8, _validity_gauge_width, _gauge_height + 1, _parry_object.validity_time / _parry_object.max_validity, _gauge_valid_fill_color, _gauge_background_color)
-      draw_gauge(_cooldown_gauge_left, _y + 8 + _gauge_height + 2, _cooldown_gauge_width, _gauge_height, _parry_object.cooldown_time / _parry_object.max_cooldown, _gauge_cooldown_fill_color, _gauge_background_color)
+      draw_gauge(_validity_gauge_left, _y + 8, _validity_gauge_width, _gauge_height + 1, _parry_object.validity_time / _parry_object.max_validity, _gauge_valid_fill_color, _gauge_background_color, nil, true)
+      draw_gauge(_cooldown_gauge_left, _y + 8 + _gauge_height + 2, _cooldown_gauge_width, _gauge_height, _parry_object.cooldown_time / _parry_object.max_cooldown, _gauge_cooldown_fill_color, _gauge_background_color, nil, true)
+
+      gui.box(_validity_gauge_left + 3 * _gauge_x_scale, _y + 8, _validity_gauge_left + 2 + 3 * _gauge_x_scale,  _y + 8 + _gauge_height + 2, 0xFF000077, 0x00000000)
 
       if _parry_object.delta then
-        local _marker_x = _validity_gauge_right - _parry_object.delta * _gauge_x_scale
+        local _marker_x = _validity_gauge_left + _parry_object.delta * _gauge_x_scale
         _marker_x = math.min(math.max(_marker_x, _x), _cooldown_gauge_right)
         gui.box(_marker_x, _y + 7, _marker_x + _gauge_x_scale, _y + 8 + _gauge_height + 2, _validity_text_color, _validity_outline_color)
       end
@@ -3497,8 +3754,17 @@ function on_gui()
     end
   end
 
+  if history_enabled then
+    history_draw()
+  end
+
   if is_in_match then
-    if P1.input.pressed.start or P2.input.pressed.start then
+    local _should_toggle = P1.input.pressed.start or P2.input.pressed.start
+    if history_enabled then
+      _should_toggle = P1.input.released.start or P2.input.released.start
+    end
+    _should_toggle = not history_start_locked and _should_toggle
+    if _should_toggle then
       is_menu_open = (not is_menu_open)
       if current_popup ~= nil then
         close_popup()
@@ -3509,17 +3775,6 @@ function on_gui()
   end
 
   if is_menu_open then
-    function check_input_down_autofire(_input, _autofire_rate, _autofire_time)
-      _autofire_rate = _autofire_rate or 4
-      _autofire_time = _autofire_time or 23
-      for _i = 1, 2 do
-        if player_objects[_i].input.pressed[_input] or (player_objects[_i].input.down[_input] and player_objects[_i].input.state_time[_input] > _autofire_time and (player_objects[_i].input.state_time[_input] % _autofire_rate) == 0) then
-          return true
-        end
-      end
-      return false
-    end
-
     local _current_entry = menu[main_menu_selected_index].entries[sub_menu_selected_index]
 
     if current_popup then
@@ -3553,7 +3808,7 @@ function on_gui()
       end
     end
 
-    if check_input_down_autofire("down", _vertical_autofire_rate) then
+    if check_input_down_autofire(player_objects[1], "down", _vertical_autofire_rate) or check_input_down_autofire(player_objects[2], "down", _vertical_autofire_rate) then
       if is_main_menu_selected then
         is_main_menu_selected = false
         sub_menu_selected_index = 0
@@ -3570,7 +3825,7 @@ function on_gui()
       end
     end
 
-    if check_input_down_autofire("up", _vertical_autofire_rate) then
+    if check_input_down_autofire(player_objects[1], "up", _vertical_autofire_rate) or check_input_down_autofire(player_objects[2], "up", _vertical_autofire_rate) then
       if is_main_menu_selected then
         is_main_menu_selected = false
         sub_menu_selected_index = #menu[main_menu_selected_index].entries + 1
@@ -3587,7 +3842,7 @@ function on_gui()
       end
     end
 
-    if check_input_down_autofire("left", _horizontal_autofire_rate) then
+    if check_input_down_autofire(player_objects[1], "left", _horizontal_autofire_rate) or check_input_down_autofire(player_objects[2], "left", _horizontal_autofire_rate) then
       if is_main_menu_selected then
         main_menu_selected_index = main_menu_selected_index - 1
         if main_menu_selected_index == 0 then
@@ -3599,7 +3854,7 @@ function on_gui()
       end
     end
 
-    if check_input_down_autofire("right", _horizontal_autofire_rate) then
+    if check_input_down_autofire(player_objects[1], "right", _horizontal_autofire_rate) or check_input_down_autofire(player_objects[2], "right", _horizontal_autofire_rate) then
       if is_main_menu_selected then
         main_menu_selected_index = main_menu_selected_index + 1
         if main_menu_selected_index > #menu then
@@ -3722,6 +3977,12 @@ function to_bit(_bool)
   end
 end
 
+function memory_readword_reverse(_addr)
+  local _1 = memory.readbyte(_addr)
+  local _2 = memory.readbyte(_addr + 1)
+  return  bit.bor(bit.lshift(_2, 8), _1)
+end
+
 function clamp01(_number)
   return math.max(math.min(_number, 1.0), 0.0)
 end
@@ -3767,15 +4028,20 @@ function draw_input(_x, _y, _input, _prefix)
   gui.text(_x + 55, _y + 10, "C", col(coin), text_default_border_color)
 end
 
-function draw_gauge(_x, _y, _width, _height, _fill_ratio, _fill_color, _bg_color, _border_color)
+function draw_gauge(_x, _y, _width, _height, _fill_ratio, _fill_color, _bg_color, _border_color, _reverse_fill)
   _bg_color = _bg_color or 0x00000000
   _border_color = _border_color or 0xFFFFFFFF
+  _reverse_fill = _reverse_fill or false
 
   _width = _width + 1
   _height = _height + 1
 
   gui.box(_x, _y, _x + _width, _y + _height, _bg_color, _border_color)
-  gui.box(_x, _y, _x + _width * clamp01(_fill_ratio), _y + _height, _fill_color, 0x00000000)
+  if _reverse_fill then
+    gui.box(_x + _width, _y, _x + _width - _width * clamp01(_fill_ratio), _y + _height, _fill_color, 0x00000000)
+  else
+    gui.box(_x, _y, _x + _width * clamp01(_fill_ratio), _y + _height, _fill_color, 0x00000000)
+  end
 end
 
 function string:split(sep)
@@ -3785,6 +4051,69 @@ function string:split(sep)
    return fields
 end
 
+function string_hash(_str)
+	if #_str == 0 then
+		return 0
+  end
+
+  local _DJB2_INIT = 5381;
+	local _hash = _DJB2_INIT
+  for _i = 1, #_str do
+    local _c = _str.byte(_i)
+    _hash = bit.lshift(_hash, 5) + _hash + _c
+  end
+	return _hash
+end
+
+function string_to_color(_str)
+  local _HRange = { 0.0, 360.0 }
+	local _SRange = { 0.8, 1.0 }
+	local _LRange = { 0.7, 1.0 }
+
+	local _HAmplitude = _HRange[2] - _HRange[1];
+	local _SAmplitude = _SRange[2] - _SRange[1];
+	local _LAmplitude = _LRange[2] - _LRange[1];
+
+  local _hash = string_hash(_str)
+
+  local _HI = bit.rshift(bit.band(_hash, 0xFF000000), 24)
+  local _SI = bit.rshift(bit.band(_hash, 0x00FF0000), 16)
+	local _LI = bit.rshift(bit.band(_hash, 0x0000FF00), 8)
+	local _base = bit.lshift(1, 8)
+
+	local _H = _HRange[1] + (_HI / _base) * _HAmplitude;
+	local _S = _SRange[1] + (_SI / _base) * _SAmplitude;
+	local _L = _LRange[1] + (_LI / _base) * _LAmplitude;
+
+	local _HDiv60 = _H / 60.0
+	local _HDiv60_Floor = math.floor(_HDiv60);
+	local _HDiv60_Fraction = _HDiv60 - _HDiv60_Floor;
+
+	local _RGBValues = {
+		_L,
+		_L * (1.0 - _S),
+		_L * (1.0 - (_HDiv60_Fraction * _S)),
+		_L * (1.0 - ((1.0 - _HDiv60_Fraction) * _S))
+	}
+
+	local _RGBSwizzle = {
+		{1, 4, 2},
+		{3, 1, 2},
+		{2, 1, 4},
+		{2, 3, 1},
+		{4, 2, 1},
+		{1, 2, 3},
+	}
+	local _SwizzleIndex = (_HDiv60_Floor % 6) + 1
+  local _R = _RGBValues[_RGBSwizzle[_SwizzleIndex][1]]
+  local _G = _RGBValues[_RGBSwizzle[_SwizzleIndex][2]]
+  local _B = _RGBValues[_RGBSwizzle[_SwizzleIndex][3]]
+
+  --print(string.format("H:%.1f, S:%.1f, L:%.1f | R:%.1f, G:%.1f, B:%.1f", _H, _S, _L, _R, _G, _B))
+
+  local _color = bit.lshift(math.floor(_R * 255), 24) + bit.lshift(math.floor(_G * 255), 16) + bit.lshift(math.floor(_B * 255), 8) + 0xFF
+  return _color
+end
 
 screen_x = 0
 screen_y = 0
