@@ -285,9 +285,9 @@ function process_pending_input_sequence(_player_obj, _input)
   for i = 1, #_current_frame_input do
     local _input_name = _player_obj.prefix.." "
     if _current_frame_input[i] == "forward" then
-      if _player_obj.delayed_flip_input then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
+      if _player_obj.flip_input then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
     elseif _current_frame_input[i] == "back" then
-      if _player_obj.delayed_flip_input then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
+      if _player_obj.flip_input then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
     elseif _current_frame_input[i] == "up" then
       _input_name = _input_name.."Up"
     elseif _current_frame_input[i] == "down" then
@@ -1633,7 +1633,7 @@ function record_framedata(_player_obj)
       --print(string.format("recording frame %d (%d - %d - %d)", _frame, frame_number, _player_obj.current_animation_freeze_frames, _player_obj.current_animation_start_frame))
 
       local _sign = 1
-      if _player_obj.flip_x ~= 0 then _sign = -1 end
+      if _player_obj.flip_input ~= 0 then _sign = -1 end
 
       current_recording_animation.frames[_frame + 1] = {
         boxes = {},
@@ -2659,7 +2659,7 @@ function stick_input_to_sequence_input(_player_obj, _input)
   if _input == "Strong Kick" then return "HK" end
 
   if _input == "Left" then
-    if _player_obj.flip_x == 0 then
+    if _player_obj.flip_input == 0 then
       return "forward"
     else
       return "back"
@@ -2667,7 +2667,7 @@ function stick_input_to_sequence_input(_player_obj, _input)
   end
 
   if _input == "Right" then
-    if _player_obj.flip_x == 0 then
+    if _player_obj.flip_input == 0 then
       return "back"
     else
       return "forward"
@@ -3371,33 +3371,20 @@ function update_flip_input(_player, _other_player)
   local _debug = false
   if _player.flip_input == nil then
     _player.flip_input = _other_player.pos_x >= _player.pos_x
-    _player.delayed_flip_input = _player.flip_input
-    _player.last_flip_input_switch_frame = frame_number
     return
   end
 
   local _previous_flip_input = _player.flip_input
   local _flip_hysteresis = 0
   local _diff = _other_player.pos_x - _player.pos_x
-  if math.abs(_diff) > _flip_hysteresis then
+  if math.abs(_diff) >= _flip_hysteresis then
     _player.flip_input = _other_player.pos_x >= _player.pos_x
   end
 
   if _previous_flip_input ~= _player.flip_input then
-    _player.last_flip_input_switch_frame = frame_number
-    if _debug then
-      print(string.format("%d - %s flip input: %s", frame_number, _player.prefix, tostring(_player.flip_input)))
-    end
+    history_add_entry(_player.prefix, "fight", "flip input")
   end
 
-  -- Delayed input flip is useful to avoid the dummy fucking up manipulations on wake up when being crossed up for instance
-  local _input_flip_delay = 0 -- It seems that even when the input is swapped in the middle of the manipulation, everything works. Let's put it to 0 but keep the code just in case
-  if _player.flip_input ~= _player.delayed_flip_input and (frame_number - _player.last_flip_input_switch_frame) > _input_flip_delay then
-    _player.delayed_flip_input = _player.flip_input
-    if _debug then
-      print(string.format("%d - %s delayed flip input: %s", frame_number, _player.prefix, tostring(_player.delayed_flip_input)))
-    end
-  end
 end
 
 function write_player_vars(_player_obj)
