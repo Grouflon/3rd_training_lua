@@ -744,13 +744,13 @@ text_default_border_color = 0x101008FF
 text_selected_color = 0xFF0000FF
 text_disabled_color = 0x999999FF
 
-function meter_gauge_menu_item(_name, _object, _property_name, _player_obj)
+function meter_gauge_menu_item(_name, _object, _property_name, _player_id)
   local _o = {}
   local _bar_ratio = 2
   _o.name = _name
   _o.object = _object
   _o.property_name = _property_name
-  _o.player_obj = _player_obj
+  _o.player_id = _player_id
   _o.autofire_rate = 1
 
   function _o:draw(_x, _y, _selected)
@@ -764,7 +764,7 @@ function meter_gauge_menu_item(_name, _object, _property_name, _player_obj)
     end
     gui.text(_x, _y, _prefix..self.name.." : ", _c, text_default_border_color)
 
-    local _box_width = self.player_obj.max_meter_gauge * self.player_obj.max_meter_count / _bar_ratio
+    local _box_width = player_objects[self.player_id].max_meter_gauge *  player_objects[self.player_id].max_meter_count / _bar_ratio
     local _box_top = _y + 1
     local _box_left = _x + 53
     local _box_right = _box_left + _box_width
@@ -772,8 +772,8 @@ function meter_gauge_menu_item(_name, _object, _property_name, _player_obj)
     gui.box(_box_left, _box_top, _box_right, _box_bottom, text_default_color, text_default_border_color)
     local _content_width = self.object[self.property_name] / _bar_ratio
     gui.box(_box_left, _box_top, _box_left + _content_width, _box_bottom, 0x0000FFFF, 0x00000000)
-    for _i = 1, self.player_obj.max_meter_count - 1 do
-      local _line_x = _box_left + _i * self.player_obj.max_meter_gauge / _bar_ratio
+    for _i = 1,  player_objects[self.player_id].max_meter_count - 1 do
+      local _line_x = _box_left + _i *  player_objects[self.player_id].max_meter_gauge / _bar_ratio
       gui.line(_line_x, _box_top, _line_x, _box_bottom, text_default_border_color)
     end
 
@@ -785,7 +785,7 @@ function meter_gauge_menu_item(_name, _object, _property_name, _player_obj)
   end
 
   function _o:right()
-    self.object[self.property_name] = math.min(self.object[self.property_name] + _bar_ratio, self.player_obj.max_meter_gauge * self.player_obj.max_meter_count)
+    self.object[self.property_name] = math.min(self.object[self.property_name] + _bar_ratio,  player_objects[self.player_id].max_meter_gauge *  player_objects[self.player_id].max_meter_count)
   end
 
   function _o:reset()
@@ -2530,8 +2530,8 @@ life_refill_delay_item.is_disabled = function()
   return training_settings.life_mode ~= 2
 end
 
-p1_meter_gauge_item = meter_gauge_menu_item("P1 meter", training_settings, "p1_meter", player_objects[1])
-p2_meter_gauge_item = meter_gauge_menu_item("P2 meter", training_settings, "p2_meter", player_objects[2])
+p1_meter_gauge_item = meter_gauge_menu_item("P1 meter", training_settings, "p1_meter", 1)
+p2_meter_gauge_item = meter_gauge_menu_item("P2 meter", training_settings, "p2_meter", 2)
 meter_refill_delay_item = integer_menu_item("Meter refill delay", training_settings, "meter_refill_delay", 1, 100, false, 20)
 
 p1_meter_gauge_item.is_disabled = function()
