@@ -4996,6 +4996,7 @@ frame_data_meta["yun"].moves["630c"] = { hits = {{ type = 3 }}, movement_type = 
 frame_data_meta["yun"].moves["650c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
 frame_data_meta["yun"].moves["66bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
 
+
 frame_data_meta["yun"].moves["6b14"] = { force_recording = true,  hits = {{ type = 3 }} } -- Target Air HP
 frame_data_meta["yun"].moves["748c"] = { proxy = { id = "48bc", offset = 0 } } -- Target LK
 frame_data_meta["yun"].moves["75a4"] = { proxy = { id = "415c", offset = 0 } } -- Target MP
