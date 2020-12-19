@@ -1633,7 +1633,7 @@ function record_framedata(_player_obj)
       --print(string.format("recording frame %d (%d - %d - %d)", _frame, frame_number, _player_obj.current_animation_freeze_frames, _player_obj.current_animation_start_frame))
 
       local _sign = 1
-      if _player_obj.flip_input ~= 0 then _sign = -1 end
+      if _player_obj.flip_input then _sign = -1 end
 
       current_recording_animation.frames[_frame + 1] = {
         boxes = {},
@@ -2659,18 +2659,18 @@ function stick_input_to_sequence_input(_player_obj, _input)
   if _input == "Strong Kick" then return "HK" end
 
   if _input == "Left" then
-    if _player_obj.flip_input == 0 then
-      return "forward"
-    else
+    if _player_obj.flip_input then
       return "back"
+    else
+      return "forward"
     end
   end
 
   if _input == "Right" then
-    if _player_obj.flip_input == 0 then
-      return "back"
-    else
+    if _player_obj.flip_input then
       return "forward"
+    else
+      return "back"
     end
   end
   return ""
