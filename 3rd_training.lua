@@ -678,14 +678,14 @@ hit_type =
 
 life_mode =
 {
-  "normal",
+  "no refill",
   "refill",
   "infinite"
 }
 
 meter_mode =
 {
-  "normal",
+  "no refill",
   "refill",
   "infinite"
 }
