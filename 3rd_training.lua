@@ -159,7 +159,9 @@ function reset_player_objects()
 
   P1.gauge_addr = 0x020695B5
   P1.meter_addr = { 0x020286AB, 0x020695BF } -- 2nd address is the master variable
-  P1.stun_base = 0x020695FD
+  P1.stun_max_addr = 0x020695F7
+  P1.stun_timer_addr = P1.stun_max_addr + 0x2
+  P1.stun_bar_addr = P1.stun_max_addr + 0x6
   P1.meter_update_flag = 0x020157C8
   P1.score_addr = 0x020113A2
   P1.parry_forward_validity_time_addr = 0x02026335
@@ -173,7 +175,9 @@ function reset_player_objects()
 
   P2.gauge_addr = 0x020695E1
   P2.meter_addr = { 0x020286DF, 0x020695EB} -- 2nd address is the master variable
-  P2.stun_base = 0x02069611
+  P2.stun_max_addr = 0x0206960B
+  P2.stun_timer_addr = P2.stun_max_addr + 0x2
+  P2.stun_bar_addr = P2.stun_max_addr + 0x6
   P2.meter_update_flag = 0x020157C9
   P2.score_addr = 0x020113AE
 end
@@ -690,6 +694,13 @@ meter_mode =
   "infinite"
 }
 
+stun_mode =
+{
+  "normal",
+  "no stun",
+  "delayed reset"
+}
+
 standing_state =
 {
   "knockeddown",
@@ -744,14 +755,17 @@ text_default_border_color = 0x101008FF
 text_selected_color = 0xFF0000FF
 text_disabled_color = 0x999999FF
 
-function meter_gauge_menu_item(_name, _object, _property_name, _player_id)
+function gauge_menu_item(_name, _object, _property_name, _unit, _fill_color, _gauge_max, _subdivision_count)
   local _o = {}
-  local _bar_ratio = 2
   _o.name = _name
   _o.object = _object
   _o.property_name = _property_name
   _o.player_id = _player_id
   _o.autofire_rate = 1
+  _o.unit = _unit or 2
+  _o.gauge_max = _gauge_max or 0
+  _o.subdivision_count = _subdivision_count or 1
+  _o.fill_color = _fill_color or 0x0000FFFF
 
   function _o:draw(_x, _y, _selected)
     local _c = text_default_color
@@ -764,16 +778,16 @@ function meter_gauge_menu_item(_name, _object, _property_name, _player_id)
     end
     gui.text(_x, _y, _prefix..self.name.." : ", _c, text_default_border_color)
 
-    local _box_width = player_objects[self.player_id].max_meter_gauge *  player_objects[self.player_id].max_meter_count / _bar_ratio
+    local _box_width = self.gauge_max / self.unit
     local _box_top = _y + 1
-    local _box_left = _x + 53
+    local _box_left = _x + get_text_width("< "..self.name.." : ") - 1
     local _box_right = _box_left + _box_width
     local _box_bottom = _box_top + 4
     gui.box(_box_left, _box_top, _box_right, _box_bottom, text_default_color, text_default_border_color)
-    local _content_width = self.object[self.property_name] / _bar_ratio
-    gui.box(_box_left, _box_top, _box_left + _content_width, _box_bottom, 0x0000FFFF, 0x00000000)
-    for _i = 1,  player_objects[self.player_id].max_meter_count - 1 do
-      local _line_x = _box_left + _i *  player_objects[self.player_id].max_meter_gauge / _bar_ratio
+    local _content_width = self.object[self.property_name] / self.unit
+    gui.box(_box_left, _box_top, _box_left + _content_width, _box_bottom, self.fill_color, 0x00000000)
+    for _i = 1, self.subdivision_count - 1 do
+      local _line_x = _box_left + _i * self.gauge_max / (self.subdivision_count * self.unit)
       gui.line(_line_x, _box_top, _line_x, _box_bottom, text_default_border_color)
     end
 
@@ -781,11 +795,11 @@ function meter_gauge_menu_item(_name, _object, _property_name, _player_id)
   end
 
   function _o:left()
-    self.object[self.property_name] = math.max(self.object[self.property_name] - _bar_ratio, 0)
+    self.object[self.property_name] = math.max(self.object[self.property_name] - self.unit, 0)
   end
 
   function _o:right()
-    self.object[self.property_name] = math.min(self.object[self.property_name] + _bar_ratio,  player_objects[self.player_id].max_meter_gauge *  player_objects[self.player_id].max_meter_count)
+    self.object[self.property_name] = math.min(self.object[self.property_name] + self.unit, self.gauge_max)
   end
 
   function _o:reset()
@@ -1508,7 +1522,7 @@ function history_draw()
         gui.box(_box_x, _box_y, _box_x + _box_size, _box_y + _box_size, _event.color, 0x00000000)
         gui.box(_box_x + 1, _box_y + 1, _box_x + _box_size - 1, _box_y + _box_size - 1, 0x00000000, 0x00000022)
         gui.text(_box_x + _box_size + _box_margin, _box_y, _event.name, text_default_color, 0x00000000)
-        _box_x = _box_x + _box_size + _box_margin + get_text_with(_event.name) + _box_margin
+        _box_x = _box_x + _box_size + _box_margin + get_text_width(_event.name) + _box_margin
       end
     end
 
@@ -2497,7 +2511,10 @@ training_settings = {
   p1_meter = 0,
   p2_meter = 0,
   infinite_sa_time = false,
-  no_stun = true,
+  stun_mode = 1,
+  p1_stun_reset_value = 0,
+  p2_stun_reset_value = 0,
+  stun_reset_delay = 20,
   display_input = true,
   display_p1_input_history = false,
   display_p2_input_history = false,
@@ -2530,8 +2547,17 @@ life_refill_delay_item.is_disabled = function()
   return training_settings.life_mode ~= 2
 end
 
-p1_meter_gauge_item = meter_gauge_menu_item("P1 meter", training_settings, "p1_meter", 1)
-p2_meter_gauge_item = meter_gauge_menu_item("P2 meter", training_settings, "p2_meter", 2)
+p1_stun_reset_value_gauge_item = gauge_menu_item("P1 Stun reset value", training_settings, "p1_stun_reset_value", 0x10000, 0xFF0000FF)
+p2_stun_reset_value_gauge_item = gauge_menu_item("P2 Stun reset value", training_settings, "p2_stun_reset_value", 0x10000, 0xFF0000FF)
+stun_reset_delay_item = integer_menu_item("Stun reset delay", training_settings, "stun_reset_delay", 1, 100, false, 20)
+p1_stun_reset_value_gauge_item.is_disabled = function()
+  return training_settings.stun_mode ~= 3
+end
+p2_stun_reset_value_gauge_item.is_disabled = p1_stun_reset_value_gauge_item.is_disabled
+stun_reset_delay_item.is_disabled = p1_stun_reset_value_gauge_item.is_disabled
+
+p1_meter_gauge_item = gauge_menu_item("P1 Meter", training_settings, "p1_meter", 2, 0x0000FFFF)
+p2_meter_gauge_item = gauge_menu_item("P2 Meter", training_settings, "p2_meter", 2, 0x0000FFFF)
 meter_refill_delay_item = integer_menu_item("Meter refill delay", training_settings, "meter_refill_delay", 1, 100, false, 20)
 
 p1_meter_gauge_item.is_disabled = function()
@@ -2574,7 +2600,10 @@ menu = {
       checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
       list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
       life_refill_delay_item,
-      checkbox_menu_item("Disable Stun", training_settings, "no_stun"),
+      list_menu_item("Stun Mode", training_settings, "stun_mode", stun_mode),
+      p1_stun_reset_value_gauge_item,
+      p2_stun_reset_value_gauge_item,
+      stun_reset_delay_item,
       list_menu_item("Meter Refill Mode", training_settings, "meter_mode", meter_mode),
       p1_meter_gauge_item,
       p2_meter_gauge_item,
@@ -3018,7 +3047,6 @@ function read_player_vars(_player_obj)
   end
 
 
-  --local _gauge_ui = nil
   if _player_obj.id == 1 then
     _player_obj.max_meter_gauge = memory.readbyte(0x020695B3)
     _player_obj.max_meter_count = memory.readbyte(0x020695BD)
@@ -3026,8 +3054,8 @@ function read_player_vars(_player_obj)
     _player_obj.superfreeze_decount = memory.readbyte(0x02069520) -- seems to be in P2 memory space, don't know why
 
     training_settings.p1_meter = math.min(training_settings.p1_meter, _player_obj.max_meter_count * _player_obj.max_meter_gauge)
-
-    --_gauge_ui = p1_meter_gauge_item
+    p1_meter_gauge_item.gauge_max = _player_obj.max_meter_gauge * _player_obj.max_meter_count
+    p1_meter_gauge_item.subdivision_count = _player_obj.max_meter_count
   else
     _player_obj.max_meter_gauge = memory.readbyte(0x020695DF)
     _player_obj.max_meter_count = memory.readbyte(0x020695E9)
@@ -3035,12 +3063,8 @@ function read_player_vars(_player_obj)
     _player_obj.superfreeze_decount = memory.readbyte(0x02069088) -- seems to be in P1 memory space, don't know why
 
     training_settings.p2_meter = math.min(training_settings.p2_meter, _player_obj.max_meter_count * _player_obj.max_meter_gauge)
-
-    --_gauge_ui = p2_meter_gauge_item
-  end
-  if is_in_match then
-    --_gauge_ui.max = _player_obj.max_meter_count * _player_obj.max_meter_gauge
-    --_gauge_ui.object[_gauge_ui.property_name] = math.min(_gauge_ui.object[_gauge_ui.property_name], _gauge_ui.max)
+    p2_meter_gauge_item.gauge_max = _player_obj.max_meter_gauge * _player_obj.max_meter_count
+    p2_meter_gauge_item.subdivision_count = _player_obj.max_meter_count
   end
 
   -- THROW
@@ -3365,6 +3389,21 @@ function read_player_vars(_player_obj)
     read_parry_state(_player_obj.parry_air, _player_obj.parry_air_validity_time_addr, _player_obj.parry_air_cooldown_time_addr)
     read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
   end
+
+  -- STUN
+  _player_obj.stun_max = bit.lshift(memory.readbyte(_player_obj.stun_max_addr) + 1, 16)
+  _player_obj.stun_timer = memory.readbyte(_player_obj.stun_timer_addr)
+  _player_obj.stun_bar = bit.rshift(memory.readdword(_player_obj.stun_bar_addr), 8)
+
+  local _gauge_item = nil
+  if _player_obj.id == 1 then
+    _gauge_item = p1_stun_reset_value_gauge_item
+    training_settings.p1_stun_reset_value = math.min(training_settings.p1_stun_reset_value, _player_obj.stun_max)
+  else
+    _gauge_item = p2_stun_reset_value_gauge_item
+    training_settings.p2_stun_reset_value = math.min(training_settings.p2_stun_reset_value, _player_obj.stun_max)
+  end
+  _gauge_item.gauge_max = _player_obj.stun_max
 end
 
 function update_flip_input(_player, _other_player)
@@ -3483,13 +3522,27 @@ function write_player_vars(_player_obj)
   end
 
   -- STUN
-  -- 0x020695FD P1 stun timer
-  -- 0x020695FF P1 stun bar
-  -- 0x02069611 P2 stun timer
-  -- 0x02069613 P2 stun bar
-  if training_settings.no_stun then
-    memory.writebyte(_player_obj.stun_base, 0); -- Stun timer
-    memory.writedword(_player_obj.stun_base + 0x2, 0); -- Stun bar
+  if training_settings.stun_mode == 2 then
+    memory.writebyte(_player_obj.stun_timer_addr, 0);
+    memory.writedword(_player_obj.stun_bar_addr, 0);
+  elseif training_settings.stun_mode == 3 then
+    if is_in_match and not is_menu_open and _player_obj.is_idle then
+      local _wanted_stun = 0
+      if _player_obj.id == 1 then
+        _wanted_stun = training_settings.p1_stun_reset_value
+      else
+        _wanted_stun = training_settings.p2_stun_reset_value
+      end
+      _wanted_stun = math.max(_wanted_stun - 1, 0)
+
+      if _player_obj.stun_bar < _wanted_stun then
+        memory.writedword(_player_obj.stun_bar_addr, bit.lshift(_wanted_stun, 8));
+      elseif _player_obj.is_idle and _player_obj.idle_time > training_settings.stun_reset_delay then
+        local _stun = _player_obj.stun_bar
+        _stun = math.max(_stun - 0x30000, _wanted_stun)
+        memory.writedword(_player_obj.stun_bar_addr, bit.lshift(_stun, 8));
+      end
+    end
   end
 end
 
@@ -3974,7 +4027,7 @@ function clamp01(_number)
   return math.max(math.min(_number, 1.0), 0.0)
 end
 
-function get_text_with(_text)
+function get_text_width(_text)
   if #_text == 0 then
     return 0
   end
@@ -4995,7 +5048,6 @@ frame_data_meta["yun"].moves["60ec"] = { hits = {{ type = 3 }}, movement_type = 
 frame_data_meta["yun"].moves["630c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive L
 frame_data_meta["yun"].moves["650c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
 frame_data_meta["yun"].moves["66bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
-
 
 frame_data_meta["yun"].moves["6b14"] = { force_recording = true,  hits = {{ type = 3 }} } -- Target Air HP
 frame_data_meta["yun"].moves["748c"] = { proxy = { id = "48bc", offset = 0 } } -- Target LK
