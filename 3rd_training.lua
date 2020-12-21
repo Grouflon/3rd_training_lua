@@ -3361,23 +3361,23 @@ function read_player_vars(_player_obj)
           _parry_object.last_hit_or_block_frame = 0
           history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "success")
         elseif _parry_object.last_validity_start_frame == frame_number - 1 and (frame_number - _parry_object.last_hit_or_block_frame) < 20 then
-          _parry_object.delta = _parry_object.last_hit_or_block_frame - frame_number + 1
-          _parry_object.success = false
-          _parry_object.armed = false
-          _parry_object.last_hit_or_block_frame = 0
+          local _delta = _parry_object.last_hit_or_block_frame - frame_number + 1
+          if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
+            _parry_object.delta = _delta
+            _parry_object.success = false
+          end
           history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "late")
         elseif _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
-          _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
-          _parry_object.success = false
-          _parry_object.armed = false
-          _parry_object.last_hit_or_block_frame = 0
+          local _delta = frame_number - _parry_object.last_validity_start_frame
+          if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
+            _parry_object.delta = _delta
+            _parry_object.success = false
+          end
           history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "early")
         end
       end
       if frame_number - _parry_object.last_validity_start_frame > 30 and _parry_object.armed then
 
-        --_parry_object.delta = nil
-        --_parry_object.success = nil
         _parry_object.armed = false
         _parry_object.last_hit_or_block_frame = 0
         history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "reset")
