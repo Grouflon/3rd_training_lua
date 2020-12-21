@@ -11,6 +11,12 @@ print("- In recording mode, press \"Coin\" again to start/stop recording")
 print("- In normal mode, press \"Coin\" to start/stop replay")
 print("")
 
+-- Kudos to indirect contributors:
+-- *esn3s* for his work on 3s frame data : http://baston.esn3s.com/
+-- *dammit* for his work on 3s hitbox display script : https://dammit.typepad.com/blog/2011/10/improved-3rd-strike-hitboxes.html
+-- *furitiem* for his prior work on 3s C# training program : https://www.youtube.com/watch?v=vE27xe0QM64
+-- *crytal_cube99* for his prior work on 3s training & trial scripts : https://ameblo.jp/3fv/
+
 -- FBA-RR Scripting reference:
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
 -- https://github.com/TASVideos/mame-rr/wiki/Lua-scripting-functions
