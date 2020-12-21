@@ -24,15 +24,17 @@ print("")
 json = require ("lua_libs/dkjson")
 
 recording_slot_count = 8
--- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
-advanced_mode = false
+
+-- debug options
+advanced_mode = false -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 assert_enabled = false
 history_enabled = false
 history_categories_shown =
 {
   input = false,
-  fight = false,
+  fight = true,
   parry_training_FORWARD = false,
+  blocking = true,
 }
 
 function t_assert(_condition, _msg)
@@ -2068,12 +2070,16 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       _dummy.blocking.next_attack_hit_id = 0
       _dummy.blocking.last_attack_hit_id = 0
 
+      history_add_entry(_dummy.prefix, "blocking", string.format("listening %s", _player.relevant_animation))
       if _debug then
         print(string.format("%d - %s listening for attack animation \"%s\" (starts at frame %d)", frame_number, _dummy.prefix, _player.relevant_animation, _player.relevant_animation_start_frame))
       end
     else
-      if _debug and _dummy.blocking.listening then
-        print(string.format("%d - %s stopped listening for attack animation", frame_number, _dummy.prefix))
+      if _dummy.blocking.listening then
+        history_add_entry(_dummy.prefix, "blocking", string.format("stopped listening"))
+        if _debug then
+          print(string.format("%d - %s stopped listening for attack animation", frame_number, _dummy.prefix))
+        end
       end
       _dummy.blocking.listening = false
       _dummy.blocking.blocked_hit_count = 0
@@ -2126,6 +2132,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
             _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
+            history_add_entry(_dummy.prefix, "blocking", string.format(""))
 
             if _mode == 3 then -- first hit
               if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
@@ -2183,6 +2190,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       if _blocking_style == 1 then
         if frame_number >= _dummy.blocking.next_attack_animation_hit_frame - 2 then
 
+          history_add_entry(_dummy.prefix, "blocking", string.format("dummy block %d", _dummy.blocking.next_attack_hit_id))
           if _debug then
             print(string.format("%d - %s blocking", frame_number, _dummy.prefix))
           end
