@@ -2579,6 +2579,10 @@ parry_air_on_item.is_disabled = parry_forward_on_item.is_disabled
 parry_antiair_on_item = checkbox_menu_item("Anti-Air Parry Helper", training_settings, "special_training_parry_antiair_on")
 parry_antiair_on_item.is_disabled = parry_forward_on_item.is_disabled
 
+hits_before_red_parry_item = integer_menu_item("Hits before Red Parry", training_settings, "red_parry_hit_count", 1, 20, true)
+hits_before_red_parry_item.is_disabled = function()
+  return training_settings.blocking_style ~= 3
+end
 
 menu = {
   {
@@ -2586,8 +2590,8 @@ menu = {
     entries = {
       list_menu_item("Pose", training_settings, "pose", pose),
       list_menu_item("Blocking Style", training_settings, "blocking_style", blocking_style),
+      hits_before_red_parry_item,
       list_menu_item("Blocking", training_settings, "blocking_mode", blocking_mode),
-      integer_menu_item("Hits before Red Parry", training_settings, "red_parry_hit_count", 1, 20, true),
       list_menu_item("Tech Throws", training_settings, "tech_throws_mode", tech_throws_mode),
       list_menu_item("Counter-Attack Move", training_settings, "counter_attack_stick", stick_gesture),
       list_menu_item("Counter-Attack Action", training_settings, "counter_attack_button", button_gesture),
