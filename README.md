@@ -10,6 +10,7 @@ The right version of Fightcade can be downloaded [here](https://www.fightcade.co
 - Can save/load recorded sequences to/from files
 - Can display hit/hurt/throwboxes
 - Can display input history for both players
+- Special training mode to train parries and red parries
 
 ## How to use
 * Download emulator from [here](https://www.fightcade.com/) and find the proper roms
@@ -49,9 +50,11 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
 ## Changelog
-### v0.8 (???)
+### v0.8 (23/12/2020)
 - [Feature] Special trainings section + parry special training
 - [Feature] Stun delayed reset mode
+- [Improvement] Added new menu categories and made a better split of options between them
+- [Improvement] Changed counter-attack random deviation cap from 40 to 600
 - [Bugfix] Fixed incorrect index causing errors when using random replay and weights
 - [Bugfix] [issue#21](https://github.com/Grouflon/3rd_training_lua/issues/21) When the game is paused and hitboxes are enabled, an error occurs when loading a savestate
 - [Bugfix] [issue#29](https://github.com/Grouflon/3rd_training_lua/issues/29) If you make a recording and rename it with lower case or space in its name, it won't launch
@@ -59,6 +62,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - [Bufix] [Fixed meter gauges not updating after loading a save state](https://trello.com/c/7eMUwOHg/76-meter-refill-does-not-update-max-values-correctly-when-coming-back-to-select-screen-or-using-save-states)
 - [FrameData] Added some missing Makoto wake up data
 - [FrameData] Added some missing Ken wake up data
+- [FrameData] Added some missing Ibuki frame data
 
 ### v0.7 (12/11/2020)
 - Changed main supported emulator from FBA-rr to Fightcade's FBNeo fork
