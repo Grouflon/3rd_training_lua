@@ -2582,7 +2582,7 @@ meter_refill_delay_item.is_disabled = p1_meter_gauge_item.is_disabled
 
 slot_weight_item = integer_menu_item("Weight", nil, "weight", 0, 100, false, 10)
 counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
-counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -40, 40, false, 0)
+counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -600, 600, false, 0, 1)
 
 parry_forward_on_item = checkbox_menu_item("Forward Parry Helper", training_settings, "special_training_parry_forward_on")
 parry_forward_on_item.is_disabled = function() return training_settings.special_training_current_mode ~= 2 end
