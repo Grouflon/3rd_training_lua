@@ -33,6 +33,7 @@ history_categories_shown =
 {
   input = false,
   fight = true,
+  animation = true,
   parry_training_FORWARD = false,
   blocking = true,
 }
@@ -1395,7 +1396,7 @@ history_categories = {}
 history_recording_on = false
 history_category_count = 0
 current_entry = 1
-history_size_max = 40
+history_size_max = 80
 history_line_count_max = 25
 history_line_offset = 0
 function history_add_entry(_section_name, _category_name, _event_name)
@@ -2036,6 +2037,14 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   _dummy.blocking.next_attack_hit_id = _dummy.blocking.next_attack_hit_id or 0
   _dummy.blocking.last_attack_hit_id = _dummy.blocking.last_attack_hit_id or 0
 
+  -- exit if playing recording
+  if current_recording_state == 4 then
+    _dummy.blocking.listening = false
+    _dummy.blocking.blocked_hit_count = 0
+    return
+  end
+
+  -- blockstring detection
   if _dummy.blocking.block_string then
     if _dummy.remaining_freeze_frames == 0 and _dummy.recovery_time == 0 and _dummy.previous_recovery_time == 1 then
       _dummy.blocking.block_string = false
@@ -2044,8 +2053,6 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
     end
   elseif not _dummy.blocking.wait_for_block_string then
-    --print(string.format("%d - (%s, %s, %d)", frame_number, tostring(_dummy.blocking.last_attack_hit_id), tostring(_dummy.blocking.next_attack_hit_id), _dummy.idle_time))
-
     if ((_dummy.blocking.next_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20) then
       _dummy.blocking.wait_for_block_string = true
       if _debug_block_string then
@@ -2054,17 +2061,13 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     end
   end
 
-  if current_recording_state == 4 then
-    _dummy.blocking.listening = false
-    _dummy.blocking.blocked_hit_count = 0
-    return
-  end
-
+  -- new animation
   if _player.has_relevant_animation_just_changed then
     if (
       frame_data[_player.char_str] and
       frame_data[_player.char_str][_player.relevant_animation]
     ) then
+      -- known animation, start listening
       _dummy.blocking.listening = true
       _dummy.blocking.next_attack_animation_hit_frame = 0
       _dummy.blocking.next_attack_hit_id = 0
@@ -2075,6 +2078,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         print(string.format("%d - %s listening for attack animation \"%s\" (starts at frame %d)", frame_number, _dummy.prefix, _player.relevant_animation, _player.relevant_animation_start_frame))
       end
     else
+      -- unknown animation, stop listening
       if _dummy.blocking.listening then
         history_add_entry(_dummy.prefix, "blocking", string.format("stopped listening"))
         if _debug then
@@ -2093,27 +2097,30 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     return
   end
 
-  if _player.has_just_been_blocked or _player.has_just_been_parried then
+  -- increment hit id
+  if _dummy.has_just_blocked or _dummy.has_just_parried then
+    history_add_entry(_dummy.prefix, "blocking", string.format("next hit %d>%d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.next_attack_hit_id))
     _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
     _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
   end
 
   if _dummy.blocking.listening then
-    if _player.current_hit_id == 0 and _dummy.blocking.last_attack_hit_id > 0 and _player.remaining_freeze_frames == 0 then
+    history_add_entry(_player.prefix, "blocking", string.format("frame %d", _player.relevant_animation_frame))
+
+    -- move has probably changed, therefore we reset hit id
+    if _player.highest_hit_id == 0 and _dummy.blocking.last_attack_hit_id > 0 and _player.remaining_freeze_frames == 0 then
+      history_add_entry(_dummy.prefix, "blocking", string.format("reset hits"))
       if _debug then
-        print(string.format("%d - reset last hit (%d, %d)", frame_number, _player.current_hit_id, _dummy.blocking.last_attack_hit_id))
+        print(string.format("%d - reset last hit (%d, %d)", frame_number, _player.highest_hit_id, _dummy.blocking.last_attack_hit_id))
       end
       _dummy.blocking.last_attack_hit_id = 0
       _dummy.blocking.next_attack_hit_id = 0
     end
 
-    --print(string.format("%d - %d %d %d", frame_number, _player.relevant_animation_start_frame, _player.relevant_animation_frame , _player.relevant_animation_freeze_frames))
-
     if (_dummy.blocking.next_attack_animation_hit_frame < frame_number) then
       local _max_prediction_frames = 2
       for i = 1, _max_prediction_frames do
-        local _predicted_hit = predict_hitboxes(_player, i, _dummy.blocking.last_attack_hit_id)
-        --print(string.format(" predicted frame %d (id:%d)", _predicted_hit.frame, _predicted_hit.hit_id))
+        local _predicted_hit = predict_hitboxes(_player, i)
         if _predicted_hit.frame_data then
           local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
           local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
@@ -2132,7 +2139,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
             _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
-            history_add_entry(_dummy.prefix, "blocking", string.format(""))
+            history_add_entry(_dummy.prefix, "blocking", string.format("should block in %d frames", _dummy.blocking.next_attack_animation_hit_frame - frame_number))
 
             if _mode == 3 then -- first hit
               if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
@@ -3002,7 +3009,8 @@ function read_player_vars(_player_obj)
     end
   end
   local _remaining_freeze_frame_diff = _player_obj.remaining_freeze_frames - _previous_remaining_freeze_frames
-  if _remaining_freeze_frame_diff ~= 0 then
+  if _remaining_freeze_frame_diff > 0 then
+    history_add_entry(_player_obj.prefix, "fight", string.format("freeze %d", _player_obj.remaining_freeze_frames))
     --print(string.format("%d: %d(%d)",  _player_obj.id, _player_obj.remaining_freeze_frames, _player_obj.freeze_type))
   end
 
@@ -3231,8 +3239,7 @@ function read_player_vars(_player_obj)
     _player_obj.relevant_animation_frame_data = frame_data[_player_obj.char_str][_player_obj.relevant_animation]
   end
 
-  _player_obj.current_hit_id = 0
-
+  _player_obj.highest_hit_id = 0
   if _player_obj.relevant_animation_frame_data ~= nil then
 
     -- Resync animation
@@ -3249,6 +3256,7 @@ function read_player_vars(_player_obj)
         local _frame = _player_obj.relevant_animation_frame_data.frames[_frame_index]
         if _frame.frame_id == _player_obj.animation_frame_id then
 
+          history_add_entry(_player_obj.prefix, "animation", string.format("resynced %s (%d->%d)", _player_obj.relevant_animation, _player_obj.relevant_animation_frame, (_frame_index - 1)))
           if _player_obj.debug_animation_frames then
             print(string.format("%d: resynced anim %s from frame %d to %d (%d -> %d)", frame_number, _player_obj.relevant_animation, _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id, _frame.frame_id, _player_obj.relevant_animation_frame, (_frame_index - 1)))
           end
@@ -3265,18 +3273,17 @@ function read_player_vars(_player_obj)
       if type(_hit_frame) == "number" then
 
         if _player_obj.relevant_animation_frame >= _hit_frame then
-          _player_obj.current_hit_id = _index
+          _player_obj.highest_hit_id = _index
         end
       else
-        if _player_obj.relevant_animation_frame >= _hit_frame.min and _player_obj.relevant_animation_frame <= _hit_frame.max then
-          _player_obj.current_hit_id = _index
-          break
+        if _player_obj.relevant_animation_frame >= _hit_frame.min then
+          _player_obj.highest_hit_id = _index
         end
       end
     end
 
     if _player_obj.debug_animation_frames then
-      print(string.format("%d - %d, %d, %d, %d", frame_number, _player_obj.relevant_animation_frame, _player_obj.remaining_freeze_frames, _player_obj.animation_frame_id, _player_obj.current_hit_id))
+      print(string.format("%d - %d, %d, %d, %d", frame_number, _player_obj.relevant_animation_frame, _player_obj.remaining_freeze_frames, _player_obj.animation_frame_id, _player_obj.highest_hit_id))
     end
   end
 
