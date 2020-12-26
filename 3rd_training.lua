@@ -1,5 +1,5 @@
 print("-----------------------------")
-print("  3rd_training.lua - v0.8")
+print("  3rd_training.lua - v0.9 dev")
 print("  Training mode for Street Fighter III 3rd Strike (Japan 990512), on Fightcade v2.0.91")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
@@ -28,10 +28,10 @@ recording_slot_count = 8
 -- debug options
 advanced_mode = false -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 assert_enabled = false
-history_enabled = false
-history_categories_shown =
+log_enabled = false
+log_categories_shown =
 {
-  input = false,
+  input = true,
   fight = true,
   animation = true,
   parry_training_FORWARD = false,
@@ -141,8 +141,6 @@ function make_player_object(_id, _base, _prefix)
       state_time = make_input_set(0),
     },
     blocking = {
-      last_attack_hit_id = 0,
-      next_attack_hit_id = 0,
       wait_for_block_string = true,
       block_string = false,
     },
@@ -1385,51 +1383,51 @@ function swap_inputs(_out_input_table)
   swap("Medium Kick")
   swap("Strong Kick")
 end
--- HISTORY
-history = {}
-history_sections = {
+-- logs
+logs = {}
+log_sections = {
   global = 1,
   P1 = 2,
   P2 = 3,
 }
-history_categories = {}
-history_recording_on = false
-history_category_count = 0
+log_categories = {}
+log_recording_on = false
+log_category_count = 0
 current_entry = 1
-history_size_max = 80
-history_line_count_max = 25
-history_line_offset = 0
-function history_add_entry(_section_name, _category_name, _event_name)
-  if not history_enabled then return end
-  if not history_recording_on then return end
+log_size_max = 80
+log_line_count_max = 25
+log_line_offset = 0
+function log(_section_name, _category_name, _event_name)
+  if not log_enabled then return end
+  if not log_recording_on then return end
 
   _event_name = _event_name or ""
   _category_name = _category_name or ""
   _section_name = _section_name or "global"
-  if history_sections[_section_name] == nil then _section_name = "global" end
+  if log_sections[_section_name] == nil then _section_name = "global" end
 
-  if not history_categories_shown[_category_name] then return end
+  if not log_categories_shown[_category_name] then return end
 
   -- Add category if it does not exists
-  if history_categories[_category_name] == nil then
-    history_categories[_category_name] = history_category_count
-    history_category_count = history_category_count + 1
+  if log_categories[_category_name] == nil then
+    log_categories[_category_name] = log_category_count
+    log_category_count = log_category_count + 1
   end
 
   -- Insert frame if it does not exists
-  if #history == 0 or history[#history].frame ~= frame_number then
-    table.insert(history, {
+  if #logs == 0 or logs[#logs].frame ~= frame_number then
+    table.insert(logs, {
       frame = frame_number,
       events = {}
     })
   end
 
-  -- Remove overflowing history frame
-  while #history > history_size_max do
-    table.remove(history, 1)
+  -- Remove overflowing logs frame
+  while #logs > log_size_max do
+    table.remove(logs, 1)
   end
 
-  local _current_frame = history[#history]
+  local _current_frame = logs[#logs]
   table.insert(_current_frame.events, {
     name = _event_name,
     section = _section_name,
@@ -1438,63 +1436,63 @@ function history_add_entry(_section_name, _category_name, _event_name)
   })
 end
 
-history_filtered = {}
-history_start_locked = false
-function history_update()
-  history_filtered = {}
-  if not history_enabled then return end
+log_filtered = {}
+log_start_locked = false
+function log_update()
+  log_filtered = {}
+  if not log_enabled then return end
 
-  -- compute filtered history
-  for _i = 1, #history do
-    local _frame = history[_i]
+  -- compute filtered logs
+  for _i = 1, #logs do
+    local _frame = logs[_i]
     local _filtered_frame = { frame = _frame.frame, events = {}}
     for _j, _event in ipairs(_frame.events) do
-      if history_categories_shown[_event.category] then
+      if log_categories_shown[_event.category] then
         table.insert(_filtered_frame.events, _event)
       end
     end
 
     if #_filtered_frame.events > 0 then
-      table.insert(history_filtered, _filtered_frame)
+      table.insert(log_filtered, _filtered_frame)
     end
   end
 
   -- process input
   if player.input.down.start then
     if player.input.pressed.HP then
-      history_start_locked = true
-      history_recording_on = not history_recording_on
-      if history_recording_on then
-        history_line_offset = 0
+      log_start_locked = true
+      log_recording_on = not log_recording_on
+      if log_recording_on then
+        log_line_offset = 0
       end
     end
     if player.input.pressed.HK then
-      history_start_locked = true
-      history_line_offset = 0
-      history = {}
+      log_start_locked = true
+      log_line_offset = 0
+      logs = {}
     end
 
     if check_input_down_autofire(player, "up", 4) then
-      history_start_locked = true
-      history_line_offset = history_line_offset - 1
-      history_line_offset = math.max(history_line_offset, 0)
+      log_start_locked = true
+      log_line_offset = log_line_offset - 1
+      log_line_offset = math.max(log_line_offset, 0)
     end
     if check_input_down_autofire(player, "down", 4) then
-      history_start_locked = true
-      history_line_offset = history_line_offset + 1
-      history_line_offset = math.min(history_line_offset, math.max(#history_filtered - history_line_count_max - 1, 0))
+      log_start_locked = true
+      log_line_offset = log_line_offset + 1
+      log_line_offset = math.min(log_line_offset, math.max(#log_filtered - log_line_count_max - 1, 0))
     end
   end
 
   if not player.input.down.start and not player.input.released.start then
-    history_start_locked = false
+    log_start_locked = false
   end
 end
 
 function history_draw()
-  local _history = history_filtered
+  local _log = log_filtered
 
-  if #_history == 0 then return end
+  if #_log == 0 then return end
 
   local _line_background = { 0x333333CC, 0x555555CC }
   local _separator_color = 0xAAAAAAFF
@@ -1509,16 +1507,16 @@ function history_draw()
   local _box_margin = 2
   gui.box(_x_start, _y_start , _x_start + _width, _y_start, 0x00000000, _separator_color)
   local _last_displayed_frame = 0
-  for _i = 0, history_line_count_max do
-    local _frame_index = #_history - (_i + history_line_offset)
+  for _i = 0, log_line_count_max do
+    local _frame_index = #_log - (_i + log_line_offset)
     if _frame_index < 1 then
       break
     end
-    local _frame = _history[_frame_index]
+    local _frame = _log[_frame_index]
     local _events = {{}, {}, {}}
     for _j, _event in ipairs(_frame.events) do
-      if history_categories_shown[_event.category] then
-        table.insert(_events[history_sections[_event.section]], _event)
+      if log_categories_shown[_event.category] then
+        table.insert(_events[log_sections[_event.section]], _event)
       end
     end
 
@@ -1536,7 +1534,7 @@ function history_draw()
     end
 
     if _frame_index > 1 then
-      local _frame_diff = _frame.frame - _history[_frame_index - 1].frame
+      local _frame_diff = _frame.frame - _log[_frame_index - 1].frame
       gui.text(_x_start + 2, _y + 1, string.format("%d", _frame_diff), text_default_color, 0x00000000)
     end
     gui.box(_x_start, _y + _line_height, _x_start + _width, _y + _line_height, 0x00000000, _separator_color)
@@ -1780,37 +1778,85 @@ function update_draw_hitboxes()
   end
 end
 
-function draw_hitboxes(_pos_x, _pos_y, _flip_x, _boxes)
-  local _px = _pos_x - screen_x + emu.screenwidth()/2
-  local _py = emu.screenheight() - (_pos_y - screen_y) - ground_offset
+function game_to_screen_space(_x, _y)
+  local _px = _x - screen_x + emu.screenwidth()/2
+  local _py = emu.screenheight() - (_y - screen_y) - ground_offset
+  return _px, _py
+end
+
+printed_geometry = {}
+
+function print_hitboxes(_pos_x, _pos_y, _flip_x, _boxes, _filter, _dilation)
+  local _g = {
+    type = "hitboxes",
+    x = _pos_x,
+    y = _pos_y,
+    flip_x = _flip_x,
+    boxes = _boxes,
+    filter = _filter,
+    dilation = _dilation
+  }
+  table.insert(printed_geometry, _g)
+end
+
+function print_point(_pos_x, _pos_y, _color)
+  local _g = {
+    type = "point",
+    x = _pos_x,
+    y = _pos_y,
+    color = _color
+  }
+  table.insert(printed_geometry, _g)
+end
+
+function draw_hitboxes(_pos_x, _pos_y, _flip_x, _boxes, _filter, _dilation)
+  _dilation = _dilation or 0
+  local _px, _py = game_to_screen_space(_pos_x, _pos_y)
 
   for __, _box in ipairs(_boxes) do
+    if not _filter or _filter[_box.type] == true then
+      local _c = 0x0000FFFF
+      if (_box.type == "attack") then
+        _c = 0xFF0000FF
+      elseif (_box.type == "throwable") then
+        _c = 0x00FF00FF
+      elseif (_box.type == "throw") then
+        _c = 0xFFFF00FF
+      elseif (_box.type == "push") then
+        _c = 0xFF00FFFF
+      elseif (_box.type == "ext. vulnerability") then
+        _c = 0x00FFFFFF
+      end
 
-    local _c = 0x0000FFFF
-    if (_box.type == "attack") then
-      _c = 0xFF0000FF
-    elseif (_box.type == "throwable") then
-      _c = 0x00FF00FF
-    elseif (_box.type == "throw") then
-      _c = 0xFFFF00FF
-    elseif (_box.type == "push") then
-      _c = 0xFF00FFFF
-    elseif (_box.type == "ext. vulnerability") then
-      _c = 0x00FFFFFF
+      local _l, _r
+      if _flip_x == 0 then
+        _l = _px + _box.left
+      else
+        _l = _px - _box.left - _box.width
+      end
+      local _r = _l + _box.width
+      local _b = _py - _box.bottom
+      local _t = _b - _box.height
+
+      _l = _l - _dilation
+      _r = _r + _dilation
+      _b = _b + _dilation
+      _t = _t - _dilation
+
+      gui.box(_l, _b, _r, _t, 0x00000000, _c)
     end
-
-    local _l, _r
-    if _flip_x == 0 then
-      _l = _px + _box.left
-    else
-      _l = _px - _box.left - _box.width
-    end
-    local _r = _l + _box.width
-    local _b = _py - _box.bottom
-    local _t = _b - _box.height
-
-    gui.box(_l, _b, _r, _t, 0x00000000, _c)
   end
+end
+
+function draw_point(_x, _y, _color)
+  local _cross_half_size = 4
+  local _l = _x - _cross_half_size
+  local _r = _x + _cross_half_size
+  local _t = _y - _cross_half_size
+  local _b = _y + _cross_half_size
+
+  gui.box(_l, _y, _r, _y, 0x00000000, _color)
+  gui.box(_x, _t, _x, _b, 0x00000000, _color)
 end
 
 function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _box_type_matches, _defender_hitbox_dilation)
@@ -1845,13 +1891,18 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
         -- compute defender box bounds
         local _d_l
         if _defender_flip_x == 0 then
-          _d_l = _defender_x + _d_box.left - _defender_hitbox_dilation
+          _d_l = _defender_x + _d_box.left
         else
-          _d_l = _defender_x - _d_box.left - _d_box.width - _defender_hitbox_dilation
+          _d_l = _defender_x - _d_box.left - _d_box.width
         end
-        local _d_r = _d_l + _d_box.width + _defender_hitbox_dilation
-        local _d_b = _defender_y + _d_box.bottom - _defender_hitbox_dilation
-        local _d_t = _d_b + _d_box.height + _defender_hitbox_dilation
+        local _d_r = _d_l + _d_box.width
+        local _d_b = _defender_y + _d_box.bottom
+        local _d_t = _d_b + _d_box.height
+
+        _d_l = _d_l - _defender_hitbox_dilation
+        _d_r = _d_r + _defender_hitbox_dilation
+        _d_b = _d_b - _defender_hitbox_dilation
+        _d_t = _d_t + _defender_hitbox_dilation
 
         for j = 1, #_attacker_boxes do
           local _a_box = _attacker_boxes[j]
@@ -1942,14 +1993,12 @@ function predict_player_position(_player_obj, _frames_prediction)
     _player_obj.pos_x,
     _player_obj.pos_y,
   }
-  local _velocity_x = _player_obj.velocity_x
-  local _velocity_y = _player_obj.velocity_y
-  for i = 1, _frames_prediction do
-    _velocity_x = _velocity_x + _player_obj.acc_x
-    _velocity_y = _velocity_y + _player_obj.acc_y
-    _result[1] = _result[1] + _velocity_x
-    _result[2] = _result[2] + _velocity_y
-  end
+  local _last_velocity_sample = _player_obj.velocity_samples[#_player_obj.velocity_samples]
+  local _velocity_x = _last_velocity_sample.x + _player_obj.acc.x * _frames_prediction
+  local _velocity_y = _last_velocity_sample.y + _player_obj.acc.y * _frames_prediction
+
+  _result[1] = _result[1] + _velocity_x * _frames_prediction
+  _result[2] = _result[2] + _velocity_y * _frames_prediction
   return _result
 end
 
@@ -1971,7 +2020,7 @@ function predict_hitboxes(_player_obj, _frames_prediction)
   local _frame_data_meta = frame_data_meta[_player_obj.char_str].moves[_player_obj.relevant_animation]
 
   local _frame = _player_obj.relevant_animation_frame
-  local _frame_to_check = math.max(_frame + 1, _frame - _player_obj.remaining_freeze_frames + _frames_prediction)
+  local _frame_to_check = _frame + _frames_prediction
   local _current_animation_pos = {_player_obj.pos_x, _player_obj.pos_y}
   local _frame_delta = _frame_to_check - _frame
 
@@ -2033,8 +2082,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   -- ensure variables
   _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count or 0
-  _dummy.blocking.next_attack_animation_hit_frame = _dummy.blocking.next_attack_animation_hit_frame or 0
-  _dummy.blocking.next_attack_hit_id = _dummy.blocking.next_attack_hit_id or 0
+  _dummy.blocking.expected_attack_animation_hit_frame = _dummy.blocking.expected_attack_animation_hit_frame or 0
+  _dummy.blocking.expected_attack_hit_id = _dummy.blocking.expected_attack_hit_id or 0
   _dummy.blocking.last_attack_hit_id = _dummy.blocking.last_attack_hit_id or 0
 
   -- exit if playing recording
@@ -2049,14 +2098,14 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     if _dummy.remaining_freeze_frames == 0 and _dummy.recovery_time == 0 and _dummy.previous_recovery_time == 1 then
       _dummy.blocking.block_string = false
       if _debug_block_string then
-        print(string.format("%d - ended block string (%d, %d, %d)", frame_number, _dummy.blocking.last_attack_hit_id, _dummy.blocking.next_attack_hit_id, _dummy.recovery_time))
+        print(string.format("%d - ended block string (%d, %d, %d)", frame_number, _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id, _dummy.recovery_time))
       end
     end
   elseif not _dummy.blocking.wait_for_block_string then
-    if ((_dummy.blocking.next_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20) then
+    if ((_dummy.blocking.expected_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20) then
       _dummy.blocking.wait_for_block_string = true
       if _debug_block_string then
-        print(string.format("%d - wait for block string (%d, %d, %d)", frame_number, _dummy.blocking.next_attack_hit_id, _dummy.blocking.last_attack_hit_id, _dummy.idle_time))
+        print(string.format("%d - wait for block string (%d, %d, %d)", frame_number, _dummy.blocking.expected_attack_hit_id, _dummy.blocking.last_attack_hit_id, _dummy.idle_time))
       end
     end
   end
@@ -2069,18 +2118,19 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     ) then
       -- known animation, start listening
       _dummy.blocking.listening = true
-      _dummy.blocking.next_attack_animation_hit_frame = 0
-      _dummy.blocking.next_attack_hit_id = 0
+      _dummy.blocking.expected_attack_animation_hit_frame = 0
+      _dummy.blocking.expected_attack_hit_id = 0
       _dummy.blocking.last_attack_hit_id = 0
+      _dummy.blocking.should_block = false
 
-      history_add_entry(_dummy.prefix, "blocking", string.format("listening %s", _player.relevant_animation))
+      log(_dummy.prefix, "blocking", string.format("listening %s", _player.relevant_animation))
       if _debug then
         print(string.format("%d - %s listening for attack animation \"%s\" (starts at frame %d)", frame_number, _dummy.prefix, _player.relevant_animation, _player.relevant_animation_start_frame))
       end
     else
       -- unknown animation, stop listening
       if _dummy.blocking.listening then
-        history_add_entry(_dummy.prefix, "blocking", string.format("stopped listening"))
+        log(_dummy.prefix, "blocking", string.format("stopped listening"))
         if _debug then
           print(string.format("%d - %s stopped listening for attack animation", frame_number, _dummy.prefix))
         end
@@ -2099,31 +2149,43 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   -- increment hit id
   if _dummy.has_just_blocked or _dummy.has_just_parried then
-    history_add_entry(_dummy.prefix, "blocking", string.format("next hit %d>%d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.next_attack_hit_id))
-    _dummy.blocking.last_attack_hit_id = _dummy.blocking.next_attack_hit_id
+    log(_dummy.prefix, "blocking", string.format("next hit %d>%d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id))
+    _dummy.blocking.last_attack_hit_id = _dummy.blocking.expected_attack_hit_id
+    _dummy.blocking.expected_attack_hit_id = 0
     _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
+    _dummy.blocking.should_block = false
+  elseif _dummy.blocking.last_attack_hit_id < _player.next_hit_id - 1 then
+    local _next_hit = _player.next_hit_id - 1
+    log(_dummy.prefix, "blocking", string.format("missed hit %d>%d", _dummy.blocking.last_attack_hit_id, _next_hit))
+    _dummy.blocking.last_attack_hit_id = _next_hit
+    _dummy.blocking.expected_attack_hit_id = 0
+    _dummy.blocking.should_block = false
   end
 
   if _dummy.blocking.listening then
-    history_add_entry(_player.prefix, "blocking", string.format("frame %d", _player.relevant_animation_frame))
+    log(_player.prefix, "blocking", string.format("frame %d", _player.relevant_animation_frame))
 
     -- move has probably changed, therefore we reset hit id
     if _player.highest_hit_id == 0 and _dummy.blocking.last_attack_hit_id > 0 and _player.remaining_freeze_frames == 0 then
-      history_add_entry(_dummy.prefix, "blocking", string.format("reset hits"))
+      log(_dummy.prefix, "blocking", string.format("reset hits"))
       if _debug then
         print(string.format("%d - reset last hit (%d, %d)", frame_number, _player.highest_hit_id, _dummy.blocking.last_attack_hit_id))
       end
       _dummy.blocking.last_attack_hit_id = 0
-      _dummy.blocking.next_attack_hit_id = 0
+      _dummy.blocking.expected_attack_hit_id = 0
+      _dummy.blocking.should_block = false
     end
 
-    if (_dummy.blocking.next_attack_animation_hit_frame < frame_number) then
+    --if (_dummy.blocking.expected_attack_animation_hit_frame < frame_number or _dummy.blocking.last_attack_hit_id == _dummy.blocking.expected_attack_hit_id) then
+    if (_dummy.blocking.expected_attack_hit_id == 0 and not _dummy.blocking.should_block) then
       local _max_prediction_frames = 2
       for i = 1, _max_prediction_frames do
         local _predicted_hit = predict_hitboxes(_player, i)
         if _predicted_hit.frame_data then
           local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
           local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
+
+          --log(_dummy.prefix, "blocking", string.format("%d,%d", _predicted_hit.frame, _predicted_hit.hit_id))
 
           local _box_type_matches = {{{"vulnerability", "ext. vulnerability"}, {"attack"}}}
           if frame_data_meta[_player.char_str].moves[_player.relevant_animation] and frame_data_meta[_player.char_str].moves[_player.relevant_animation].hit_throw then
@@ -2136,10 +2198,10 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _box_type_matches,
             4 -- defender hitbox dilation
           ) then
-            _dummy.blocking.next_attack_animation_hit_frame = frame_number + _player.remaining_freeze_frames + _frame_delta
-            _dummy.blocking.next_attack_hit_id = _predicted_hit.hit_id
+            _dummy.blocking.expected_attack_animation_hit_frame = _predicted_hit.frame
+            _dummy.blocking.expected_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
-            history_add_entry(_dummy.prefix, "blocking", string.format("should block in %d frames", _dummy.blocking.next_attack_animation_hit_frame - frame_number))
+            log(_dummy.prefix, "blocking", string.format("block in %d", _dummy.blocking.expected_attack_animation_hit_frame - _player.relevant_animation_frame))
 
             if _mode == 3 then -- first hit
               if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
@@ -2167,7 +2229,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             end
 
             if _debug then
-              print(string.format(" %d: next hit %d at frame %d (%d), last hit %d", frame_number, _dummy.blocking.next_attack_hit_id, _predicted_hit.frame, _dummy.blocking.next_attack_animation_hit_frame, _dummy.blocking.last_attack_hit_id))
+              print(string.format(" %d: next hit %d at frame %d (%d), last hit %d", frame_number, _dummy.blocking.expected_attack_hit_id, _predicted_hit.frame, _dummy.blocking.expected_attack_animation_hit_frame, _dummy.blocking.last_attack_hit_id))
             end
 
             break
@@ -2176,10 +2238,10 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
     end
 
-    if frame_number <= _dummy.blocking.next_attack_animation_hit_frame and _dummy.blocking.last_attack_hit_id < _dummy.blocking.next_attack_hit_id and _dummy.blocking.should_block then
+    if _dummy.blocking.should_block then
 
       local _hit_type = 1
-      local _blocking_style = _style
+      local _blocking_style = _style -- 1 is block, 2 is parry
 
       if _blocking_style == 3 then -- red parry
         if _dummy.blocking.blocked_hit_count ~= _red_parry_hit_count then
@@ -2190,14 +2252,15 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
 
       local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.relevant_animation]
-      if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_dummy.blocking.next_attack_hit_id] then
-        _hit_type = _frame_data_meta.hits[_dummy.blocking.next_attack_hit_id].type
+      if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_dummy.blocking.expected_attack_hit_id] then
+        _hit_type = _frame_data_meta.hits[_dummy.blocking.expected_attack_hit_id].type
       end
 
-      if _blocking_style == 1 then
-        if frame_number >= _dummy.blocking.next_attack_animation_hit_frame - 2 then
+      local _animation_frame_delta = _dummy.blocking.expected_attack_animation_hit_frame - _player.relevant_animation_frame
 
-          history_add_entry(_dummy.prefix, "blocking", string.format("dummy block %d", _dummy.blocking.next_attack_hit_id))
+      if _blocking_style == 1 then
+        if _animation_frame_delta <= 2 then
+          log(_dummy.prefix, "blocking", string.format("dummy block %d", _dummy.blocking.expected_attack_hit_id))
           if _debug then
             print(string.format("%d - %s blocking", frame_number, _dummy.prefix))
           end
@@ -2221,10 +2284,10 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         _input[_dummy.prefix..' Left'] = false
         _input[_dummy.prefix..' Down'] = false
 
-        local _parry_low = _hit_type == 2 --or (_hit_type ~= 3 and training_settings.pose == 2)
+        local _parry_low = _hit_type == 2
+        if (_animation_frame_delta + _player.remaining_freeze_frames) == 1 then
 
-        if frame_number == _dummy.blocking.next_attack_animation_hit_frame - 1 then
-
+          log(_dummy.prefix, "blocking", string.format("parry %d", _dummy.blocking.expected_attack_hit_id))
           if _debug then
             print(string.format("%d - %s parrying", frame_number, _dummy.prefix))
           end
@@ -2235,6 +2298,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _input[_dummy.prefix..' Right'] = _dummy.flip_input
             _input[_dummy.prefix..' Left'] = not _dummy.flip_input
           end
+        else
+          log(_dummy.prefix, "blocking", string.format("pre parry %d", _dummy.blocking.expected_attack_hit_id))
         end
       end
     end
@@ -2616,7 +2681,7 @@ menu = {
       list_menu_item("Tech Throws", training_settings, "tech_throws_mode", tech_throws_mode),
       list_menu_item("Counter-Attack Move", training_settings, "counter_attack_stick", stick_gesture),
       list_menu_item("Counter-Attack Action", training_settings, "counter_attack_button", button_gesture),
-      list_menu_item("Fast Recovery", training_settings, "fast_recovery_mode", fast_recovery_mode),
+      list_menu_item("Fast Wake Up", training_settings, "fast_recovery_mode", fast_recovery_mode),
     }
   },
   {
@@ -2654,8 +2719,8 @@ menu = {
     name = "Display",
     entries = {
       checkbox_menu_item("Display Controllers", training_settings, "display_input"),
-      checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
-      checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history"),
+      checkbox_menu_item("Display P1 Input logs", training_settings, "display_p1_input_history"),
+      checkbox_menu_item("Display P2 Input logs", training_settings, "display_p2_input_history"),
       checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
       integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
     }
@@ -3010,7 +3075,7 @@ function read_player_vars(_player_obj)
   end
   local _remaining_freeze_frame_diff = _player_obj.remaining_freeze_frames - _previous_remaining_freeze_frames
   if _remaining_freeze_frame_diff > 0 then
-    history_add_entry(_player_obj.prefix, "fight", string.format("freeze %d", _player_obj.remaining_freeze_frames))
+    log(_player_obj.prefix, "fight", string.format("freeze %d", _player_obj.remaining_freeze_frames))
     --print(string.format("%d: %d(%d)",  _player_obj.id, _player_obj.remaining_freeze_frames, _player_obj.freeze_type))
   end
 
@@ -3048,7 +3113,7 @@ function read_player_vars(_player_obj)
   _player_obj.has_just_blocked = false
   if _player_obj.received_connection and _player_obj.received_connection_marker ~= 0xFFF1 and _total_received_hit_count_diff == 0 then --0xFFF1 is parry
     _player_obj.has_just_blocked = true
-    history_add_entry(_player_obj.prefix, "fight", "block")
+    log(_player_obj.prefix, "fight", "block")
     if _debug_state_variables then
       print(string.format("%d - %s blocked", frame_number, _player_obj.prefix))
     end
@@ -3062,13 +3127,13 @@ function read_player_vars(_player_obj)
   _player_obj.has_just_been_hit = false
   if _total_received_hit_count_diff > 0 then
     _player_obj.has_just_been_hit = true
-    history_add_entry(_player_obj.prefix, "fight", "hit")
+    log(_player_obj.prefix, "fight", "hit")
   end
 
   _player_obj.has_just_parried = false
   if _player_obj.received_connection and _player_obj.received_connection_marker == 0xFFF1 and _total_received_hit_count_diff == 0 then
     _player_obj.has_just_parried = true
-    history_add_entry(_player_obj.prefix, "fight", "parry")
+    log(_player_obj.prefix, "fight", "parry")
     if _debug_state_variables then print(string.format("%d - %s parried", frame_number, _player_obj.prefix)) end
   end
 
@@ -3106,13 +3171,29 @@ function read_player_vars(_player_obj)
 
   if _player_obj.debug_freeze_frames and _player_obj.remaining_freeze_frames > 0 then print(string.format("%d - %d remaining freeze frames", frame_number, _player_obj.remaining_freeze_frames)) end
 
-  local _prev_velocity_x = _player_obj.velocity_x or 0
-  local _prev_velocity_y = _player_obj.velocity_y or 0
-  _player_obj.velocity_x = _player_obj.pos_x - _prev_pos_x
-  _player_obj.velocity_y = _player_obj.pos_y - _prev_pos_y
-  _player_obj.acc_x = _player_obj.velocity_x - _prev_velocity_x
-  _player_obj.acc_y = _player_obj.velocity_y - _prev_velocity_y
-  --if _player_obj.id == 1 then print(string.format("%.2f:%.2f, %.2f:%.2f, %.2f:%.2f", _player_obj.pos_x, _player_obj.pos_y, _player_obj.velocity_x, _player_obj.velocity_y, _player_obj.acc_x, _player_obj.acc_y)) end
+  -- VELOCITY & ACCELERATION
+  local _velocity_frame_sampling_count = 2
+
+  _player_obj.pos_samples = _player_obj.pos_samples or {}
+  _player_obj.velocity_samples = _player_obj.velocity_samples or {}
+
+  local _pos = { x = _player_obj.pos_x, y = _player_obj.pos_y }
+  table.insert(_player_obj.pos_samples, _pos)
+  while #_player_obj.pos_samples > _velocity_frame_sampling_count do
+    table.remove(_player_obj.pos_samples, 1)
+  end
+  local _velocity = {
+    x = (_pos.x - _player_obj.pos_samples[1].x) / #_player_obj.pos_samples,
+    y = (_pos.y - _player_obj.pos_samples[1].y) / #_player_obj.pos_samples,
+  }
+  table.insert(_player_obj.velocity_samples, _velocity)
+  while #_player_obj.velocity_samples > _velocity_frame_sampling_count do
+    table.remove(_player_obj.velocity_samples, 1)
+  end
+  _player_obj.acc = {
+    x = (_velocity.x - _player_obj.velocity_samples[1].x) / #_player_obj.velocity_samples,
+    y = (_velocity.y - _player_obj.velocity_samples[1].y) / #_player_obj.velocity_samples,
+  }
 
   -- ATTACKING
   local _previous_is_attacking = _player_obj.is_attacking or false
@@ -3131,7 +3212,7 @@ function read_player_vars(_player_obj)
   _player_obj.hit_count = memory.readbyte(_player_obj.base + 0x189)
   _player_obj.has_just_hit = _player_obj.hit_count > _previous_hit_count
   if _player_obj.has_just_hit then
-    history_add_entry(_player_obj.prefix, "fight", "has hit")
+    log(_player_obj.prefix, "fight", "has hit")
     if _debug_state_variables then
       print(string.format("%d - %s hit (%d > %d)", frame_number, _player_obj.prefix, _previous_hit_count, _player_obj.hit_count))
     end
@@ -3240,6 +3321,7 @@ function read_player_vars(_player_obj)
   end
 
   _player_obj.highest_hit_id = 0
+  _player_obj.next_hit_id = 0
   if _player_obj.relevant_animation_frame_data ~= nil then
 
     -- Resync animation
@@ -3250,21 +3332,43 @@ function read_player_vars(_player_obj)
     and _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id ~= _player_obj.animation_frame_id
     then
       local _frame_count =  #_player_obj.relevant_animation_frame_data.frames
-      -- search for frames ahead before frames behind
-      for _i = 0, (_frame_count - 1) do
-        local _frame_index = ((_player_obj.relevant_animation_frame + _i) % _frame_count) + 1
+      local _resync_range_begin = -1
+      local _resync_range_end = -1
+      local _resync_target = -1
+
+      for _i = 1, _frame_count do
+        local _frame_index = _i
         local _frame = _player_obj.relevant_animation_frame_data.frames[_frame_index]
         if _frame.frame_id == _player_obj.animation_frame_id then
-
-          history_add_entry(_player_obj.prefix, "animation", string.format("resynced %s (%d->%d)", _player_obj.relevant_animation, _player_obj.relevant_animation_frame, (_frame_index - 1)))
-          if _player_obj.debug_animation_frames then
-            print(string.format("%d: resynced anim %s from frame %d to %d (%d -> %d)", frame_number, _player_obj.relevant_animation, _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id, _frame.frame_id, _player_obj.relevant_animation_frame, (_frame_index - 1)))
+          if _resync_range_begin == -1 then
+            _resync_range_begin = _frame_index
           end
-
-          _player_obj.relevant_animation_frame = (_frame_index - 1)
-          _player_obj.relevant_animation_start_frame = frame_number - (_frame_index - 1 + _player_obj.relevant_animation_freeze_frames)
-          break
+          _resync_range_end = _frame_index
         end
+      end
+
+      -- if behind, always go th the range begin, else go at end unless it has been wrapping
+      if _resync_range_begin >= 0 then
+        if _player_obj.relevant_animation_frame < _resync_range_begin then
+          _resync_target = _resync_range_begin
+        else
+          local _delta = math.abs(_player_obj.relevant_animation_frame - _resync_range_end)
+          if _delta > _frame_count * 0.5 then
+            _resync_target = _resync_range_begin
+          else
+            _resync_target = _resync_range_end
+          end
+        end
+      end
+
+      if _resync_target >= 0 then
+        log(_player_obj.prefix, "animation", string.format("resynced %s (%d->%d)", _player_obj.relevant_animation, _player_obj.relevant_animation_frame, (_resync_target - 1)))
+        if _player_obj.debug_animation_frames then
+          print(string.format("%d: resynced anim %s from frame %d to %d (%d -> %d)", frame_number, _player_obj.relevant_animation, _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id, _frame.frame_id, _player_obj.relevant_animation_frame, (_resync_target - 1)))
+        end
+
+        _player_obj.relevant_animation_frame = (_resync_target - 1)
+        _player_obj.relevant_animation_start_frame = frame_number - (_resync_target - 1 + _player_obj.relevant_animation_freeze_frames)
       end
     end
 
@@ -3278,6 +3382,19 @@ function read_player_vars(_player_obj)
       else
         if _player_obj.relevant_animation_frame >= _hit_frame.min then
           _player_obj.highest_hit_id = _index
+        end
+      end
+    end
+
+    for _index = #_player_obj.relevant_animation_frame_data.hit_frames, 1, -1 do
+      local _hit_frame = _player_obj.relevant_animation_frame_data.hit_frames[_index]
+      if type(_hit_frame) == "number" then
+        if _player_obj.relevant_animation_frame <= _hit_frame then
+          _player_obj.next_hit_id = _index
+        end
+      else
+        if _player_obj.relevant_animation_frame <= _hit_frame.max then
+          _player_obj.next_hit_id = _index
         end
       end
     end
@@ -3373,7 +3490,7 @@ function read_player_vars(_player_obj)
         _parry_object.delta = nil
         _parry_object.success = nil
         _parry_object.armed = true
-        history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "armed")
+        log(_player_obj.prefix, "parry_training_".._parry_object.name, "armed")
       end
 
       -- check success/miss
@@ -3384,28 +3501,28 @@ function read_player_vars(_player_obj)
           _parry_object.success = true
           _parry_object.armed = false
           _parry_object.last_hit_or_block_frame = 0
-          history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "success")
+          log(_player_obj.prefix, "parry_training_".._parry_object.name, "success")
         elseif _parry_object.last_validity_start_frame == frame_number - 1 and (frame_number - _parry_object.last_hit_or_block_frame) < 20 then
           local _delta = _parry_object.last_hit_or_block_frame - frame_number + 1
           if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
             _parry_object.delta = _delta
             _parry_object.success = false
           end
-          history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "late")
+          log(_player_obj.prefix, "parry_training_".._parry_object.name, "late")
         elseif _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
           local _delta = frame_number - _parry_object.last_validity_start_frame
           if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
             _parry_object.delta = _delta
             _parry_object.success = false
           end
-          history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "early")
+          log(_player_obj.prefix, "parry_training_".._parry_object.name, "early")
         end
       end
       if frame_number - _parry_object.last_validity_start_frame > 30 and _parry_object.armed then
 
         _parry_object.armed = false
         _parry_object.last_hit_or_block_frame = 0
-        history_add_entry(_player_obj.prefix, "parry_training_".._parry_object.name, "reset")
+        log(_player_obj.prefix, "parry_training_".._parry_object.name, "reset")
       end
     end
 
@@ -3446,7 +3563,7 @@ function update_flip_input(_player, _other_player)
   end
 
   if _previous_flip_input ~= _player.flip_input then
-    history_add_entry(_player.prefix, "fight", "flip input")
+    log(_player.prefix, "fight", "flip input")
   end
 
 end
@@ -3656,11 +3773,47 @@ function before_frame()
     input_history[2] = {}
   end
 
-  history_update()
+  -- Log input
+  if previous_input then
+    function log_input(_player_object, _name, _short_name)
+      _short_name = _short_name or _name
+      local _full_name = _player_object.prefix.." ".._name
+      if not previous_input[_full_name] and _input[_full_name] then
+        log(_player_object.prefix, "input", _short_name.." 1")
+      elseif previous_input[_full_name] and not _input[_full_name] then
+        log(_player_object.prefix, "input", _short_name.." 0")
+      end
+    end
+
+    for _i, _o in ipairs(player_objects) do
+      log_input(_o, "Left")
+      log_input(_o, "Right")
+      log_input(_o, "Up")
+      log_input(_o, "Down")
+      log_input(_o, "Weak Punch", "LP")
+      log_input(_o, "Medium Punch", "MP")
+      log_input(_o, "Strong Punch", "HP")
+      log_input(_o, "Weak Kick", "LK")
+      log_input(_o, "Medium Kick", "MK")
+      log_input(_o, "Strong Kick", "HK")
+    end
+  end
+  previous_input = _input
 
   joypad.set(_input)
 
   update_framedata_recording(player_objects[1])
+
+  local _debug_position_prediction = false
+  if _debug_position_prediction and player.pos_y > 0 then
+    local _px, _py = game_to_screen_space(player.pos_x, player.pos_y)
+    print_point(_px, _py, 0x00FFFFFF)
+    local _prediction = predict_player_position(player, 2)
+    _px, _py = game_to_screen_space(_prediction[1], _prediction[2])
+    print_point(_px, _py, 0xFF0000FF)
+  end
+
+  log_update()
 end
 
 is_menu_open = false
@@ -3678,6 +3831,18 @@ function on_gui()
 
   if is_in_match then
     update_draw_hitboxes()
+
+    if P1.input.pressed.start or P2.input.pressed.start then
+      printed_geometry = {}
+    end
+
+    for _i, _geometry in ipairs(printed_geometry) do
+      if _geometry.type == "hitboxes" then
+        draw_hitboxes(_geometry.x, _geometry.y, _geometry.flip_x, _geometry.boxes, _geometry.filter, _geometry.dilation)
+      elseif _geometry.type == "point" then
+        draw_point(_geometry.x, _geometry.y, _geometry.color)
+      end
+    end
   end
 
   if is_in_match and training_settings.display_input then
@@ -3819,16 +3984,16 @@ function on_gui()
     end
   end
 
-  if history_enabled then
+  if log_enabled then
     history_draw()
   end
 
   if is_in_match then
     local _should_toggle = P1.input.pressed.start or P2.input.pressed.start
-    if history_enabled then
+    if log_enabled then
       _should_toggle = P1.input.released.start or P2.input.released.start
     end
-    _should_toggle = not history_start_locked and _should_toggle
+    _should_toggle = not log_start_locked and _should_toggle
     if _should_toggle then
       is_menu_open = (not is_menu_open)
       if current_popup ~= nil then
@@ -4553,17 +4718,17 @@ frame_data_meta["ibuki"].moves["eb60"] = { hits = {{ type = 2 }, { type = 2 }} }
 frame_data_meta["ibuki"].moves["0748"] = { hits = {{ type = 3 }} } -- Forward MK
 frame_data_meta["ibuki"].moves["30a0"] = { hits = {{ type = 3 }} } -- Target MK
 frame_data_meta["ibuki"].moves["dec0"] = { hits = {{ type = 3 }} } -- UOH
-frame_data_meta["ibuki"].moves["2450"] = { hits = {{ type = 3 }} } -- Air LP
-frame_data_meta["ibuki"].moves["25b0"] = { hits = {{ type = 3 }} } -- Air MP
-frame_data_meta["ibuki"].moves["1ee8"] = { hits = {{ type = 3 }} } -- Air HP
-frame_data_meta["ibuki"].moves["2748"] = { hits = {{ type = 3 }} } -- Air LK
-frame_data_meta["ibuki"].moves["2878"] = { hits = {{ type = 3 }} } -- Air MK
-frame_data_meta["ibuki"].moves["29a8"] = { hits = {{ type = 3 }} } -- Air HK
-frame_data_meta["ibuki"].moves["1c10"] = { hits = {{ type = 3 }} } -- Straight Air LP
-frame_data_meta["ibuki"].moves["1d10"] = { hits = {{ type = 3 }} } -- Straight Air MP
-frame_data_meta["ibuki"].moves["20f0"] = { hits = {{ type = 3 }} } -- Straight Air LK
-frame_data_meta["ibuki"].moves["2210"] = { hits = {{ type = 3 }} } -- Straight Air MK
-frame_data_meta["ibuki"].moves["2330"] = { hits = {{ type = 3 }} } -- Straight Air HK
+frame_data_meta["ibuki"].moves["2450"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
+frame_data_meta["ibuki"].moves["25b0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
+frame_data_meta["ibuki"].moves["1ee8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["ibuki"].moves["2748"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
+frame_data_meta["ibuki"].moves["2878"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
+frame_data_meta["ibuki"].moves["29a8"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HK
+frame_data_meta["ibuki"].moves["1c10"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LP
+frame_data_meta["ibuki"].moves["1d10"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MP
+frame_data_meta["ibuki"].moves["20f0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air LK
+frame_data_meta["ibuki"].moves["2210"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air MK
+frame_data_meta["ibuki"].moves["2330"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Straight Air HK
 
 frame_data_meta["ibuki"].moves["91f8"] = { hit_throw = true, hits = {{ type = 2 }} } -- L Neck Breaker
 frame_data_meta["ibuki"].moves["93b8"] = { hit_throw = true, hits = {{ type = 2 }} } -- M Neck Breaker
@@ -4586,8 +4751,10 @@ frame_data_meta["ibuki"].moves["3828"] = { proxy = { offset = 1, id = "0b10" } }
 frame_data_meta["ibuki"].moves["4290"] = { proxy = { offset = -2, id = "0b10" } } -- target HK
 frame_data_meta["ibuki"].moves["3290"] = { proxy = { offset = 5, id = "19c0" } } -- target Cr HK
 
-frame_data_meta["ibuki"].moves["3480"] = { proxy = { offset = 2, id = "2878" } } -- target Air MK
-frame_data_meta["ibuki"].moves["3580"] = { proxy = { offset = 4, id = "1ee8" } } -- target Air HP
+frame_data_meta["ibuki"].moves["3480"] = { hits = {{ type = 3 }}, movement_type = 2 } -- target Air MK
+frame_data_meta["ibuki"].moves["3580"] = { hits = {{ type = 3 }}, movement_type = 2 } -- target Air HP
+
+frame_data_meta["ibuki"].moves["3f28"] = { force_recording = true } -- Target HP
 
 -- HUGO
 frame_data_meta["hugo"].moves["5060"] = { hits = {{ type = 2 }} } -- Cr LK
