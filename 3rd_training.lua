@@ -5220,7 +5220,7 @@ frame_data_meta["yang"].moves["e5ac"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["yang"].moves["e75c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
 
 -- YUN
-frame_data_meta["yun"].moves["53bc"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
+frame_data_meta["yun"].moves["53bc"] = { hits = {{ type = 2 }} } -- Cr LK
 frame_data_meta["yun"].moves["548c"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["yun"].moves["a014"] = { hits = {{ type = 2 }} } -- Cr HK
 
@@ -5243,10 +5243,30 @@ frame_data_meta["yun"].moves["630c"] = { hits = {{ type = 3 }}, movement_type = 
 frame_data_meta["yun"].moves["650c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive M
 frame_data_meta["yun"].moves["66bc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Dive H
 
-frame_data_meta["yun"].moves["6b14"] = { force_recording = true,  hits = {{ type = 3 }} } -- Target Air HP
+frame_data_meta["yun"].moves["6b14"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Target Air HP
 frame_data_meta["yun"].moves["748c"] = { proxy = { id = "48bc", offset = 0 } } -- Target LK
 frame_data_meta["yun"].moves["75a4"] = { proxy = { id = "415c", offset = 0 } } -- Target MP
-frame_data_meta["yun"].moves["6c24"] = { force_recording = false } -- Target HP
-frame_data_meta["yun"].moves["6e14"] = { force_recording = true } -- Target Back HP
-frame_data_meta["yun"].moves["9d14"] = { force_recording = true } -- Target HK
-frame_data_meta["yun"].moves["76a4"] = { force_recording = true } -- Target Cr HK
+
+frame_data_meta["yun"].moves["8964"] = { hits = {{ type = 2 }} } -- genei Cr LK
+frame_data_meta["yun"].moves["8a04"] = { hits = {{ type = 2 }} } -- genei Cr MK
+frame_data_meta["yun"].moves["8ae4"] = { hits = {{ type = 2 }} } -- genei Cr HK
+
+frame_data_meta["yun"].moves["62f0"] = { hits = {{ type = 3 }} } -- genei UOH
+frame_data_meta["yun"].moves["83ec"] = { hits = {{ type = 3 }} } -- genei Forward MK
+
+frame_data_meta["yun"].moves["8c8c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Straight Air LP
+frame_data_meta["yun"].moves["8d6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Straight Air MP
+frame_data_meta["yun"].moves["8e4c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Straight Air HP
+frame_data_meta["yun"].moves["a7c0"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Straight Air LK
+frame_data_meta["yun"].moves["976c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Straight Air MK
+frame_data_meta["yun"].moves["920c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Straight Air HK
+frame_data_meta["yun"].moves["92fc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Air LP
+frame_data_meta["yun"].moves["93ec"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Air MP
+frame_data_meta["yun"].moves["94cc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Air HP
+frame_data_meta["yun"].moves["959c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Air LK
+frame_data_meta["yun"].moves["976c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Air MK
+frame_data_meta["yun"].moves["994c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Air HK
+frame_data_meta["yun"].moves["96cc"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Dive L
+frame_data_meta["yun"].moves["98ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Dive M
+frame_data_meta["yun"].moves["9a3c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Dive H
+frame_data_meta["yun"].moves["9f04"] = { proxy = { id = "920c", offset = 2 } } -- Genei Target Air HP
