@@ -2042,6 +2042,8 @@ function predict_hitboxes(_player_obj, _frames_prediction)
     end
   end
 
+  if _next_hit_id > #_frame_data.hit_frames then return _result end
+
   if _frame_to_check < #_frame_data.frames then
     local _next_frame = _frame_data.frames[_frame_to_check + 1]
     local _sign = 1
