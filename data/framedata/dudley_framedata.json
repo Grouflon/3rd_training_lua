@@ -9,19 +9,7 @@
       }],
     "frames":[{
         "frame_id":6545,
-        "boxes":[{
-            "type":"attack",
-            "bottom":65,
-            "height":21,
-            "left":-87,
-            "width":61
-          },{
-            "type":"attack",
-            "bottom":47,
-            "height":18,
-            "left":-69,
-            "width":43
-          }],
+        "boxes":[],
         "movement":[0,0]
       },{
         "frame_id":6568,
@@ -2256,19 +2244,7 @@
       }],
     "frames":[{
         "frame_id":6484,
-        "boxes":[{
-            "type":"attack",
-            "bottom":71,
-            "height":21,
-            "left":-74,
-            "width":27
-          },{
-            "type":"attack",
-            "bottom":53,
-            "height":18,
-            "left":-63,
-            "width":30
-          }],
+        "boxes":[],
         "movement":[0,0]
       },{
         "frame_id":6539,
@@ -4271,19 +4247,7 @@
       }],
     "frames":[{
         "frame_id":6466,
-        "boxes":[{
-            "type":"attack",
-            "bottom":80,
-            "height":13,
-            "left":-87,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":80,
-            "height":13,
-            "left":-72,
-            "width":47
-          }],
+        "boxes":[],
         "movement":[0,0]
       },{
         "frame_id":6467,

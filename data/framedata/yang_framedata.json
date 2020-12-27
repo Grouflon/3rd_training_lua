@@ -4854,13 +4854,7 @@
       }],
     "frames":[{
         "frame_id":15846,
-        "boxes":[{
-            "type":"attack",
-            "bottom":8,
-            "height":28,
-            "left":-52,
-            "width":33
-          }],
+        "boxes":[],
         "movement":[-0,0]
       },{
         "frame_id":15855,

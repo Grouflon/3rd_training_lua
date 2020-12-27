@@ -1337,19 +1337,7 @@
   "36c8":{
     "hit_frames":[4],
     "frames":[{
-        "boxes":[{
-            "type":"attack",
-            "bottom":45,
-            "height":18,
-            "left":-58,
-            "width":14
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":7,
-            "left":-44,
-            "width":34
-          }],
+        "boxes":[],
         "movement":[-0,0]
       },{
         "boxes":[],
@@ -11460,13 +11448,7 @@
   "30a0":{
     "hit_frames":[29],
     "frames":[{
-        "boxes":[{
-            "type":"attack",
-            "bottom":60,
-            "height":12,
-            "left":-94,
-            "width":84
-          }],
+        "boxes":[],
         "movement":[0,0]
       },{
         "boxes":[],
