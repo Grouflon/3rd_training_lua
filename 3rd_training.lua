@@ -3271,7 +3271,7 @@ function read_player_vars(_player_obj)
           _last_hit_frame = _hit_frame.max
         end
 
-        if _frame < _last_hit_frame then
+        if _frame <= _last_hit_frame then
           _all_hits_done = false
           break
         end
