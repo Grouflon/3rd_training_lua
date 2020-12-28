@@ -187,6 +187,15 @@ function reset_player_objects()
   P2.stun_bar_addr = P2.stun_max_addr + 0x6
   P2.meter_update_flag = 0x020157C9
   P2.score_addr = 0x020113AE
+  P2.parry_forward_validity_time_addr = P1.parry_forward_validity_time_addr + 0x406
+  P2.parry_forward_cooldown_time_addr = P1.parry_forward_cooldown_time_addr + 0x620
+  P2.parry_down_validity_time_addr = P1.parry_down_validity_time_addr + 0x406
+  P2.parry_down_cooldown_time_addr = P1.parry_down_cooldown_time_addr + 0x620
+  P2.parry_air_validity_time_addr = P1.parry_air_validity_time_addr + 0x406
+  P2.parry_air_cooldown_time_addr = P1.parry_air_cooldown_time_addr + 0x620
+  P2.parry_antiair_validity_time_addr = P1.parry_antiair_validity_time_addr + 0x406
+  P2.parry_antiair_cooldown_time_addr = P1.parry_antiair_cooldown_time_addr + 0x620
+
 end
 reset_player_objects()
 
@@ -1859,10 +1868,11 @@ function draw_point(_x, _y, _color)
   gui.box(_x, _t, _x, _b, 0x00000000, _color)
 end
 
-function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _box_type_matches, _defender_hitbox_dilation)
+function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _box_type_matches, _defender_hurtbox_dilation, _attacker_hitbox_dilation)
 
   local _debug = false
-  if (_defender_hitbox_dilation == nil) then _defender_hitbox_dilation = 0 end
+  if (_defender_hurtbox_dilation == nil) then _defender_hurtbox_dilation = 0 end
+  if (_attacker_hitbox_dilation == nil) then _attacker_hitbox_dilation = 0 end
   if (_test_throws == nil) then _test_throws = false end
   if (_box_type_matches == nil) then _box_type_matches = {{{"vulnerability", "ext. vulnerability"}, {"attack"}}} end
 
@@ -1899,10 +1909,10 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
         local _d_b = _defender_y + _d_box.bottom
         local _d_t = _d_b + _d_box.height
 
-        _d_l = _d_l - _defender_hitbox_dilation
-        _d_r = _d_r + _defender_hitbox_dilation
-        _d_b = _d_b - _defender_hitbox_dilation
-        _d_t = _d_t + _defender_hitbox_dilation
+        _d_l = _d_l - _defender_hurtbox_dilation
+        _d_r = _d_r + _defender_hurtbox_dilation
+        _d_b = _d_b - _defender_hurtbox_dilation
+        _d_t = _d_t + _defender_hurtbox_dilation
 
         for j = 1, #_attacker_boxes do
           local _a_box = _attacker_boxes[j]
@@ -1927,6 +1937,11 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
             local _a_r = _a_l + _a_box.width
             local _a_b = _attacker_y + _a_box.bottom
             local _a_t = _a_b + _a_box.height
+
+            _a_l = _a_l - _attacker_hitbox_dilation
+            _a_r = _a_r + _attacker_hitbox_dilation
+            _a_b = _a_b - _attacker_hitbox_dilation
+            _a_t = _a_t + _attacker_hitbox_dilation
 
             if _debug then print(string.format("   testing (%d,%d,%d,%d)(%s) against (%d,%d,%d,%d)(%s)", _d_t, _d_r, _d_b, _d_l, _d_box.type, _a_t, _a_r, _a_b, _a_l, _a_box.type)) end
 
@@ -2090,6 +2105,13 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   _dummy.blocking.is_bypassing_freeze_frames = _dummy.blocking.is_bypassing_freeze_frames or false
   _dummy.blocking.bypassed_freeze_frames = _dummy.blocking.bypassed_freeze_frames or 0
 
+  function reset_parry_cooldowns(_player_obj)
+    memory.writebyte(_player_obj.parry_forward_cooldown_time_addr, 0)
+    memory.writebyte(_player_obj.parry_down_cooldown_time_addr, 0)
+    memory.writebyte(_player_obj.parry_air_cooldown_time_addr, 0)
+    memory.writebyte(_player_obj.parry_antiair_cooldown_time_addr, 0)
+  end
+
   if not is_in_match then
     return
   end
@@ -2140,6 +2162,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       _dummy.blocking.is_bypassing_freeze_frames = false
       _dummy.blocking.bypassed_freeze_frames = 0
       _dummy.blocking.should_block = false
+      reset_parry_cooldowns(_dummy)
 
       log(_dummy.prefix, "blocking", string.format("listening %s", _player.relevant_animation))
       if _debug then
@@ -2165,6 +2188,17 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     return
   end
 
+  function get_meta_hit(_character_str, _move_id, _hit_id)
+    local _character_meta = frame_data_meta[_character_str]
+    if _character_meta == nil then return nil end
+    if _character_meta.moves == nil then return nil end
+    local _move_meta = _character_meta.moves[_player.relevant_animation]
+    if _move_meta == nil then return nil end
+    if _move_meta.hits == nil then return nil end
+    if _move_meta.hits[_hit_id] == nil then return nil end
+    return _move_meta.hits[_hit_id]
+  end
+
   -- increment hit id
   if _dummy.has_just_blocked or _dummy.has_just_parried then
     log(_dummy.prefix, "blocking", string.format("next hit %d>%d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id))
@@ -2172,8 +2206,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     _dummy.blocking.expected_attack_hit_id = 0
     _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
     _dummy.blocking.should_block = false
-    local _relevant_move_meta = frame_data_meta[_player.char_str].moves[_player.relevant_animation]
-    if _dummy.has_just_blocked and _relevant_move_meta and _relevant_move_meta.hits and _player.remaining_freeze_frames > 0 and _relevant_move_meta.hits[_dummy.blocking.last_attack_hit_id].bypass_freeze then
+    local _relevant_hit = get_meta_hit(_player.char_str, _player.relevant_animation, _player.last_attack_hit_id)
+    if _relevant_hit and _player.remaining_freeze_frames > 0 and _relevant_hit.bypass_freeze then
       _dummy.blocking.is_bypassing_freeze_frames = true
       log(_dummy.prefix, "blocking", string.format("bypassing start"))
     elseif _dummy.blocking.is_bypassing_freeze_frames then
@@ -2186,6 +2220,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     _dummy.blocking.last_attack_hit_id = _next_hit
     _dummy.blocking.expected_attack_hit_id = 0
     _dummy.blocking.should_block = false
+    reset_parry_cooldowns(_dummy)
   end
 
   if _dummy.blocking.listening then
@@ -2205,6 +2240,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       _dummy.blocking.is_bypassing_freeze_frames = false
       _dummy.blocking.bypassed_freeze_frames = 0
       _dummy.blocking.should_block = false
+      reset_parry_cooldowns(_dummy)
     end
 
     --if (_dummy.blocking.expected_attack_animation_hit_frame < frame_number or _dummy.blocking.last_attack_hit_id == _dummy.blocking.expected_attack_hit_id) then
@@ -2224,11 +2260,19 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             table.insert(_box_type_matches, {{"throwable"}, {"throw"}})
           end
 
+          -- Add dilation to attacker hit box
+          local _meta_hit = get_meta_hit(_player.char_str, _player.relevant_animation, _predicted_hit.hit_id)
+          local _attacker_box_dilation = 0
+          if _meta_hit and _meta_hit.dilation then
+            _attacker_box_dilation = _meta_hit.dilation
+          end
+
           if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
             _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
             _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
             _box_type_matches,
-            4 -- defender hitbox dilation
+            4, -- defender hitbox dilation
+            _attacker_box_dilation
           ) then
             _dummy.blocking.expected_attack_animation_hit_frame = _predicted_hit.frame
             _dummy.blocking.expected_attack_hit_id = _predicted_hit.hit_id
@@ -3295,7 +3339,7 @@ function read_player_vars(_player_obj)
   if not _player_obj.has_animation_just_changed and not debug_settings.record_framedata then -- no self cancel handling if we record animations, this can lead to tenacious ill formed frame data in the database
     if (frame_data[_player_obj.char_str] and frame_data[_player_obj.char_str][_player_obj.animation]) then
       local _all_hits_done = true
-      local _frame = frame_number - _player_obj.current_animation_start_frame - (_player_obj.current_animation_freeze_frames - 1)
+      local _frame = frame_number - _player_obj.current_animation_start_frame - _player_obj.current_animation_freeze_frames
       for __, _hit_frame in ipairs(frame_data[_player_obj.char_str][_player_obj.animation].hit_frames) do
         local _last_hit_frame = 0
         if type(_hit_frame) == "number" then
@@ -3312,6 +3356,7 @@ function read_player_vars(_player_obj)
       if _player_obj.has_just_attacked and _all_hits_done then
         _player_obj.has_animation_just_changed = true
         _self_cancel = true
+        log(_player_obj.prefix, "blocking", string.format("self cancel"))
       end
     end
   end
@@ -3501,71 +3546,68 @@ function read_player_vars(_player_obj)
   end
 
   -- PARRY BUFFERS
-  -- only p1 is supported until I find the adresses for p2
-  if _player_obj.id == 1 then
-    -- global game consts
-    _player_obj.parry_forward = _player_obj.parry_forward or { name = "FORWARD", max_validity = 10, max_cooldown = 23 }
-    _player_obj.parry_down = _player_obj.parry_down or { name = "DOWN", max_validity = 10, max_cooldown = 23 }
-    _player_obj.parry_air = _player_obj.parry_air or { name = "AIR", max_validity = 7, max_cooldown = 20 }
-    _player_obj.parry_antiair = _player_obj.parry_antiair or { name = "ANTI-AIR", max_validity = 5, max_cooldown = 18 }
+  -- global game consts
+  _player_obj.parry_forward = _player_obj.parry_forward or { name = "FORWARD", max_validity = 10, max_cooldown = 23 }
+  _player_obj.parry_down = _player_obj.parry_down or { name = "DOWN", max_validity = 10, max_cooldown = 23 }
+  _player_obj.parry_air = _player_obj.parry_air or { name = "AIR", max_validity = 7, max_cooldown = 20 }
+  _player_obj.parry_antiair = _player_obj.parry_antiair or { name = "ANTI-AIR", max_validity = 5, max_cooldown = 18 }
 
-    function read_parry_state(_parry_object, _validity_addr, _cooldown_addr)
-      -- read data
-      _parry_object.last_hit_or_block_frame =  _parry_object.last_hit_or_block_frame or 0
-      if _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
-        _parry_object.last_hit_or_block_frame = frame_number
-      end
-      _parry_object.last_validity_start_frame = _parry_object.last_validity_start_frame or 0
-      local _previous_validity_time = _parry_object.validity_time or 0
-      _parry_object.validity_time = memory.readbyte(_validity_addr)
-      _parry_object.cooldown_time = memory.readbyte(_cooldown_addr)
-      if _parry_object.cooldown_time == 0xFF then _parry_object.cooldown_time = 0 end
-      if _previous_validity_time == 0 and _parry_object.validity_time ~= 0 then
-        _parry_object.last_validity_start_frame = frame_number
-        _parry_object.delta = nil
-        _parry_object.success = nil
-        _parry_object.armed = true
-        log(_player_obj.prefix, "parry_training_".._parry_object.name, "armed")
-      end
-
-      -- check success/miss
-      if _parry_object.armed then
-        if _player_obj.has_just_parried then
-          -- right
-          _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
-          _parry_object.success = true
-          _parry_object.armed = false
-          _parry_object.last_hit_or_block_frame = 0
-          log(_player_obj.prefix, "parry_training_".._parry_object.name, "success")
-        elseif _parry_object.last_validity_start_frame == frame_number - 1 and (frame_number - _parry_object.last_hit_or_block_frame) < 20 then
-          local _delta = _parry_object.last_hit_or_block_frame - frame_number + 1
-          if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
-            _parry_object.delta = _delta
-            _parry_object.success = false
-          end
-          log(_player_obj.prefix, "parry_training_".._parry_object.name, "late")
-        elseif _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
-          local _delta = frame_number - _parry_object.last_validity_start_frame
-          if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
-            _parry_object.delta = _delta
-            _parry_object.success = false
-          end
-          log(_player_obj.prefix, "parry_training_".._parry_object.name, "early")
-        end
-      end
-      if frame_number - _parry_object.last_validity_start_frame > 30 and _parry_object.armed then
-
-        _parry_object.armed = false
-        _parry_object.last_hit_or_block_frame = 0
-        log(_player_obj.prefix, "parry_training_".._parry_object.name, "reset")
-      end
+  function read_parry_state(_parry_object, _validity_addr, _cooldown_addr)
+    -- read data
+    _parry_object.last_hit_or_block_frame =  _parry_object.last_hit_or_block_frame or 0
+    if _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
+      _parry_object.last_hit_or_block_frame = frame_number
+    end
+    _parry_object.last_validity_start_frame = _parry_object.last_validity_start_frame or 0
+    local _previous_validity_time = _parry_object.validity_time or 0
+    _parry_object.validity_time = memory.readbyte(_validity_addr)
+    _parry_object.cooldown_time = memory.readbyte(_cooldown_addr)
+    if _parry_object.cooldown_time == 0xFF then _parry_object.cooldown_time = 0 end
+    if _previous_validity_time == 0 and _parry_object.validity_time ~= 0 then
+      _parry_object.last_validity_start_frame = frame_number
+      _parry_object.delta = nil
+      _parry_object.success = nil
+      _parry_object.armed = true
+      log(_player_obj.prefix, "parry_training_".._parry_object.name, "armed")
     end
 
-    read_parry_state(_player_obj.parry_forward, _player_obj.parry_forward_validity_time_addr, _player_obj.parry_forward_cooldown_time_addr)
-    read_parry_state(_player_obj.parry_down, _player_obj.parry_down_validity_time_addr, _player_obj.parry_down_cooldown_time_addr)
-    read_parry_state(_player_obj.parry_air, _player_obj.parry_air_validity_time_addr, _player_obj.parry_air_cooldown_time_addr)
-    read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
+    -- check success/miss
+    if _parry_object.armed then
+      if _player_obj.has_just_parried then
+        -- right
+        _parry_object.delta = frame_number - _parry_object.last_validity_start_frame
+        _parry_object.success = true
+        _parry_object.armed = false
+        _parry_object.last_hit_or_block_frame = 0
+        log(_player_obj.prefix, "parry_training_".._parry_object.name, "success")
+      elseif _parry_object.last_validity_start_frame == frame_number - 1 and (frame_number - _parry_object.last_hit_or_block_frame) < 20 then
+        local _delta = _parry_object.last_hit_or_block_frame - frame_number + 1
+        if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
+          _parry_object.delta = _delta
+          _parry_object.success = false
+        end
+        log(_player_obj.prefix, "parry_training_".._parry_object.name, "late")
+      elseif _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
+        local _delta = frame_number - _parry_object.last_validity_start_frame
+        if _parry_object.delta == nil or math.abs(_parry_object.delta) > math.abs(_delta) then
+          _parry_object.delta = _delta
+          _parry_object.success = false
+        end
+        log(_player_obj.prefix, "parry_training_".._parry_object.name, "early")
+      end
+    end
+    if frame_number - _parry_object.last_validity_start_frame > 30 and _parry_object.armed then
+
+      _parry_object.armed = false
+      _parry_object.last_hit_or_block_frame = 0
+      log(_player_obj.prefix, "parry_training_".._parry_object.name, "reset")
+    end
   end
+
+  read_parry_state(_player_obj.parry_forward, _player_obj.parry_forward_validity_time_addr, _player_obj.parry_forward_cooldown_time_addr)
+  read_parry_state(_player_obj.parry_down, _player_obj.parry_down_validity_time_addr, _player_obj.parry_down_cooldown_time_addr)
+  read_parry_state(_player_obj.parry_air, _player_obj.parry_air_validity_time_addr, _player_obj.parry_air_cooldown_time_addr)
+  read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
 
   -- STUN
   _player_obj.stun_max = bit.lshift(memory.readbyte(_player_obj.stun_max_addr) + 1, 16)
@@ -4790,6 +4832,9 @@ frame_data_meta["ibuki"].moves["3480"] = { hits = {{ type = 3 }}, movement_type 
 frame_data_meta["ibuki"].moves["3580"] = { hits = {{ type = 3 }}, movement_type = 2 } -- target Air HP
 
 frame_data_meta["ibuki"].moves["3f28"] = { force_recording = true } -- Target HP
+
+frame_data_meta["ibuki"].moves["75f0"] = { hits = {{}, {}, {}, { dilation = 5 }} } -- DPF HK
+frame_data_meta["ibuki"].moves["7888"] = { hits = {{}, {}, {}, { dilation = 5 }} } -- DPF Ex K
 
 -- HUGO
 frame_data_meta["hugo"].moves["5060"] = { hits = {{ type = 2 }} } -- Cr LK
