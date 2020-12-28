@@ -2087,6 +2087,12 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   _dummy.blocking.expected_attack_animation_hit_frame = _dummy.blocking.expected_attack_animation_hit_frame or 0
   _dummy.blocking.expected_attack_hit_id = _dummy.blocking.expected_attack_hit_id or 0
   _dummy.blocking.last_attack_hit_id = _dummy.blocking.last_attack_hit_id or 0
+  _dummy.blocking.is_bypassing_freeze_frames = _dummy.blocking.is_bypassing_freeze_frames or false
+  _dummy.blocking.bypassed_freeze_frames = _dummy.blocking.bypassed_freeze_frames or 0
+
+  if not is_in_match then
+    return
+  end
 
   -- exit if playing recording
   if current_recording_state == 4 then
@@ -2112,6 +2118,11 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     end
   end
 
+  if _dummy.blocking.is_bypassing_freeze_frames then
+    _dummy.blocking.bypassed_freeze_frames = _dummy.blocking.bypassed_freeze_frames + 1
+  end
+  local _player_relevant_animation_frame = _player.relevant_animation_frame + _dummy.blocking.bypassed_freeze_frames
+
   -- new animation
   if _player.has_relevant_animation_just_changed then
     if (
@@ -2123,6 +2134,11 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       _dummy.blocking.expected_attack_animation_hit_frame = 0
       _dummy.blocking.expected_attack_hit_id = 0
       _dummy.blocking.last_attack_hit_id = 0
+      if _dummy.blocking.is_bypassing_freeze_frames then
+        log(_dummy.prefix, "blocking", string.format("bypassing end&reset"))
+      end
+      _dummy.blocking.is_bypassing_freeze_frames = false
+      _dummy.blocking.bypassed_freeze_frames = 0
       _dummy.blocking.should_block = false
 
       log(_dummy.prefix, "blocking", string.format("listening %s", _player.relevant_animation))
@@ -2156,6 +2172,14 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     _dummy.blocking.expected_attack_hit_id = 0
     _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
     _dummy.blocking.should_block = false
+    local _relevant_move_meta = frame_data_meta[_player.char_str].moves[_player.relevant_animation]
+    if _dummy.has_just_blocked and _relevant_move_meta and _relevant_move_meta.hits and _player.remaining_freeze_frames > 0 and _relevant_move_meta.hits[_dummy.blocking.last_attack_hit_id].bypass_freeze then
+      _dummy.blocking.is_bypassing_freeze_frames = true
+      log(_dummy.prefix, "blocking", string.format("bypassing start"))
+    elseif _dummy.blocking.is_bypassing_freeze_frames then
+      _dummy.blocking.is_bypassing_freeze_frames = false
+      log(_dummy.prefix, "blocking", string.format("bypassing end"))
+    end
   elseif _dummy.blocking.last_attack_hit_id < _player.next_hit_id - 1 then
     local _next_hit = _player.next_hit_id - 1
     log(_dummy.prefix, "blocking", string.format("missed hit %d>%d", _dummy.blocking.last_attack_hit_id, _next_hit))
@@ -2165,7 +2189,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   end
 
   if _dummy.blocking.listening then
-    log(_player.prefix, "blocking", string.format("frame %d", _player.relevant_animation_frame))
+    log(_player.prefix, "blocking", string.format("frame %d", _player_relevant_animation_frame))
 
     -- move has probably changed, therefore we reset hit id
     if _player.highest_hit_id == 0 and _dummy.blocking.last_attack_hit_id > 0 and _player.remaining_freeze_frames == 0 then
@@ -2175,6 +2199,11 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
       _dummy.blocking.last_attack_hit_id = 0
       _dummy.blocking.expected_attack_hit_id = 0
+      if _dummy.blocking.is_bypassing_freeze_frames then
+        log(_dummy.prefix, "blocking", string.format("bypassing end&reset"))
+      end
+      _dummy.blocking.is_bypassing_freeze_frames = false
+      _dummy.blocking.bypassed_freeze_frames = 0
       _dummy.blocking.should_block = false
     end
 
@@ -2182,9 +2211,10 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     if (_dummy.blocking.expected_attack_hit_id == 0 and not _dummy.blocking.should_block) then
       local _max_prediction_frames = 2
       for i = 1, _max_prediction_frames do
-        local _predicted_hit = predict_hitboxes(_player, i)
+        local predicted_frame_id = i + _dummy.blocking.bypassed_freeze_frames
+        local _predicted_hit = predict_hitboxes(_player, predicted_frame_id)
         if _predicted_hit.frame_data then
-          local _frame_delta = _predicted_hit.frame - _player.relevant_animation_frame
+          local _frame_delta = _predicted_hit.frame - _player_relevant_animation_frame
           local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
 
           --log(_dummy.prefix, "blocking", string.format("%d,%d", _predicted_hit.frame, _predicted_hit.hit_id))
@@ -2203,7 +2233,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.expected_attack_animation_hit_frame = _predicted_hit.frame
             _dummy.blocking.expected_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
-            log(_dummy.prefix, "blocking", string.format("block in %d", _dummy.blocking.expected_attack_animation_hit_frame - _player.relevant_animation_frame))
+            log(_dummy.prefix, "blocking", string.format("block in %d", _dummy.blocking.expected_attack_animation_hit_frame - _player_relevant_animation_frame))
 
             if _mode == 3 then -- first hit
               if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
@@ -2258,7 +2288,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         _hit_type = _frame_data_meta.hits[_dummy.blocking.expected_attack_hit_id].type
       end
 
-      local _animation_frame_delta = _dummy.blocking.expected_attack_animation_hit_frame - _player.relevant_animation_frame
+      local _animation_frame_delta = _dummy.blocking.expected_attack_animation_hit_frame - _player_relevant_animation_frame
 
       if _blocking_style == 1 then
         if _animation_frame_delta <= 2 then
@@ -2287,8 +2317,11 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         _input[_dummy.prefix..' Down'] = false
 
         local _parry_low = _hit_type == 2
-        if (_animation_frame_delta + _player.remaining_freeze_frames) == 1 then
 
+        if not _dummy.blocking.is_bypassing_freeze_frames then
+          _animation_frame_delta = _animation_frame_delta + _player.remaining_freeze_frames
+        end
+        if _animation_frame_delta == 1 then
           log(_dummy.prefix, "blocking", string.format("parry %d", _dummy.blocking.expected_attack_hit_id))
           if _debug then
             print(string.format("%d - %s parrying", frame_number, _dummy.prefix))
@@ -5270,3 +5303,5 @@ frame_data_meta["yun"].moves["96cc"] = { hits = {{ type = 3 }}, movement_type = 
 frame_data_meta["yun"].moves["98ac"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Dive M
 frame_data_meta["yun"].moves["9a3c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Genei Dive H
 frame_data_meta["yun"].moves["9f04"] = { proxy = { id = "920c", offset = 2 } } -- Genei Target Air HP
+
+frame_data_meta["yun"].moves["5c30"] = { hits = {{ bypass_freeze = true }, { bypass_freeze = true }, { bypass_freeze = true }}, movement_type = 2 } -- Genei QCF LP
