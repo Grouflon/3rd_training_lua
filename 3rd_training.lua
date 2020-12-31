@@ -26,7 +26,7 @@ json = require ("lua_libs/dkjson")
 recording_slot_count = 8
 
 -- debug options
-advanced_mode = false -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
+developer_mode = false -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 assert_enabled = false
 log_enabled = false
 log_categories_shown =
@@ -36,6 +36,7 @@ log_categories_shown =
   animation = true,
   parry_training_FORWARD = false,
   blocking = true,
+  counter_attack = true,
 }
 
 function t_assert(_condition, _msg)
@@ -660,7 +661,7 @@ characters =
   "remy"
 }
 
-fast_recovery_mode =
+fast_wakeup_mode =
 {
   "never",
   "always",
@@ -1584,6 +1585,7 @@ function load_frame_data()
   for _key, _value in ipairs(characters) do
     local _file_path = framedata_path.._value..frame_data_file_ext
     frame_data[_value] = read_object_from_json_file(_file_path) or {}
+    frame_data[_value].wakeups = frame_data[_value].wakeups or {}
   end
 end
 
@@ -1749,6 +1751,23 @@ function update_framedata_recording(_player_obj)
     record_framedata(_player_obj)
   else
     reset_current_recording_animation()
+  end
+end
+
+function update_wakeupdata_recording(_player_obj)
+  if debug_settings.record_wakeupdata and is_in_match then
+
+    function record_wakeupdata(_char_str, _animation, _duration)
+      frame_data[_char_str].dirty = true
+      frame_data[_char_str].wakeups[_animation] = { duration = _duration }
+      print(string.format("Recorded wakeup animation %s:%s, %d", _char_str, _animation, _duration))
+    end
+
+    if _player_obj.previous_is_fast_wakingup == true and _player_obj.is_fast_wakingup == false then
+      record_wakeupdata(_player_obj.char_str, _player_obj.fast_wakeup_animation, _player_obj.fast_wakeup_time)
+    elseif _player_obj.previous_is_wakingup == true and _player_obj.is_wakingup == false then
+      record_wakeupdata(_player_obj.char_str, _player_obj.wakeup_animation, _player_obj.wakeup_time)
+    end
   end
 end
 
@@ -2365,7 +2384,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         if not _dummy.blocking.is_bypassing_freeze_frames then
           _animation_frame_delta = _animation_frame_delta + _player.remaining_freeze_frames
         end
-        if _animation_frame_delta == 1 then
+        if _animation_frame_delta == 1 or _animation_frame_delta == 2 then
           log(_dummy.prefix, "blocking", string.format("parry %d", _dummy.blocking.expected_attack_hit_id))
           if _debug then
             print(string.format("%d - %s parrying", frame_number, _dummy.prefix))
@@ -2385,26 +2404,12 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   end
 end
 
-function update_fast_recovery(_input, _player, _dummy, _mode)
+function update_fast_wake_up(_input, _player, _dummy, _mode)
   if is_in_match and _mode ~= 1 and current_recording_state ~= 4 then
-    local _should_tap_down = false
-    -- Special case for Hugo's 360
-    if _player.char_id == 6 and _player.animation == "0470" then
-      local _tech_timing = 10
-      if character_specific[_dummy.char_str].hugo_360_tech_timing ~= nil then
-        _tech_timing = character_specific[_dummy.char_str].hugo_360_tech_timing
-      end
-      if _player.animation_frame == _tech_timing  then
-        _should_tap_down = true
-        is_in_special_recovery = true
-      end
-    -- General case
-    elseif not is_in_special_recovery and _dummy.previous_standing_state ~= 0x00 and _dummy.standing_state == 0x00 then
-      _should_tap_down = true
-    end
+    local _should_tap_down = _dummy.previous_can_fast_wakeup == 0 and _dummy.can_fast_wakeup == 1
 
-    if _dummy.previous_standing_state == 0x00 and _dummy.standing_state ~= 0x00 then
-      is_in_special_recovery = false
+    if _dummy.is_wakingup and not _dummy.is_fast_wakingup then
+        _should_tap_down = (frame_number % 2) == 0
     end
 
     if _should_tap_down then
@@ -2454,28 +2459,40 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     if _debug then
       print(frame_number.." - init ca (parry)")
     end
+    log(_defender.prefix, "counter_attack", "init ca (parry)")
     _defender.counter.attack_frame = frame_number + 15
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
     handle_recording()
 
-  elseif _attacker.has_just_hit or _attacker.has_just_been_blocked then
+  elseif _defender.has_just_been_hit or _defender.has_just_blocked then
     if _debug then
       print(frame_number.." - init ca (hit/block)")
     end
+    log(_defender.prefix, "counter_attack", "init ca (hit/block)")
     _defender.counter.ref_time = _defender.recovery_time
     clear_input_sequence(_defender)
     _defender.counter.attack_frame = -1
     _defender.counter.sequence = nil
     _defender.counter.recording_slot = -1
   elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
-    if _debug then
-      print(frame_number.." - init ca (wake up)")
+    local _wakeup_animation = nil
+    if _defender.is_fast_wakingup then
+      _wakeup_animation = _defender.fast_wakeup_animation
+    else
+      _wakeup_animation = _defender.wakeup_animation
     end
-    _defender.counter.attack_frame = frame_number + _defender.wake_up_time
-    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
-    _defender.counter.ref_time = -1
-    handle_recording()
+    local _wakeup = frame_data[_defender.char_str].wakeups[_wakeup_animation]
+    if _wakeup then
+      if _debug then
+        print(frame_number.." - init ca (wake up)")
+      end
+      log(_defender.prefix, "counter_attack", "init ca (wakeup)")
+      _defender.counter.attack_frame = frame_number + _wakeup.duration
+      _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+      _defender.counter.ref_time = -1
+      handle_recording()
+    end
   end
 
   if not _defender.counter.sequence then
@@ -2483,6 +2500,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       if _debug then
         print(frame_number.." - setup ca")
       end
+      log(_defender.prefix, "counter_attack", "setup ca")
       _defender.counter.attack_frame = frame_number + _defender.recovery_time + 2
       _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
       _defender.counter.ref_time = -1
@@ -2500,6 +2518,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       if _debug then
         print(frame_number.." - queue ca")
       end
+      log(_defender.prefix, "counter_attack", string.format("queue ca %d", _frames_remaining))
       queue_input_sequence(_defender, _defender.counter.sequence)
       _defender.counter.sequence = nil
       _defender.counter.attack_frame = -1
@@ -2512,6 +2531,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       if _debug then
         print(frame_number.." - queue recording")
       end
+      log(_defender.prefix, "counter_attack", "queue recording")
       _defender.counter.attack_frame = -1
       _defender.counter.recording_slot = -1
       set_recording_state(_input, 1)
@@ -2669,7 +2689,7 @@ training_settings = {
   red_parry_hit_count = 1,
   counter_attack_stick = 1,
   counter_attack_button = 1,
-  fast_recovery_mode = 1,
+  fast_wakeup_mode = 1,
   infinite_time = true,
   life_mode = 1,
   meter_mode = 1,
@@ -2703,6 +2723,7 @@ training_settings = {
 debug_settings = {
   show_predicted_hitbox = false,
   record_framedata = false,
+  record_wakeupdata = false,
   debug_character = "",
   debug_move = "",
 }
@@ -2760,7 +2781,7 @@ menu = {
       list_menu_item("Tech Throws", training_settings, "tech_throws_mode", tech_throws_mode),
       list_menu_item("Counter-Attack Move", training_settings, "counter_attack_stick", stick_gesture),
       list_menu_item("Counter-Attack Action", training_settings, "counter_attack_button", button_gesture),
-      list_menu_item("Fast Wake Up", training_settings, "fast_recovery_mode", fast_recovery_mode),
+      list_menu_item("Fast Wake Up", training_settings, "fast_wakeup_mode", fast_wakeup_mode),
     }
   },
   {
@@ -2818,12 +2839,13 @@ menu = {
 }
 
 debug_move_menu_item = map_menu_item("Debug Move", debug_settings, "debug_move", frame_data, nil)
-if advanced_mode then
+if developer_mode then
   local _debug_settings_menu = {
     name = "Debug",
     entries = {
       checkbox_menu_item("Show Predicted Hitboxes", debug_settings, "show_predicted_hitbox"),
       checkbox_menu_item("Record Frame Data", debug_settings, "record_framedata"),
+      checkbox_menu_item("Record Wake-Up Data", debug_settings, "record_wakeupdata"),
       button_menu_item("Save Frame Data", save_frame_data),
       map_menu_item("Debug Character", debug_settings, "debug_character", _G, "frame_data"),
       debug_move_menu_item
@@ -3122,7 +3144,7 @@ function read_player_vars(_player_obj)
     return
   end
 
-  local _debug_state_variables = (_player_obj == player and advanced_mode) or _player_obj.debug_state_variables
+  local _debug_state_variables = (_player_obj == player and developer_mode) or _player_obj.debug_state_variables
 
   update_input(_player_obj)
 
@@ -3318,8 +3340,8 @@ function read_player_vars(_player_obj)
     not _player_obj.is_attacking and
     not _player_obj.is_attacking_ext and
     not _player_obj.is_blocking and
-    not _player_obj.is_waking_up and
-    not _player_obj.is_fast_waking_up and
+    not _player_obj.is_wakingup and
+    not _player_obj.is_fast_wakingup and
     _player_obj.recovery_time == _player_obj.previous_recovery_time and
     _player_obj.remaining_freeze_frames == 0 and
     _player_obj.input_capacity > 0
@@ -3489,49 +3511,92 @@ function read_player_vars(_player_obj)
   if is_in_match then
 
     -- WAKE UP
-    local _previous_is_waking_up = _player_obj.is_waking_up or false
-    local _previous_is_fast_waking_up = _player_obj.is_fast_waking_up or false
+    local _debug_wakeup = true
+    _player_obj.previous_can_fast_wakeup = _player_obj.can_fast_wakeup or 0
+    _player_obj.can_fast_wakeup = memory.readbyte(_player_obj.base + 0x402)
 
-    if not _player_obj.is_waking_up and character_specific[_player_obj.char_str].wake_ups then
-      for i = 1, #character_specific[_player_obj.char_str].wake_ups do
-        if _previous_animation ~= character_specific[_player_obj.char_str].wake_ups[i].animation and _player_obj.animation == character_specific[_player_obj.char_str].wake_ups[i].animation then
-          _player_obj.is_waking_up = true
-          _player_obj.wake_up_time = character_specific[_player_obj.char_str].wake_ups[i].length
-          _player_obj.waking_up_start_frame = frame_number
-          _player_obj.wake_up_animation = _player_obj.animation
-          break
+    local _previous_fast_wakeup_flag = _player_obj.fast_wakeup_flag or 0
+    _player_obj.fast_wakeup_flag = memory.readbyte(_player_obj.base + 0x403)
+
+    local _previous_is_flying_down_flag = _player_obj.is_flying_down_flag or 0
+    _player_obj.is_flying_down_flag = memory.readbyte(_player_obj.base + 0x8D) -- does not reset to 0 after air reset landings, resets to 0 after jump start
+
+    _player_obj.previous_is_wakingup = _player_obj.is_wakingup or false
+    _player_obj.is_wakingup = _player_obj.is_wakingup or false
+    _player_obj.wakeup_time = _player_obj.wakeup_time or 0
+    if _previous_is_flying_down_flag == 1 and _player_obj.is_flying_down_flag == 0 and _player_obj.standing_state == 0 and _player_obj.movement_type ~= 2 then -- movement type 2 is hugo's running grab
+      _player_obj.is_wakingup = true
+      _player_obj.wakeup_time = 0
+      _player_obj.wakeup_animation = _player_obj.animation
+      if _debug_wakeup then
+        print(string.format("%s: wakeup started", _player_obj.prefix))
+      end
+    end
+    if _player_obj.is_wakingup then
+      _player_obj.wakeup_time = _player_obj.wakeup_time + 1
+    end
+
+    _player_obj.previous_is_fast_wakingup = _player_obj.is_fast_wakingup or false
+    _player_obj.is_fast_wakingup = _player_obj.is_fast_wakingup or false
+    _player_obj.fast_wakeup_time = _player_obj.fast_wakeup_time or 0
+    if _player_obj.is_wakingup and _previous_fast_wakeup_flag == 1 and _player_obj.fast_wakeup_flag == 0 then
+      _player_obj.is_fast_wakingup = true
+      _player_obj.fast_wakeup_time = 0
+      _player_obj.fast_wakeup_animation = _player_obj.animation
+      if _debug_wakeup then
+        print(string.format("%s: fast wakeup started", _player_obj.prefix))
+      end
+    end
+    if _player_obj.is_fast_wakingup then
+      _player_obj.fast_wakeup_time = _player_obj.fast_wakeup_time + 1
+    end
+
+    if _player_obj.previous_standing_state == 0x00 and (_player_obj.standing_state ~= 0x00 or _player_obj.is_attacking) then
+      if _player_obj.is_wakingup then
+        _player_obj.is_wakingup = false
+        if not _player_obj.is_fast_wakingup then
+          local _wakeup = frame_data[_player_obj.char_str].wakeups[_player_obj.wakeup_animation]
+          if _wakeup then
+            if _player_obj.wakeup_time ~= _wakeup.duration then
+              print(string.format("Mismatching wakeup animation time %s: %d against %d", _player_obj.wakeup_animation, _player_obj.wakeup_time, _wakeup.duration))
+            end
+          else
+            print(string.format("Unknown wakeup animation: %s", _player_obj.wakeup_animation))
+          end
+        end
+        if _debug_wakeup then
+          print(string.format("%s: wake up: %s, %d", _player_obj.prefix, _player_obj.wakeup_animation, _player_obj.wakeup_time))
+        end
+      end
+      if _player_obj.is_fast_wakingup then
+        _player_obj.is_fast_wakingup = false
+        local _wakeup = frame_data[_player_obj.char_str].wakeups[_player_obj.fast_wakeup_animation]
+        if _wakeup then
+          if _player_obj.fast_wakeup_time ~= _wakeup.duration then
+            print(string.format("Mismatching wakeup animation time %s:%s: %d against %d", _player_obj.char_str, _player_obj.fast_wakeup_animation, _player_obj.fast_wakeup_time, _wakeup.duration))
+          end
+        else
+          print(string.format("Unknown wakeup animation: %s:%s", _player_obj.char_str, _player_obj.fast_wakeup_animation))
+        end
+        if _debug_wakeup then
+          print(string.format("%s: fast wake up: %s, %d", _player_obj.prefix, _player_obj.fast_wakeup_animation, _player_obj.fast_wakeup_time))
         end
       end
     end
 
-    if not _player_obj.is_fast_waking_up and character_specific[_player_obj.char_str].fast_wake_ups then
-      for i = 1, #character_specific[_player_obj.char_str].fast_wake_ups do
-        if _previous_animation ~= character_specific[_player_obj.char_str].fast_wake_ups[i].animation and _player_obj.animation == character_specific[_player_obj.char_str].fast_wake_ups[i].animation then
-          _player_obj.is_fast_waking_up = true
-          _player_obj.wake_up_time = character_specific[_player_obj.char_str].fast_wake_ups[i].length
-          _player_obj.waking_up_start_frame = frame_number
-          _player_obj.wake_up_animation = _player_obj.animation
-          break
-        end
-      end
-    end
+    _player_obj.has_just_started_wake_up = not _player_obj.previous_is_wakingup and _player_obj.is_wakingup
+    _player_obj.has_just_started_fast_wake_up = not _player_obj.previous_is_fast_wakingup and _player_obj.is_fast_wakingup
+    _player_obj.has_just_woke_up = _player_obj.previous_is_wakingup and not _player_obj.is_wakingup
 
-    if _player_obj.debug_wake_up then
-      if (_player_obj.is_waking_up or _player_obj.is_fast_waking_up) and (_previous_standing_state == 0x00 and _player_obj.standing_state ~= 0x00) then
-        print(string.format("%d - %d %d %s wake_up_time: %d", frame_number, to_bit(_player_obj.is_waking_up), to_bit(_player_obj.is_fast_waking_up), _player_obj.wake_up_animation, (frame_number - P2_waking_up_start_frame) + 1))
-      end
-      if (_player_obj.has_animation_just_changed) then
-        print(string.format("%d - %s", frame_number, _player_obj.animation))
-      end
+    if _player_obj.has_just_started_wake_up then
+      log(_player_obj.prefix, "fight", string.format("wakeup 1"))
     end
-
-    if (_player_obj.is_waking_up or _player_obj.is_fast_waking_up) and frame_number >= (_player_obj.waking_up_start_frame + _player_obj.wake_up_time) then
-      _player_obj.is_waking_up = false
-      _player_obj.is_fast_waking_up = false
+    if _player_obj.has_just_started_fast_wake_up then
+      log(_player_obj.prefix, "fight", string.format("fwakeup 1"))
     end
-
-    _player_obj.has_just_started_wake_up = not _previous_is_waking_up and _player_obj.is_waking_up
-    _player_obj.has_just_started_fast_wake_up = not _previous_is_fast_waking_up and _player_obj.is_fast_waking_up
+    if _player_obj.has_just_woke_up then
+      log(_player_obj.prefix, "fight", string.format("wakeup 0"))
+    end
   end
 
   -- TIMED SA
@@ -3827,8 +3892,8 @@ function before_frame()
   -- blocking
   update_blocking(_input, player, dummy, training_settings.blocking_mode, training_settings.blocking_style, training_settings.red_parry_hit_count)
 
-  -- fast recovery
-  update_fast_recovery(_input, player, dummy, training_settings.fast_recovery_mode)
+  -- fast wake-up
+  update_fast_wake_up(_input, player, dummy, training_settings.fast_wakeup_mode)
 
   -- tech throws
   update_tech_throws(_input, player, dummy, training_settings.tech_throws_mode)
@@ -3880,6 +3945,7 @@ function before_frame()
   joypad.set(_input)
 
   update_framedata_recording(player_objects[1])
+  update_wakeupdata_recording(player_objects[2])
 
   local _debug_position_prediction = false
   if _debug_position_prediction and player.pos_y > 0 then
@@ -4440,7 +4506,7 @@ for i = 1, #characters do
   character_specific[characters[i]] = { timed_sa = {false, false, false} }
 end
 
--- Character Dimensions
+-- Character approximate dimensions
 character_specific.alex.half_width = 45
 character_specific.chunli.half_width = 39
 character_specific.dudley.half_width = 29
@@ -4495,258 +4561,6 @@ character_specific.makoto.timed_sa[3] = true;
 character_specific.twelve.timed_sa[3] = true;
 character_specific.yang.timed_sa[3] = true;
 character_specific.yun.timed_sa[3] = true;
-
--- Characters wake ups
-
--- wake ups to test (Ibuki) :
---  Cr HK
---  Throw
---  Close HK
---  Jmp HK
---  Raida
---  Neck breaker
--- Always test with LP wake up (specials may have longer buffering times and result in length that do not fit every move)
-
-character_specific.alex.wake_ups = {
-  { animation = "362c", length = 36 },
-  { animation = "389c", length = 68 },
-  { animation = "39bc", length = 68 },
-  { animation = "378c", length = 66 },
-  { animation = "3a8c", length = 53 },
-}
-character_specific.alex.fast_wake_ups = {
-  { animation = "1fb8", length = 30 },
-  { animation = "2098", length = 29 },
-}
-
-
-character_specific.ryu.wake_ups = {
-  { animation = "49ac", length = 47 },
-  { animation = "4aac", length = 78 },
-  { animation = "4dcc", length = 71 },
-  { animation = "4f9c", length = 68 },
-}
-character_specific.ryu.fast_wake_ups = {
-  { animation = "c1dc", length = 29 },
-  { animation = "c12c", length = 29 },
-}
-
-
-character_specific.yun.wake_ups = {
-  { animation = "e980", length = 50 },
-  { animation = "ebd0", length = 61 },
-  { animation = "eb00", length = 61 },
-  { animation = "eca0", length = 50 },
-}
-character_specific.yun.fast_wake_ups = {
-  { animation = "d5dc", length = 27 },
-  { animation = "d3bc", length = 33 },
-}
-
-
-character_specific.dudley.wake_ups = {
-  { animation = "8ffc", length = 43 },
-  { animation = "948c", length = 56 },
-  { animation = "915c", length = 56 },
-  { animation = "923c", length = 59 },
-  { animation = "93ec", length = 53 },
-}
-character_specific.dudley.fast_wake_ups = {
-  { animation = "e0bc", length = 28 },
-  { animation = "df7c", length = 31 },
-}
-
-
-character_specific.gouki.wake_ups = {
-  { animation = "5cec", length = 78 },
-  { animation = "5bec", length = 47 },
-  { animation = "600c", length = 71 },
-  { animation = "61dc", length = 68 },
-}
-character_specific.gouki.fast_wake_ups = {
-  { animation = "b66c", length = 29 },
-  { animation = "b5bc", length = 29 },
-}
-
-
-character_specific.urien.wake_ups = {
-  { animation = "32b8", length = 46 },
-  { animation = "3b40", length = 77 },
-  { animation = "3408", length = 77 },
-  { animation = "3378", length = 51 },
-}
-character_specific.urien.fast_wake_ups = {
-  { animation = "86b8", length = 34 },
-  { animation = "8618", length = 36 },
-}
-
-
-character_specific.remy.wake_ups = {
-  { animation = "56c8", length = 61 },
-  { animation = "cf4c", length = 66 },
-  { animation = "d25c", length = 57 },
-  { animation = "d17c", length = 70 },
-  { animation = "48c4", length = 35 },
-}
-character_specific.remy.fast_wake_ups = {
-  { animation = "4e34", length = 28 },
-  { animation = "4d84", length = 28 },
-}
-
-
-character_specific.necro.wake_ups = {
-  { animation = "38cc", length = 45 },
-  { animation = "3a3c", length = 61 },
-  { animation = "3b1c", length = 60 },
-  { animation = "3bfc", length = 58 },
-  { animation = "3d9c", length = 51 },
-}
-character_specific.necro.fast_wake_ups = {
-  { animation = "5bb4", length = 32 },
-  { animation = "3d9c", length = 43 },
-}
-
-
-character_specific.q.wake_ups = {
-  { animation = "28a8", length = 50 },
-  { animation = "2a28", length = 63 },
-  { animation = "2b18", length = 73 },
-  { animation = "2d48", length = 74 },
-  { animation = "2f58", length = 73 },
-}
-character_specific.q.fast_wake_ups = {
-  { animation = "6e68", length = 31 },
-  { animation = "6c98", length = 32 },
-}
-character_specific.q.hugo_360_tech_timing = 15
-
-character_specific.oro.wake_ups = {
-  { animation = "b928", length = 56 },
-  { animation = "bb28", length = 72 },
-  { animation = "bc28", length = 70 },
-  { animation = "bd18", length = 65 },
-  { animation = "be78", length = 58 },
-}
-character_specific.oro.fast_wake_ups = {
-  { animation = "d708", length = 32 },
-  { animation = "d678", length = 33 },
-}
-
-
-character_specific.ibuki.wake_ups = {
-  { animation = "3f80", length = 43 },
-  { animation = "4230", length = 69 },
-  { animation = "44d0", length = 61 },
-  { animation = "4350", length = 58 },
-  { animation = "4420", length = 58 },
-}
-character_specific.ibuki.fast_wake_ups = {
-  { animation = "7ec0", length = 27 },
-  { animation = "7c90", length = 27 },
-}
-
-
-character_specific.chunli.wake_ups = {
-  { animation = "04d0", length = 44 },
-  { animation = "05e0", length = 89 },
-  { animation = "07b0", length = 67 },
-  { animation = "0920", length = 66 },
-}
-character_specific.chunli.fast_wake_ups = {
-  { animation = "6268", length = 27 },
-  { animation = "6148", length = 30 },
-}
-
-
-character_specific.sean.wake_ups = {
-  { animation = "03c8", length = 47 },
-  { animation = "04c8", length = 78 },
-  { animation = "0768", length = 71 },
-  { animation = "0938", length = 68 },
-}
-character_specific.sean.fast_wake_ups = {
-  { animation = "5db8", length = 29 },
-  { animation = "5d08", length = 29 },
-}
-
-
-character_specific.makoto.wake_ups = {
-  { animation = "9b14", length = 52 },
-  { animation = "9ca4", length = 72 },
-  { animation = "9d94", length = 89 },
-  { animation = "9fb4", length = 85 },
-  { animation = "c000", length = 35 },
-}
-character_specific.makoto.fast_wake_ups = {
-  { animation = "c650", length = 31 },
-  { animation = "c4d0", length = 31 },
-}
-
-
-character_specific.elena.wake_ups = {
-  { animation = "008c", length = 51 },
-  { animation = "0bac", length = 74 },
-  { animation = "026c", length = 65 },
-  { animation = "035c", length = 65 },
-}
-character_specific.elena.fast_wake_ups = {
-  { animation = "51b8", length = 33 },
-  { animation = "4ff8", length = 33 },
-}
-
-
-character_specific.twelve.wake_ups = {
-  { animation = "8d44", length = 44 },
-  { animation = "8ec4", length = 55 },
-  { animation = "8f84", length = 60 },
-  { animation = "9054", length = 52 },
-  { animation = "91b4", length = 51 },
-}
-character_specific.twelve.fast_wake_ups = {
-  { animation = "d650", length = 30 },
-  { animation = "d510", length = 31 },
-}
-
-
-character_specific.hugo.wake_ups = {
-  { animation = "c5c0", length = 46 },
-  { animation = "dfe8", length = 71 },
-  { animation = "e458", length = 70 },
-  { animation = "c960", length = 57 },
-  { animation = "d0e0", length = 88 },
-}
-character_specific.hugo.fast_wake_ups = {
-  { animation = "c60c", length = 30 },
-  { animation = "c55c", length = 30 },
-}
-
-
-character_specific.yang.wake_ups = {
-  { animation = "622c", length = 47 },
-  { animation = "63fc", length = 58 },
-  { animation = "64cc", length = 58 },
-  { animation = "659c", length = 47 },
-}
-character_specific.yang.fast_wake_ups = {
-  { animation = "58dc", length = 27 },
-  { animation = "56bc", length = 33 },
-}
-
-
-character_specific.ken.wake_ups = {
-  { animation = "ec44", length = 47 },
-  { animation = "ed44", length = 76 },
-  { animation = "efd4", length = 71 },
-  { animation = "efd4", length = 71 },
-  { animation = "f1a4", length = 68 },
-  { animation = "f0a4", length = 72 },
-  { animation = "5a60", length = 80 },
-}
-character_specific.ken.fast_wake_ups = {
-  { animation = "3e7c", length = 29 },
-  { animation = "3dcc", length = 29 },
-}
-
 
 
 -- ALEX
