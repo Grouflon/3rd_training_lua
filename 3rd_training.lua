@@ -1755,22 +1755,128 @@ function update_framedata_recording(_player_obj)
   end
 end
 
-function update_wakeupdata_recording(_player_obj)
-  if debug_settings.record_wakeupdata and is_in_match then
+function find_wake_up(_char_str, _wakeup_animation, _last_act_animation)
+  local _wakeup = frame_data[_char_str].wakeups[_wakeup_animation]
+  if _wakeup == nil then
+    return nil
+  end
 
-    function record_wakeupdata(_char_str, _animation, _duration)
-      local _wakeup = frame_data[_char_str].wakeups[_animation]
-      if _wakeup == nil or _wakeup.duration ~= _duration then
-        frame_data[_char_str].dirty = true
-        frame_data[_char_str].wakeups[_animation] = { duration = _duration }
-        print(string.format("Recorded wakeup animation %s:%s, %d", _char_str, _animation, _duration))
-      end
+  if _wakeup.exceptions ~= nil then
+    local _exception = _wakeup.exceptions[_last_act_animation]
+    if _exception then
+      return _exception.duration
     end
+  end
 
-    if _player_obj.previous_is_fast_wakingup == true and _player_obj.is_fast_wakingup == false then
-      record_wakeupdata(_player_obj.char_str, _player_obj.fast_wakeup_animation, _player_obj.fast_wakeup_time)
-    elseif _player_obj.previous_is_wakingup == true and _player_obj.is_wakingup == false then
-      record_wakeupdata(_player_obj.char_str, _player_obj.wakeup_animation, _player_obj.wakeup_time)
+  return _wakeup.duration
+end
+
+function insert_wake_up(_char_str, _wakeup_animation, _last_act_animation, _duration)
+  local _debug = true
+  local _char_frame_data = frame_data[_char_str]
+  local _wakeup = _char_frame_data.wakeups[_wakeup_animation]
+
+  if _wakeup == nil then
+    _char_frame_data.dirty = true
+    _char_frame_data.wakeups[_wakeup_animation] = { duration = _duration, exceptions = {} }
+    _char_frame_data.wakeups[_wakeup_animation].exceptions[_last_act_animation] = { duration = _duration }
+    if _debug then
+      print(string.format("Inserted new wakeup \"%s\", %d", _wakeup_animation, _duration))
+    end
+    return true
+  else
+    _wakeup.exceptions = _wakeup.exceptions or {}
+    if _wakeup.exceptions[_last_act_animation] == nil or _wakeup.exceptions[_last_act_animation].duration ~= _duration then
+      if _wakeup.exceptions[_last_act_animation] == nil and _wakeup.duration == _duration then
+        return false
+      end
+
+      _char_frame_data.dirty = true
+      _wakeup.exceptions[_last_act_animation] = { duration = _duration }
+
+      -- recompute default value
+      local _durations = {}
+      local _max_occurence = 0
+      local _exception_count = 0
+      for _i, _o in pairs(_wakeup.exceptions) do
+        _exception_count = _exception_count + 1
+        local _id = tostring(_o.duration)
+        _durations[_id] = (_durations[_id] or 0) + 1
+        _max_occurence = math.max(_max_occurence, _durations[_id])
+      end
+      local _final_duration = 0
+      for _i, _occurences in pairs(_durations) do
+        if _occurences == _max_occurence then
+          _final_duration = tonumber(_i)
+        end
+        if _final_duration == _wakeup.duration then -- if default duration is ex-aequo, it wins
+          break
+        end
+      end
+      _wakeup.duration = _final_duration
+
+      if _debug then
+        print(string.format("Inserted new exception \"%s\" for wakeup \"%s\", %d. Default is %d",_last_act_animation, _wakeup_animation, _duration, _wakeup.duration))
+      end
+      return true
+    end
+  end
+  return false
+end
+
+function update_wakeupdata_recording(_dummy_obj)
+  if not is_in_match then
+    return
+  end
+  -- moves to record to produce a complete set of wake ups:
+  -- fast wake ups:
+  --  Alex throw
+  --  Alex HCB P
+  --  Alex HCB K
+  --  Oro back throw
+  --  Gouki Back throw
+  --  Gouki Demon flip P
+  -- normal wake ups:
+  --  Alex slash Ex
+  --  Alex sweep
+  --  Alex HCB K
+  --  Alex HCB P
+  --  Alex stomp
+  --  Alex DPF K
+  --  Alex HCharge ExK
+  --  Ibuki raida
+  --  Ibuki air throw
+  --  Ibuki neck breaker
+  --  Hugo 360 P
+  --  Hugo neutral grab
+  --  Hugo back breaker
+  --  Oro back throw
+  --  Oro HCB Px3
+  --  Gouki back throw
+  --  Gouki demon flip P
+  --  Twelve forward, neutral and back throw
+
+  -- Always report missing data
+  if _dummy_obj.has_just_woke_up then
+    local _wakeup_animation = _dummy_obj.wakeup_animation
+    local _wakeup_time = _dummy_obj.wakeup_time
+    local _wakeup = frame_data[_dummy_obj.char_str].wakeups[_wakeup_animation]
+    local _duration = find_wake_up(_dummy_obj.char_str, _dummy_obj.wakeup_animation, _dummy_obj.wakeup_other_last_act_animation)
+    if _duration == nil then
+      print(string.format("Unknown wakeup animation: %s", _wakeup_animation))
+    elseif _duration ~= _wakeup_time then
+      print(string.format("Mismatching wakeup animation time %s: %d against default %d. last act animation: \"%s\"", _wakeup_animation, _wakeup_time, _duration, _dummy_obj.wakeup_other_last_act_animation))
+    end
+  end
+
+  -- Record
+  if debug_settings.record_wakeupdata then
+    if _dummy_obj.has_just_woke_up then
+      local _char_str = _dummy_obj.char_str
+      local _animation = _dummy_obj.wakeup_animation
+      local _last_act_animation = _dummy_obj.wakeup_other_last_act_animation
+      local _duration = _dummy_obj.wakeup_time
+      insert_wake_up(_char_str, _animation, _last_act_animation, _duration)
     end
   end
 end
@@ -2476,24 +2582,18 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     _defender.counter.sequence = nil
     _defender.counter.recording_slot = -1
   elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
-    local _wakeup_animation = nil
-    if _defender.is_fast_wakingup then
-      _wakeup_animation = _defender.fast_wakeup_animation
-    else
-      _wakeup_animation = _defender.wakeup_animation
+    local _duration = find_wake_up(_defender.char_str, _defender.wakeup_animation, _defender.wakeup_other_last_act_animation)
+    if _duration == nil then
+      return
     end
-    local _wakeup = frame_data[_defender.char_str].wakeups[_wakeup_animation]
-    if _wakeup then
-      if _debug then
-        print(frame_number.." - init ca (wake up)")
-      end
-      log(_defender.prefix, "counter_attack", "init ca (wakeup)")
-      local _offset = character_specific[_defender.char_str].wakeup_offsets[_attacker.last_hit_animation] or 0
-      _defender.counter.attack_frame = frame_number + _wakeup.duration + _offset
-      _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
-      _defender.counter.ref_time = -1
-      handle_recording()
+    if _debug then
+      print(frame_number.." - init ca (wake up)")
     end
+    log(_defender.prefix, "counter_attack", "init ca (wakeup)")
+    _defender.counter.attack_frame = frame_number + _duration
+    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.ref_time = -1
+    handle_recording()
   end
 
   if not _defender.counter.sequence then
@@ -3145,7 +3245,7 @@ function read_player_vars(_player_obj)
     return
   end
 
-  local _debug_state_variables = (_player_obj == player and developer_mode) or _player_obj.debug_state_variables
+  local _debug_state_variables = _player_obj.debug_state_variables
 
   update_input(_player_obj)
 
@@ -3438,6 +3538,9 @@ function read_player_vars(_player_obj)
       print(string.format("%d - %d, %d, %d, %d", frame_number, _player_obj.relevant_animation_frame, _player_obj.remaining_freeze_frames, _player_obj.animation_frame_id, _player_obj.highest_hit_id))
     end
   end
+  if _player_obj.has_just_acted then
+    _player_obj.last_act_animation = _player_obj.animation
+  end
 
   -- RECEIVED HITS/BLOCKS/PARRYS
   local _previous_total_received_hit_count = _player_obj.total_received_hit_count or nil
@@ -3490,7 +3593,6 @@ function read_player_vars(_player_obj)
   _player_obj.hit_count = memory.readbyte(_player_obj.base + 0x189)
   _player_obj.has_just_hit = _player_obj.hit_count > _previous_hit_count
   if _player_obj.has_just_hit then
-    _player_obj.last_hit_animation = _player_obj.animation
     log(_player_obj.prefix, "fight", "has hit")
     if _debug_state_variables then
       print(string.format("%d - %s hit (%d > %d)", frame_number, _player_obj.prefix, _previous_hit_count, _player_obj.hit_count))
@@ -3525,50 +3627,31 @@ function read_player_vars(_player_obj)
       _player_obj.wakeup_time = 0
       _player_obj.wakeup_animation = _player_obj.animation
       if debug_wakeup then
-        print(string.format("%s: wakeup started", _player_obj.prefix))
+        print(string.format("%d - %s wakeup started", frame_number, _player_obj.prefix))
       end
-    end
-    if _player_obj.is_wakingup then
-      _player_obj.wakeup_time = _player_obj.wakeup_time + 1
     end
 
     _player_obj.previous_is_fast_wakingup = _player_obj.is_fast_wakingup or false
     _player_obj.is_fast_wakingup = _player_obj.is_fast_wakingup or false
-    _player_obj.fast_wakeup_time = _player_obj.fast_wakeup_time or 0
     if _player_obj.is_wakingup and _previous_fast_wakeup_flag == 1 and _player_obj.fast_wakeup_flag == 0 then
       _player_obj.is_fast_wakingup = true
-      _player_obj.fast_wakeup_time = 0
-      _player_obj.fast_wakeup_animation = _player_obj.animation
+      _player_obj.wakeup_time = 0
+      _player_obj.wakeup_animation = _player_obj.animation
       if debug_wakeup then
-        print(string.format("%s: fast wakeup started", _player_obj.prefix))
+        print(string.format("%d - %s fast wakeup started", frame_number, _player_obj.prefix))
       end
-    end
-    if _player_obj.is_fast_wakingup then
-      _player_obj.fast_wakeup_time = _player_obj.fast_wakeup_time + 1
     end
 
-    if _player_obj.previous_standing_state == 0x00 and (_player_obj.standing_state ~= 0x00 or _player_obj.is_attacking) then
-      if _player_obj.is_wakingup then
-        local _wakeup_animation = _player_obj.wakeup_animation
-        local _wakeup_time = _player_obj.wakeup_time
-        if _player_obj.is_fast_wakingup then
-          _wakeup_animation = _player_obj.fast_wakeup_animation
-          _wakeup_time = _player_obj.fast_wakeup_time
-        end
-        local _wakeup = frame_data[_player_obj.char_str].wakeups[_wakeup_animation]
-        if _wakeup then
-          if _wakeup_time ~= _wakeup.duration then
-            print(string.format("Mismatching wakeup animation time %s: %d against %d", _wakeup_animation, _wakeup_time, _wakeup.duration))
-          end
-        else
-          print(string.format("Unknown wakeup animation: %s", _wakeup_animation))
-        end
-        if debug_wakeup then
-          print(string.format("%s: wake up: %d, %s, %d", _player_obj.prefix, to_bit(_player_obj.is_fast_wakingup), _wakeup_animation, _wakeup_time))
-        end
-        _player_obj.is_wakingup = false
-        _player_obj.is_fast_wakingup = false
+    if _player_obj.is_wakingup then
+      _player_obj.wakeup_time = _player_obj.wakeup_time + 1
+    end
+
+    if _player_obj.is_wakingup and _player_obj.previous_standing_state == 0x00 and (_player_obj.standing_state ~= 0x00 or _player_obj.is_attacking) then
+      if debug_wakeup then
+        print(string.format("%d - %s wake up: %d, %s, %d", frame_number, _player_obj.prefix, to_bit(_player_obj.is_fast_wakingup), _player_obj.wakeup_animation, _player_obj.wakeup_time))
       end
+      _player_obj.is_wakingup = false
+      _player_obj.is_fast_wakingup = false
     end
 
     _player_obj.has_just_started_wake_up = not _player_obj.previous_is_wakingup and _player_obj.is_wakingup
@@ -3871,6 +3954,10 @@ function before_frame()
   else
     player = player_objects[2]
     dummy = player_objects[1]
+  end
+
+  if dummy.has_just_started_wake_up or dummy.has_just_started_fast_wake_up then
+    dummy.wakeup_other_last_act_animation = player.last_act_animation
   end
 
   -- pose
@@ -4490,7 +4577,7 @@ savestate.registerload(on_load_state)
 
 character_specific = {}
 for i = 1, #characters do
-  character_specific[characters[i]] = { timed_sa = {false, false, false}, wakeup_offsets = {} }
+  character_specific[characters[i]] = { timed_sa = {false, false, false} }
 end
 
 -- Character approximate dimensions
@@ -4548,33 +4635,6 @@ character_specific.makoto.timed_sa[3] = true;
 character_specific.twelve.timed_sa[3] = true;
 character_specific.yang.timed_sa[3] = true;
 character_specific.yun.timed_sa[3] = true;
-
--- wakeup offsets on some moves
-character_specific.yun.wakeup_offsets["d71c"] = -6 -- Oro HCB LP
-character_specific.yun.wakeup_offsets["d89c"] = -6 -- Oro HCB MP
-character_specific.yun.wakeup_offsets["d96c"] = -6 -- Oro HCB HP
-
-character_specific.gouki.wakeup_offsets["d71c"] = -6 -- Oro HCB LP
-character_specific.gouki.wakeup_offsets["d89c"] = -6 -- Oro HCB MP
-character_specific.gouki.wakeup_offsets["d96c"] = -6 -- Oro HCB HP
-character_specific.gouki.wakeup_offsets["73c8"] = -2 -- Oro Back throw
-
-character_specific.ryu.wakeup_offsets["d71c"] = -6 -- Oro HCB LP
-character_specific.ryu.wakeup_offsets["d89c"] = -6 -- Oro HCB MP
-character_specific.ryu.wakeup_offsets["d96c"] = -6 -- Oro HCB HP
-character_specific.ryu.wakeup_offsets["73c8"] = -2 -- Oro Back throw
-
-character_specific.remy.wakeup_offsets["d71c"] = -7 -- Oro HCB LP
-character_specific.remy.wakeup_offsets["d89c"] = -7 -- Oro HCB MP
-character_specific.remy.wakeup_offsets["d96c"] = -7 -- Oro HCB HP
-
-character_specific.urien.wakeup_offsets["d71c"] = -1 -- Oro HCB LP
-character_specific.urien.wakeup_offsets["d89c"] = -1 -- Oro HCB MP
-character_specific.urien.wakeup_offsets["d96c"] = -1 -- Oro HCB HP
-
-character_specific.oro.wakeup_offsets["d71c"] = -1 -- Oro HCB LP
-character_specific.oro.wakeup_offsets["d89c"] = -1 -- Oro HCB MP
-character_specific.oro.wakeup_offsets["d96c"] = -1 -- Oro HCB HP
 
 -- ALEX
 frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
