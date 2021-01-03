@@ -28,6 +28,7 @@ recording_slot_count = 8
 -- debug options
 developer_mode = false -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 assert_enabled = false
+debug_wakeup = false
 log_enabled = false
 log_categories_shown =
 {
@@ -1758,9 +1759,12 @@ function update_wakeupdata_recording(_player_obj)
   if debug_settings.record_wakeupdata and is_in_match then
 
     function record_wakeupdata(_char_str, _animation, _duration)
-      frame_data[_char_str].dirty = true
-      frame_data[_char_str].wakeups[_animation] = { duration = _duration }
-      print(string.format("Recorded wakeup animation %s:%s, %d", _char_str, _animation, _duration))
+      local _wakeup = frame_data[_char_str].wakeups[_animation]
+      if _wakeup == nil or _wakeup.duration ~= _duration then
+        frame_data[_char_str].dirty = true
+        frame_data[_char_str].wakeups[_animation] = { duration = _duration }
+        print(string.format("Recorded wakeup animation %s:%s, %d", _char_str, _animation, _duration))
+      end
     end
 
     if _player_obj.previous_is_fast_wakingup == true and _player_obj.is_fast_wakingup == false then
@@ -2484,7 +2488,8 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
         print(frame_number.." - init ca (wake up)")
       end
       log(_defender.prefix, "counter_attack", "init ca (wakeup)")
-      _defender.counter.attack_frame = frame_number + _wakeup.duration
+      local _offset = character_specific[_defender.char_str].wakeup_offsets[_attacker.last_hit_animation] or 0
+      _defender.counter.attack_frame = frame_number + _wakeup.duration + _offset
       _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
       _defender.counter.ref_time = -1
       handle_recording()
@@ -3185,55 +3190,6 @@ function read_player_vars(_player_obj)
   _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
   _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
 
-  local _previous_total_received_hit_count = _player_obj.total_received_hit_count or nil
-  _player_obj.total_received_hit_count = memory.readword(_player_obj.base + 0x33E)
-  local _total_received_hit_count_diff = 0
-  if _previous_total_received_hit_count then
-    if _previous_total_received_hit_count == 0xFFFF then
-      _total_received_hit_count_diff = 1
-    else
-      _total_received_hit_count_diff = _player_obj.total_received_hit_count - _previous_total_received_hit_count
-    end
-  end
-
-  local _previous_received_connection_marker = _player_obj.received_connection_marker or 0
-  _player_obj.received_connection_marker = memory.readword(_player_obj.base + 0x32E)
-  _player_obj.received_connection = _previous_received_connection_marker == 0 and _player_obj.received_connection_marker ~= 0
-
-  _player_obj.last_movement_type_change_frame = _player_obj.last_movement_type_change_frame or 0
-  if _player_obj.movement_type ~= _previous_movement_type then
-    _player_obj.last_movement_type_change_frame = frame_number
-  end
-
-  -- is blocking/has just blocked/has just been hit/has_just_parried
-  _player_obj.blocking_id = memory.readbyte(_player_obj.base + 0x3D3)
-  _player_obj.has_just_blocked = false
-  if _player_obj.received_connection and _player_obj.received_connection_marker ~= 0xFFF1 and _total_received_hit_count_diff == 0 then --0xFFF1 is parry
-    _player_obj.has_just_blocked = true
-    log(_player_obj.prefix, "fight", "block")
-    if _debug_state_variables then
-      print(string.format("%d - %s blocked", frame_number, _player_obj.prefix))
-    end
-  end
-  _player_obj.is_blocking = _player_obj.blocking_id > 0 and _player_obj.blocking_id < 5 or _player_obj.has_just_blocked
-
-  if _player_obj.has_just_blocked then
-
-  end
-
-  _player_obj.has_just_been_hit = false
-  if _total_received_hit_count_diff > 0 then
-    _player_obj.has_just_been_hit = true
-    log(_player_obj.prefix, "fight", "hit")
-  end
-
-  _player_obj.has_just_parried = false
-  if _player_obj.received_connection and _player_obj.received_connection_marker == 0xFFF1 and _total_received_hit_count_diff == 0 then
-    _player_obj.has_just_parried = true
-    log(_player_obj.prefix, "fight", "parry")
-    if _debug_state_variables then print(string.format("%d - %s parried", frame_number, _player_obj.prefix)) end
-  end
-
 
   if _player_obj.id == 1 then
     _player_obj.max_meter_gauge = memory.readbyte(0x020695B3)
@@ -3303,25 +3259,6 @@ function read_player_vars(_player_obj)
   _player_obj.action_count = memory.readbyte(_player_obj.base + 0x459)
   _player_obj.has_just_acted = _player_obj.action_count > _previous_action_count
   if _debug_state_variables and _player_obj.has_just_acted then print(string.format("%d - %s acted (%d > %d)", frame_number, _player_obj.prefix, _previous_action_count, _player_obj.action_count)) end
-
-  -- HITS
-  local _previous_hit_count = _player_obj.hit_count or 0
-  _player_obj.hit_count = memory.readbyte(_player_obj.base + 0x189)
-  _player_obj.has_just_hit = _player_obj.hit_count > _previous_hit_count
-  if _player_obj.has_just_hit then
-    log(_player_obj.prefix, "fight", "has hit")
-    if _debug_state_variables then
-      print(string.format("%d - %s hit (%d > %d)", frame_number, _player_obj.prefix, _previous_hit_count, _player_obj.hit_count))
-    end
-  end
-
-  -- BLOCKS
-  local _previous_connected_action_count = _player_obj.connected_action_count or 0
-  local _previous_blocked_count = _previous_connected_action_count - _previous_hit_count
-  _player_obj.connected_action_count = memory.readbyte(_player_obj.base + 0x17B)
-  local _blocked_count = _player_obj.connected_action_count - _player_obj.hit_count
-  _player_obj.has_just_been_blocked = _blocked_count > _previous_blocked_count
-  if _debug_state_variables and _player_obj.has_just_been_blocked then print(string.format("%d - %s blocked (%d > %d)", frame_number, _player_obj.prefix, _previous_blocked_count, _blocked_count)) end
 
   -- LANDING
   _player_obj.previous_standing_state = _player_obj.standing_state or 0
@@ -3502,12 +3439,75 @@ function read_player_vars(_player_obj)
     end
   end
 
+  -- RECEIVED HITS/BLOCKS/PARRYS
+  local _previous_total_received_hit_count = _player_obj.total_received_hit_count or nil
+  _player_obj.total_received_hit_count = memory.readword(_player_obj.base + 0x33E)
+  local _total_received_hit_count_diff = 0
+  if _previous_total_received_hit_count then
+    if _previous_total_received_hit_count == 0xFFFF then
+      _total_received_hit_count_diff = 1
+    else
+      _total_received_hit_count_diff = _player_obj.total_received_hit_count - _previous_total_received_hit_count
+    end
+  end
 
+  local _previous_received_connection_marker = _player_obj.received_connection_marker or 0
+  _player_obj.received_connection_marker = memory.readword(_player_obj.base + 0x32E)
+  _player_obj.received_connection = _previous_received_connection_marker == 0 and _player_obj.received_connection_marker ~= 0
+
+  _player_obj.last_movement_type_change_frame = _player_obj.last_movement_type_change_frame or 0
+  if _player_obj.movement_type ~= _previous_movement_type then
+    _player_obj.last_movement_type_change_frame = frame_number
+  end
+
+  -- is blocking/has just blocked/has just been hit/has_just_parried
+  _player_obj.blocking_id = memory.readbyte(_player_obj.base + 0x3D3)
+  _player_obj.has_just_blocked = false
+  if _player_obj.received_connection and _player_obj.received_connection_marker ~= 0xFFF1 and _total_received_hit_count_diff == 0 then --0xFFF1 is parry
+    _player_obj.has_just_blocked = true
+    log(_player_obj.prefix, "fight", "block")
+    if _debug_state_variables then
+      print(string.format("%d - %s blocked", frame_number, _player_obj.prefix))
+    end
+  end
+  _player_obj.is_blocking = _player_obj.blocking_id > 0 and _player_obj.blocking_id < 5 or _player_obj.has_just_blocked
+
+  _player_obj.has_just_been_hit = false
+  if _total_received_hit_count_diff > 0 then
+    _player_obj.has_just_been_hit = true
+    log(_player_obj.prefix, "fight", "hit")
+  end
+
+  _player_obj.has_just_parried = false
+  if _player_obj.received_connection and _player_obj.received_connection_marker == 0xFFF1 and _total_received_hit_count_diff == 0 then
+    _player_obj.has_just_parried = true
+    log(_player_obj.prefix, "fight", "parry")
+    if _debug_state_variables then print(string.format("%d - %s parried", frame_number, _player_obj.prefix)) end
+  end
+
+  -- HITS
+  local _previous_hit_count = _player_obj.hit_count or 0
+  _player_obj.hit_count = memory.readbyte(_player_obj.base + 0x189)
+  _player_obj.has_just_hit = _player_obj.hit_count > _previous_hit_count
+  if _player_obj.has_just_hit then
+    _player_obj.last_hit_animation = _player_obj.animation
+    log(_player_obj.prefix, "fight", "has hit")
+    if _debug_state_variables then
+      print(string.format("%d - %s hit (%d > %d)", frame_number, _player_obj.prefix, _previous_hit_count, _player_obj.hit_count))
+    end
+  end
+
+  -- BLOCKS
+  local _previous_connected_action_count = _player_obj.connected_action_count or 0
+  local _previous_blocked_count = _previous_connected_action_count - _previous_hit_count
+  _player_obj.connected_action_count = memory.readbyte(_player_obj.base + 0x17B)
+  local _blocked_count = _player_obj.connected_action_count - _player_obj.hit_count
+  _player_obj.has_just_been_blocked = _blocked_count > _previous_blocked_count
+  if _debug_state_variables and _player_obj.has_just_been_blocked then print(string.format("%d - %s blocked (%d > %d)", frame_number, _player_obj.prefix, _previous_blocked_count, _blocked_count)) end
 
   if is_in_match then
 
     -- WAKE UP
-    local _debug_wakeup = true
     _player_obj.previous_can_fast_wakeup = _player_obj.can_fast_wakeup or 0
     _player_obj.can_fast_wakeup = memory.readbyte(_player_obj.base + 0x402)
 
@@ -3524,7 +3524,7 @@ function read_player_vars(_player_obj)
       _player_obj.is_wakingup = true
       _player_obj.wakeup_time = 0
       _player_obj.wakeup_animation = _player_obj.animation
-      if _debug_wakeup then
+      if debug_wakeup then
         print(string.format("%s: wakeup started", _player_obj.prefix))
       end
     end
@@ -3539,7 +3539,7 @@ function read_player_vars(_player_obj)
       _player_obj.is_fast_wakingup = true
       _player_obj.fast_wakeup_time = 0
       _player_obj.fast_wakeup_animation = _player_obj.animation
-      if _debug_wakeup then
+      if debug_wakeup then
         print(string.format("%s: fast wakeup started", _player_obj.prefix))
       end
     end
@@ -3549,34 +3549,25 @@ function read_player_vars(_player_obj)
 
     if _player_obj.previous_standing_state == 0x00 and (_player_obj.standing_state ~= 0x00 or _player_obj.is_attacking) then
       if _player_obj.is_wakingup then
-        _player_obj.is_wakingup = false
-        if not _player_obj.is_fast_wakingup then
-          local _wakeup = frame_data[_player_obj.char_str].wakeups[_player_obj.wakeup_animation]
-          if _wakeup then
-            if _player_obj.wakeup_time ~= _wakeup.duration then
-              print(string.format("Mismatching wakeup animation time %s: %d against %d", _player_obj.wakeup_animation, _player_obj.wakeup_time, _wakeup.duration))
-            end
-          else
-            print(string.format("Unknown wakeup animation: %s", _player_obj.wakeup_animation))
-          end
+        local _wakeup_animation = _player_obj.wakeup_animation
+        local _wakeup_time = _player_obj.wakeup_time
+        if _player_obj.is_fast_wakingup then
+          _wakeup_animation = _player_obj.fast_wakeup_animation
+          _wakeup_time = _player_obj.fast_wakeup_time
         end
-        if _debug_wakeup then
-          print(string.format("%s: wake up: %s, %d", _player_obj.prefix, _player_obj.wakeup_animation, _player_obj.wakeup_time))
-        end
-      end
-      if _player_obj.is_fast_wakingup then
-        _player_obj.is_fast_wakingup = false
-        local _wakeup = frame_data[_player_obj.char_str].wakeups[_player_obj.fast_wakeup_animation]
+        local _wakeup = frame_data[_player_obj.char_str].wakeups[_wakeup_animation]
         if _wakeup then
-          if _player_obj.fast_wakeup_time ~= _wakeup.duration then
-            print(string.format("Mismatching wakeup animation time %s:%s: %d against %d", _player_obj.char_str, _player_obj.fast_wakeup_animation, _player_obj.fast_wakeup_time, _wakeup.duration))
+          if _wakeup_time ~= _wakeup.duration then
+            print(string.format("Mismatching wakeup animation time %s: %d against %d", _wakeup_animation, _wakeup_time, _wakeup.duration))
           end
         else
-          print(string.format("Unknown wakeup animation: %s:%s", _player_obj.char_str, _player_obj.fast_wakeup_animation))
+          print(string.format("Unknown wakeup animation: %s", _wakeup_animation))
         end
-        if _debug_wakeup then
-          print(string.format("%s: fast wake up: %s, %d", _player_obj.prefix, _player_obj.fast_wakeup_animation, _player_obj.fast_wakeup_time))
+        if debug_wakeup then
+          print(string.format("%s: wake up: %d, %s, %d", _player_obj.prefix, to_bit(_player_obj.is_fast_wakingup), _wakeup_animation, _wakeup_time))
         end
+        _player_obj.is_wakingup = false
+        _player_obj.is_fast_wakingup = false
       end
     end
 
@@ -4499,7 +4490,7 @@ savestate.registerload(on_load_state)
 
 character_specific = {}
 for i = 1, #characters do
-  character_specific[characters[i]] = { timed_sa = {false, false, false} }
+  character_specific[characters[i]] = { timed_sa = {false, false, false}, wakeup_offsets = {} }
 end
 
 -- Character approximate dimensions
@@ -4558,6 +4549,32 @@ character_specific.twelve.timed_sa[3] = true;
 character_specific.yang.timed_sa[3] = true;
 character_specific.yun.timed_sa[3] = true;
 
+-- wakeup offsets on some moves
+character_specific.yun.wakeup_offsets["d71c"] = -6 -- Oro HCB LP
+character_specific.yun.wakeup_offsets["d89c"] = -6 -- Oro HCB MP
+character_specific.yun.wakeup_offsets["d96c"] = -6 -- Oro HCB HP
+
+character_specific.gouki.wakeup_offsets["d71c"] = -6 -- Oro HCB LP
+character_specific.gouki.wakeup_offsets["d89c"] = -6 -- Oro HCB MP
+character_specific.gouki.wakeup_offsets["d96c"] = -6 -- Oro HCB HP
+character_specific.gouki.wakeup_offsets["73c8"] = -2 -- Oro Back throw
+
+character_specific.ryu.wakeup_offsets["d71c"] = -6 -- Oro HCB LP
+character_specific.ryu.wakeup_offsets["d89c"] = -6 -- Oro HCB MP
+character_specific.ryu.wakeup_offsets["d96c"] = -6 -- Oro HCB HP
+character_specific.ryu.wakeup_offsets["73c8"] = -2 -- Oro Back throw
+
+character_specific.remy.wakeup_offsets["d71c"] = -7 -- Oro HCB LP
+character_specific.remy.wakeup_offsets["d89c"] = -7 -- Oro HCB MP
+character_specific.remy.wakeup_offsets["d96c"] = -7 -- Oro HCB HP
+
+character_specific.urien.wakeup_offsets["d71c"] = -1 -- Oro HCB LP
+character_specific.urien.wakeup_offsets["d89c"] = -1 -- Oro HCB MP
+character_specific.urien.wakeup_offsets["d96c"] = -1 -- Oro HCB HP
+
+character_specific.oro.wakeup_offsets["d71c"] = -1 -- Oro HCB LP
+character_specific.oro.wakeup_offsets["d89c"] = -1 -- Oro HCB MP
+character_specific.oro.wakeup_offsets["d96c"] = -1 -- Oro HCB HP
 
 -- ALEX
 frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
