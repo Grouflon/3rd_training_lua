@@ -4650,6 +4650,7 @@ frame_data_meta["alex"].moves["72d4"] = { hits = {{ type = 3 }} } -- UOH
 frame_data_meta["alex"].moves["bc0c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
 frame_data_meta["alex"].moves["bd6c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
 frame_data_meta["alex"].moves["be7c"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+frame_data_meta["alex"].moves["c324"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air Down HP
 
 frame_data_meta["alex"].moves["bf94"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LK
 frame_data_meta["alex"].moves["c0e4"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MK
