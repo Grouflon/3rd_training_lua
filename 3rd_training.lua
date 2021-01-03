@@ -2408,10 +2408,6 @@ function update_fast_wake_up(_input, _player, _dummy, _mode)
   if is_in_match and _mode ~= 1 and current_recording_state ~= 4 then
     local _should_tap_down = _dummy.previous_can_fast_wakeup == 0 and _dummy.can_fast_wakeup == 1
 
-    if _dummy.is_wakingup and not _dummy.is_fast_wakingup then
-        _should_tap_down = (frame_number % 2) == 0
-    end
-
     if _should_tap_down then
       local _r = math.random()
       if _mode ~= 3 or _r > 0.5 then
