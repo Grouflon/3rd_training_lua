@@ -3408,105 +3408,6 @@
         "movement":[-0,0]
       }]
   },
-  "49d0":{
-    "hit_frames":[{
-        "min":4,
-        "max":4
-      }],
-    "frames":[{
-        "frame_id":14144,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14144,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14144,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14144,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14145,
-        "boxes":[{
-            "type":"attack",
-            "bottom":51,
-            "height":13,
-            "left":-85,
-            "width":8
-          },{
-            "type":"attack",
-            "bottom":54,
-            "height":9,
-            "left":-77,
-            "width":43
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14146,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14146,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14146,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14146,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14146,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14147,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14147,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14148,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14148,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14149,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14149,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13883,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13883,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13884,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13884,
-        "boxes":[],
-        "movement":[-0,0]
-      }]
-  },
   "e1ec":{
     "hit_frames":[{
         "min":5,
@@ -3835,6 +3736,161 @@
         "movement":[0,4]
       }]
   },
+  "wakeups":{
+    "bb28":{
+      "duration":72
+    },
+    "b928":{
+      "duration":56
+    },
+    "e1ec":{
+      "duration":2
+    },
+    "d0f8":{
+      "duration":64
+    },
+    "f2dc":{
+      "duration":62
+    },
+    "d708":{
+      "duration":32
+    },
+    "d1a8":{
+      "duration":39
+    },
+    "d678":{
+      "duration":33
+    },
+    "bc28":{
+      "duration":70
+    },
+    "bd18":{
+      "duration":65
+    },
+    "be78":{
+      "duration":58
+    }
+  },
+  "041c":{
+    "hit_frames":[{
+        "min":8,
+        "max":10
+      },{
+        "min":13,
+        "max":15
+      }],
+    "frames":[{
+        "frame_id":14362,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14362,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14362,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14362,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14362,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14362,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14359,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14359,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14357,
+        "boxes":[{
+            "type":"attack",
+            "bottom":-3,
+            "height":15,
+            "left":-28,
+            "width":22
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14358,
+        "boxes":[{
+            "type":"attack",
+            "bottom":-3,
+            "height":15,
+            "left":-28,
+            "width":22
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14358,
+        "boxes":[{
+            "type":"attack",
+            "bottom":-3,
+            "height":15,
+            "left":-28,
+            "width":22
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14359,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14359,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14360,
+        "boxes":[{
+            "type":"attack",
+            "bottom":-3,
+            "height":15,
+            "left":-28,
+            "width":22
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14361,
+        "boxes":[{
+            "type":"attack",
+            "bottom":-3,
+            "height":15,
+            "left":-28,
+            "width":22
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14361,
+        "boxes":[{
+            "type":"attack",
+            "bottom":-3,
+            "height":15,
+            "left":-28,
+            "width":22
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14361,
+        "boxes":[{
+            "type":"attack",
+            "bottom":-3,
+            "height":15,
+            "left":-28,
+            "width":22
+          }],
+        "movement":[0,0]
+      }]
+  },
   "5378":{
     "hit_frames":[{
         "min":4,
@@ -3960,433 +4016,398 @@
         "movement":[-0,0]
       }]
   },
-  "4f08":{
+  "6888":{
     "hit_frames":[{
-        "min":17,
+        "min":10,
         "max":17
-      },{
-        "min":18,
-        "max":19
       }],
     "frames":[{
-        "frame_id":14656,
+        "frame_id":14320,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-0,0]
       },{
-        "frame_id":14656,
+        "frame_id":14320,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,7]
       },{
-        "frame_id":14164,
+        "frame_id":14321,
         "boxes":[],
-        "movement":[-8,0]
+        "movement":[-4,7]
       },{
-        "frame_id":14164,
+        "frame_id":14321,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,7]
       },{
-        "frame_id":14164,
+        "frame_id":14322,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,6]
       },{
-        "frame_id":14164,
+        "frame_id":14322,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,5]
       },{
-        "frame_id":14165,
+        "frame_id":14323,
         "boxes":[],
-        "movement":[-6,0]
+        "movement":[-4,5]
       },{
-        "frame_id":14165,
+        "frame_id":14323,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,5]
       },{
-        "frame_id":14165,
+        "frame_id":14324,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,4]
       },{
-        "frame_id":14165,
+        "frame_id":14324,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,3]
       },{
-        "frame_id":14165,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14165,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14165,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14165,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14166,
-        "boxes":[],
-        "movement":[-16,0]
-      },{
-        "frame_id":14166,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14167,
-        "boxes":[],
-        "movement":[-1,0]
-      },{
-        "frame_id":14168,
+        "frame_id":14325,
         "boxes":[{
             "type":"attack",
-            "bottom":59,
-            "height":22,
-            "left":-50,
-            "width":15
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
           },{
             "type":"attack",
-            "bottom":56,
-            "height":12,
-            "left":-40,
-            "width":14
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
           }],
-        "movement":[0,0]
+        "movement":[-4,3]
       },{
-        "frame_id":14169,
+        "frame_id":14325,
         "boxes":[{
             "type":"attack",
-            "bottom":12,
-            "height":27,
-            "left":-74,
-            "width":40
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
           },{
             "type":"attack",
-            "bottom":29,
-            "height":18,
-            "left":-33,
-            "width":12
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
           }],
-        "movement":[0,0]
+        "movement":[-4,2]
       },{
-        "frame_id":14170,
+        "frame_id":14327,
         "boxes":[{
             "type":"attack",
-            "bottom":12,
-            "height":27,
-            "left":-74,
-            "width":40
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
           },{
             "type":"attack",
-            "bottom":29,
-            "height":18,
-            "left":-33,
-            "width":12
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
           }],
-        "movement":[0,0]
+        "movement":[-5,2]
       },{
-        "frame_id":14170,
-        "boxes":[],
-        "movement":[0,0]
+        "frame_id":14327,
+        "boxes":[{
+            "type":"attack",
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
+          },{
+            "type":"attack",
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
+          }],
+        "movement":[-4,1]
       },{
-        "frame_id":14170,
-        "boxes":[],
-        "movement":[0,0]
+        "frame_id":14328,
+        "boxes":[{
+            "type":"attack",
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
+          },{
+            "type":"attack",
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
+          }],
+        "movement":[-4,1]
       },{
-        "frame_id":14170,
-        "boxes":[],
-        "movement":[0,0]
+        "frame_id":14328,
+        "boxes":[{
+            "type":"attack",
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
+          },{
+            "type":"attack",
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
+          }],
+        "movement":[-5,0]
       },{
-        "frame_id":14170,
-        "boxes":[],
-        "movement":[0,0]
+        "frame_id":14327,
+        "boxes":[{
+            "type":"attack",
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
+          },{
+            "type":"attack",
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
+          }],
+        "movement":[-4,-1]
       },{
-        "frame_id":14171,
-        "boxes":[],
-        "movement":[8,0]
+        "frame_id":14327,
+        "boxes":[{
+            "type":"attack",
+            "bottom":35,
+            "height":26,
+            "left":-69,
+            "width":13
+          },{
+            "type":"attack",
+            "bottom":42,
+            "height":15,
+            "left":-56,
+            "width":28
+          }],
+        "movement":[-5,0]
       },{
-        "frame_id":14171,
+        "frame_id":14328,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,-2]
       },{
-        "frame_id":14172,
+        "frame_id":14328,
         "boxes":[],
-        "movement":[2,0]
+        "movement":[-4,-2]
       },{
-        "frame_id":14172,
+        "frame_id":14342,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,-2]
       },{
-        "frame_id":14173,
+        "frame_id":14342,
         "boxes":[],
-        "movement":[5,0]
+        "movement":[-4,-3]
       },{
-        "frame_id":14173,
+        "frame_id":14343,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,-4]
       },{
-        "frame_id":13984,
+        "frame_id":14343,
         "boxes":[],
-        "movement":[8,0]
+        "movement":[-5,-4]
       },{
-        "frame_id":13984,
+        "frame_id":14344,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,-5]
       },{
-        "frame_id":13985,
+        "frame_id":14344,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,-5]
       },{
-        "frame_id":13985,
+        "frame_id":14345,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,-6]
       },{
-        "frame_id":14176,
+        "frame_id":14345,
         "boxes":[],
-        "movement":[8,0]
+        "movement":[-4,-6]
       },{
-        "frame_id":14176,
+        "frame_id":14346,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,-7]
       },{
-        "frame_id":14177,
+        "frame_id":14346,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,-7]
       },{
-        "frame_id":14177,
+        "frame_id":14347,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,-8]
       },{
-        "frame_id":14178,
+        "frame_id":14347,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,-8]
       },{
-        "frame_id":14178,
+        "frame_id":13922,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-4,-9]
       },{
-        "frame_id":14179,
+        "frame_id":13922,
         "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14179,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14163,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14163,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":13883,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":13884,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":13885,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":13841,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":13842,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":13842,
-        "boxes":[],
-        "movement":[0,0]
+        "movement":[-5,-9]
       }]
   },
-  "6590":{
+  "5da0":{
     "hit_frames":[{
-        "min":5,
+        "min":6,
         "max":9
       }],
     "frames":[{
-        "frame_id":14394,
+        "frame_id":14299,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14394,
-        "boxes":[],
-        "movement":[-0,5]
-      },{
-        "frame_id":14394,
-        "boxes":[],
-        "movement":[-0,4]
-      },{
-        "frame_id":14395,
-        "boxes":[],
-        "movement":[-0,4]
-      },{
-        "frame_id":14395,
-        "boxes":[],
-        "movement":[-0,3]
-      },{
-        "frame_id":14396,
-        "boxes":[{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-91,
-            "width":14
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-75,
-            "width":54
-          }],
-        "movement":[-0,3]
-      },{
-        "frame_id":14397,
-        "boxes":[{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-91,
-            "width":14
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-75,
-            "width":54
-          }],
-        "movement":[-0,2]
-      },{
-        "frame_id":14397,
-        "boxes":[{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-91,
-            "width":14
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-75,
-            "width":54
-          }],
-        "movement":[-0,2]
-      },{
-        "frame_id":14398,
-        "boxes":[{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-91,
-            "width":14
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-75,
-            "width":54
-          }],
-        "movement":[-0,1]
-      },{
-        "frame_id":14398,
-        "boxes":[{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-91,
-            "width":14
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":17,
-            "left":-75,
-            "width":54
-          }],
-        "movement":[-0,1]
-      },{
-        "frame_id":14399,
+        "frame_id":14299,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14399,
+        "frame_id":14299,
         "boxes":[],
-        "movement":[-0,-1]
+        "movement":[-0,0]
       },{
-        "frame_id":14401,
+        "frame_id":14299,
         "boxes":[],
-        "movement":[-0,-1]
+        "movement":[-0,0]
       },{
-        "frame_id":14401,
+        "frame_id":14300,
         "boxes":[],
-        "movement":[-0,-1]
+        "movement":[8,0]
       },{
-        "frame_id":14401,
+        "frame_id":14300,
         "boxes":[],
-        "movement":[-0,-2]
+        "movement":[-0,0]
       },{
-        "frame_id":14402,
-        "boxes":[],
-        "movement":[-0,-3]
+        "frame_id":14300,
+        "boxes":[{
+            "type":"attack",
+            "bottom":0,
+            "height":10,
+            "left":-90,
+            "width":43
+          },{
+            "type":"attack",
+            "bottom":8,
+            "height":15,
+            "left":-54,
+            "width":45
+          }],
+        "movement":[-0,0]
       },{
-        "frame_id":14402,
-        "boxes":[],
-        "movement":[-0,-3]
+        "frame_id":14300,
+        "boxes":[{
+            "type":"attack",
+            "bottom":0,
+            "height":10,
+            "left":-90,
+            "width":43
+          },{
+            "type":"attack",
+            "bottom":8,
+            "height":15,
+            "left":-54,
+            "width":45
+          }],
+        "movement":[-0,0]
       },{
-        "frame_id":14402,
-        "boxes":[],
-        "movement":[-0,-4]
+        "frame_id":14301,
+        "boxes":[{
+            "type":"attack",
+            "bottom":0,
+            "height":10,
+            "left":-90,
+            "width":43
+          },{
+            "type":"attack",
+            "bottom":8,
+            "height":15,
+            "left":-54,
+            "width":45
+          }],
+        "movement":[-0,0]
       },{
-        "frame_id":14403,
-        "boxes":[],
-        "movement":[-0,-4]
+        "frame_id":14301,
+        "boxes":[{
+            "type":"attack",
+            "bottom":0,
+            "height":10,
+            "left":-90,
+            "width":43
+          },{
+            "type":"attack",
+            "bottom":8,
+            "height":15,
+            "left":-54,
+            "width":45
+          }],
+        "movement":[-0,0]
       },{
-        "frame_id":14403,
+        "frame_id":14301,
         "boxes":[],
-        "movement":[-0,-4]
+        "movement":[-0,0]
       },{
-        "frame_id":14403,
+        "frame_id":14301,
         "boxes":[],
-        "movement":[-0,-6]
+        "movement":[-0,0]
       },{
-        "frame_id":14356,
+        "frame_id":14301,
         "boxes":[],
-        "movement":[-0,-5]
+        "movement":[-0,0]
       },{
-        "frame_id":14356,
+        "frame_id":14302,
         "boxes":[],
-        "movement":[-0,-7]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14302,
         "boxes":[],
-        "movement":[-0,-7]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14302,
         "boxes":[],
-        "movement":[-0,-7]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14303,
         "boxes":[],
-        "movement":[-0,-8]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14303,
         "boxes":[],
-        "movement":[-0,-8]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14304,
         "boxes":[],
-        "movement":[-0,-9]
+        "movement":[-4,0]
       },{
-        "frame_id":13912,
+        "frame_id":14304,
         "boxes":[],
-        "movement":[-0,-10]
+        "movement":[-0,0]
+      },{
+        "frame_id":14278,
+        "boxes":[],
+        "movement":[-4,0]
+      },{
+        "frame_id":14278,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14279,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14298,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14298,
+        "boxes":[],
+        "movement":[-0,0]
       }]
   },
   "5258":{
@@ -5048,260 +5069,575 @@
         "movement":[-0,-10]
       }]
   },
-  "041c":{
+  "6590":{
     "hit_frames":[{
-        "min":8,
-        "max":10
-      },{
-        "min":13,
-        "max":15
+        "min":5,
+        "max":9
       }],
     "frames":[{
-        "frame_id":14362,
+        "frame_id":14394,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-0,0]
       },{
-        "frame_id":14362,
+        "frame_id":14394,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-0,5]
       },{
-        "frame_id":14362,
+        "frame_id":14394,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-0,4]
       },{
-        "frame_id":14362,
+        "frame_id":14395,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-0,4]
       },{
-        "frame_id":14362,
+        "frame_id":14395,
         "boxes":[],
-        "movement":[0,0]
+        "movement":[-0,3]
       },{
-        "frame_id":14362,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14359,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14359,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14357,
+        "frame_id":14396,
         "boxes":[{
             "type":"attack",
-            "bottom":-3,
-            "height":15,
-            "left":-28,
-            "width":22
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":14358,
-        "boxes":[{
-            "type":"attack",
-            "bottom":-3,
-            "height":15,
-            "left":-28,
-            "width":22
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":14358,
-        "boxes":[{
-            "type":"attack",
-            "bottom":-3,
-            "height":15,
-            "left":-28,
-            "width":22
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":14359,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14359,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":14360,
-        "boxes":[{
-            "type":"attack",
-            "bottom":-3,
-            "height":15,
-            "left":-28,
-            "width":22
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":14361,
-        "boxes":[{
-            "type":"attack",
-            "bottom":-3,
-            "height":15,
-            "left":-28,
-            "width":22
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":14361,
-        "boxes":[{
-            "type":"attack",
-            "bottom":-3,
-            "height":15,
-            "left":-28,
-            "width":22
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":14361,
-        "boxes":[{
-            "type":"attack",
-            "bottom":-3,
-            "height":15,
-            "left":-28,
-            "width":22
-          }],
-        "movement":[0,0]
-      }]
-  },
-  "d89c":{
-    "hit_frames":[{
-        "min":10,
-        "max":10
-      }],
-    "frames":[{
-        "frame_id":14448,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14448,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14448,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14448,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14449,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14449,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14449,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14450,
-        "boxes":[],
-        "movement":[-5,0]
-      },{
-        "frame_id":14450,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14450,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14450,
-        "boxes":[{
-            "type":"throw",
-            "bottom":0,
-            "height":16,
-            "left":-96,
-            "width":62
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14450,
-        "boxes":[{
-            "type":"throw",
-            "bottom":0,
-            "height":16,
-            "left":-96,
-            "width":62
-          }],
-        "movement":[-0,0]
-      }]
-  },
-  "48f0":{
-    "hit_frames":[{
-        "min":2,
-        "max":2
-      }],
-    "frames":[{
-        "frame_id":14180,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14180,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14181,
-        "boxes":[{
-            "type":"attack",
-            "bottom":82,
-            "height":14,
-            "left":-61,
-            "width":22
+            "bottom":49,
+            "height":17,
+            "left":-91,
+            "width":14
           },{
             "type":"attack",
-            "bottom":48,
-            "height":33,
-            "left":-49,
-            "width":28
+            "bottom":49,
+            "height":17,
+            "left":-75,
+            "width":54
+          }],
+        "movement":[-0,3]
+      },{
+        "frame_id":14397,
+        "boxes":[{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-91,
+            "width":14
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-75,
+            "width":54
+          }],
+        "movement":[-0,2]
+      },{
+        "frame_id":14397,
+        "boxes":[{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-91,
+            "width":14
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-75,
+            "width":54
+          }],
+        "movement":[-0,2]
+      },{
+        "frame_id":14398,
+        "boxes":[{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-91,
+            "width":14
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-75,
+            "width":54
+          }],
+        "movement":[-0,1]
+      },{
+        "frame_id":14398,
+        "boxes":[{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-91,
+            "width":14
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":17,
+            "left":-75,
+            "width":54
+          }],
+        "movement":[-0,1]
+      },{
+        "frame_id":14399,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14399,
+        "boxes":[],
+        "movement":[-0,-1]
+      },{
+        "frame_id":14401,
+        "boxes":[],
+        "movement":[-0,-1]
+      },{
+        "frame_id":14401,
+        "boxes":[],
+        "movement":[-0,-1]
+      },{
+        "frame_id":14401,
+        "boxes":[],
+        "movement":[-0,-2]
+      },{
+        "frame_id":14402,
+        "boxes":[],
+        "movement":[-0,-3]
+      },{
+        "frame_id":14402,
+        "boxes":[],
+        "movement":[-0,-3]
+      },{
+        "frame_id":14402,
+        "boxes":[],
+        "movement":[-0,-4]
+      },{
+        "frame_id":14403,
+        "boxes":[],
+        "movement":[-0,-4]
+      },{
+        "frame_id":14403,
+        "boxes":[],
+        "movement":[-0,-4]
+      },{
+        "frame_id":14403,
+        "boxes":[],
+        "movement":[-0,-6]
+      },{
+        "frame_id":14356,
+        "boxes":[],
+        "movement":[-0,-5]
+      },{
+        "frame_id":14356,
+        "boxes":[],
+        "movement":[-0,-7]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-7]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-7]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-8]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-8]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-9]
+      },{
+        "frame_id":13912,
+        "boxes":[],
+        "movement":[-0,-10]
+      }]
+  },
+  "6300":{
+    "hit_frames":[{
+        "min":2,
+        "max":11
+      }],
+    "frames":[{
+        "frame_id":14387,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14387,
+        "boxes":[],
+        "movement":[-0,4]
+      },{
+        "frame_id":14388,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,3]
+      },{
+        "frame_id":14388,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,3]
+      },{
+        "frame_id":14390,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,2]
+      },{
+        "frame_id":14390,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,2]
+      },{
+        "frame_id":14391,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,1]
+      },{
+        "frame_id":14391,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,1]
+      },{
+        "frame_id":14390,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
           }],
         "movement":[-0,0]
       },{
-        "frame_id":14182,
+        "frame_id":14390,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,-1]
+      },{
+        "frame_id":14391,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,-1]
+      },{
+        "frame_id":14391,
+        "boxes":[{
+            "type":"attack",
+            "bottom":55,
+            "height":16,
+            "left":-54,
+            "width":16
+          },{
+            "type":"attack",
+            "bottom":49,
+            "height":20,
+            "left":-38,
+            "width":14
+          }],
+        "movement":[-0,-1]
+      },{
+        "frame_id":14392,
+        "boxes":[],
+        "movement":[-0,-2]
+      },{
+        "frame_id":14392,
+        "boxes":[],
+        "movement":[-0,-3]
+      },{
+        "frame_id":14392,
+        "boxes":[],
+        "movement":[-0,-3]
+      },{
+        "frame_id":14393,
+        "boxes":[],
+        "movement":[-0,-4]
+      },{
+        "frame_id":14393,
+        "boxes":[],
+        "movement":[-0,-4]
+      },{
+        "frame_id":14393,
+        "boxes":[],
+        "movement":[-0,-4]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-6]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-5]
+      },{
+        "frame_id":13911,
+        "boxes":[],
+        "movement":[-0,-7]
+      },{
+        "frame_id":13912,
+        "boxes":[],
+        "movement":[-0,-7]
+      },{
+        "frame_id":13912,
+        "boxes":[],
+        "movement":[-0,-7]
+      },{
+        "frame_id":13913,
+        "boxes":[],
+        "movement":[-0,-8]
+      },{
+        "frame_id":13913,
+        "boxes":[],
+        "movement":[-0,-8]
+      },{
+        "frame_id":13912,
+        "boxes":[],
+        "movement":[-0,-9]
+      },{
+        "frame_id":13912,
+        "boxes":[],
+        "movement":[-0,-10]
+      }]
+  },
+  "4c40":{
+    "hit_frames":[{
+        "min":8,
+        "max":11
+      }],
+    "frames":[{
+        "frame_id":14976,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14182,
+        "frame_id":14976,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14183,
+        "frame_id":14976,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14184,
+        "frame_id":14977,
+        "boxes":[],
+        "movement":[-4,0]
+      },{
+        "frame_id":14977,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14185,
+        "frame_id":14977,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14185,
+        "frame_id":14977,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14186,
+        "frame_id":14978,
+        "boxes":[],
+        "movement":[-4,0]
+      },{
+        "frame_id":14979,
+        "boxes":[{
+            "type":"attack",
+            "bottom":56,
+            "height":15,
+            "left":-94,
+            "width":23
+          },{
+            "type":"attack",
+            "bottom":58,
+            "height":13,
+            "left":-71,
+            "width":26
+          }],
+        "movement":[-11,0]
+      },{
+        "frame_id":14980,
+        "boxes":[{
+            "type":"attack",
+            "bottom":59,
+            "height":12,
+            "left":-91,
+            "width":19
+          },{
+            "type":"attack",
+            "bottom":58,
+            "height":13,
+            "left":-71,
+            "width":26
+          }],
+        "movement":[2,0]
+      },{
+        "frame_id":14980,
+        "boxes":[{
+            "type":"attack",
+            "bottom":59,
+            "height":12,
+            "left":-91,
+            "width":19
+          },{
+            "type":"attack",
+            "bottom":58,
+            "height":13,
+            "left":-71,
+            "width":26
+          }],
+        "movement":[-0,0]
+      },{
+        "frame_id":14980,
+        "boxes":[{
+            "type":"attack",
+            "bottom":59,
+            "height":12,
+            "left":-91,
+            "width":19
+          },{
+            "type":"attack",
+            "bottom":58,
+            "height":13,
+            "left":-71,
+            "width":26
+          }],
+        "movement":[-0,0]
+      },{
+        "frame_id":14981,
+        "boxes":[],
+        "movement":[12,0]
+      },{
+        "frame_id":14981,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14186,
+        "frame_id":14981,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14163,
+        "frame_id":14981,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14163,
+        "frame_id":14982,
+        "boxes":[],
+        "movement":[8,0]
+      },{
+        "frame_id":14982,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14982,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14983,
+        "boxes":[],
+        "movement":[4,0]
+      },{
+        "frame_id":14983,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14983,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14983,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13883,
+        "boxes":[],
+        "movement":[3,0]
+      },{
+        "frame_id":13883,
         "boxes":[],
         "movement":[-0,0]
       },{
@@ -5318,6 +5654,26 @@
         "movement":[-0,0]
       },{
         "frame_id":13884,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13884,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13884,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13885,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13885,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13885,
         "boxes":[],
         "movement":[-0,0]
       },{
@@ -5634,245 +5990,458 @@
         "movement":[0,0]
       }]
   },
-  "6300":{
+  "48f0":{
     "hit_frames":[{
         "min":2,
-        "max":11
+        "max":2
       }],
     "frames":[{
-        "frame_id":14387,
+        "frame_id":14180,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14387,
+        "frame_id":14180,
         "boxes":[],
-        "movement":[-0,4]
+        "movement":[-0,0]
       },{
-        "frame_id":14388,
+        "frame_id":14181,
         "boxes":[{
             "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
+            "bottom":82,
+            "height":14,
+            "left":-61,
+            "width":22
           },{
             "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,3]
-      },{
-        "frame_id":14388,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,3]
-      },{
-        "frame_id":14390,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,2]
-      },{
-        "frame_id":14390,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,2]
-      },{
-        "frame_id":14391,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,1]
-      },{
-        "frame_id":14391,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,1]
-      },{
-        "frame_id":14390,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
+            "bottom":48,
+            "height":33,
+            "left":-49,
+            "width":28
           }],
         "movement":[-0,0]
       },{
-        "frame_id":14390,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,-1]
-      },{
-        "frame_id":14391,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,-1]
-      },{
-        "frame_id":14391,
-        "boxes":[{
-            "type":"attack",
-            "bottom":55,
-            "height":16,
-            "left":-54,
-            "width":16
-          },{
-            "type":"attack",
-            "bottom":49,
-            "height":20,
-            "left":-38,
-            "width":14
-          }],
-        "movement":[-0,-1]
-      },{
-        "frame_id":14392,
+        "frame_id":14182,
         "boxes":[],
-        "movement":[-0,-2]
+        "movement":[-0,0]
       },{
-        "frame_id":14392,
+        "frame_id":14182,
         "boxes":[],
-        "movement":[-0,-3]
+        "movement":[-0,0]
       },{
-        "frame_id":14392,
+        "frame_id":14183,
         "boxes":[],
-        "movement":[-0,-3]
+        "movement":[-0,0]
       },{
-        "frame_id":14393,
+        "frame_id":14184,
         "boxes":[],
-        "movement":[-0,-4]
+        "movement":[-0,0]
       },{
-        "frame_id":14393,
+        "frame_id":14185,
         "boxes":[],
-        "movement":[-0,-4]
+        "movement":[-0,0]
       },{
-        "frame_id":14393,
+        "frame_id":14185,
         "boxes":[],
-        "movement":[-0,-4]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14186,
         "boxes":[],
-        "movement":[-0,-6]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14186,
         "boxes":[],
-        "movement":[-0,-5]
+        "movement":[-0,0]
       },{
-        "frame_id":13911,
+        "frame_id":14163,
         "boxes":[],
-        "movement":[-0,-7]
+        "movement":[-0,0]
       },{
-        "frame_id":13912,
+        "frame_id":14163,
         "boxes":[],
-        "movement":[-0,-7]
+        "movement":[-0,0]
       },{
-        "frame_id":13912,
+        "frame_id":13883,
         "boxes":[],
-        "movement":[-0,-7]
+        "movement":[-0,0]
       },{
-        "frame_id":13913,
+        "frame_id":13883,
         "boxes":[],
-        "movement":[-0,-8]
+        "movement":[-0,0]
       },{
-        "frame_id":13913,
+        "frame_id":13884,
         "boxes":[],
-        "movement":[-0,-8]
+        "movement":[-0,0]
       },{
-        "frame_id":13912,
+        "frame_id":13884,
         "boxes":[],
-        "movement":[-0,-9]
+        "movement":[-0,0]
       },{
-        "frame_id":13912,
+        "frame_id":13885,
         "boxes":[],
-        "movement":[-0,-10]
+        "movement":[-0,0]
+      },{
+        "frame_id":13885,
+        "boxes":[],
+        "movement":[-0,0]
       }]
   },
-  "6bf8":{
+  "4f08":{
+    "hit_frames":[{
+        "min":17,
+        "max":17
+      },{
+        "min":18,
+        "max":19
+      }],
+    "frames":[{
+        "frame_id":14656,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14656,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14164,
+        "boxes":[],
+        "movement":[-8,0]
+      },{
+        "frame_id":14164,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14164,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14164,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[-6,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14165,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14166,
+        "boxes":[],
+        "movement":[-16,0]
+      },{
+        "frame_id":14166,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14167,
+        "boxes":[],
+        "movement":[-1,0]
+      },{
+        "frame_id":14168,
+        "boxes":[{
+            "type":"attack",
+            "bottom":59,
+            "height":22,
+            "left":-50,
+            "width":15
+          },{
+            "type":"attack",
+            "bottom":56,
+            "height":12,
+            "left":-40,
+            "width":14
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14169,
+        "boxes":[{
+            "type":"attack",
+            "bottom":12,
+            "height":27,
+            "left":-74,
+            "width":40
+          },{
+            "type":"attack",
+            "bottom":29,
+            "height":18,
+            "left":-33,
+            "width":12
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14170,
+        "boxes":[{
+            "type":"attack",
+            "bottom":12,
+            "height":27,
+            "left":-74,
+            "width":40
+          },{
+            "type":"attack",
+            "bottom":29,
+            "height":18,
+            "left":-33,
+            "width":12
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":14170,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14170,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14170,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14170,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14171,
+        "boxes":[],
+        "movement":[8,0]
+      },{
+        "frame_id":14171,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14172,
+        "boxes":[],
+        "movement":[2,0]
+      },{
+        "frame_id":14172,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14173,
+        "boxes":[],
+        "movement":[5,0]
+      },{
+        "frame_id":14173,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13984,
+        "boxes":[],
+        "movement":[8,0]
+      },{
+        "frame_id":13984,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13985,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13985,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14176,
+        "boxes":[],
+        "movement":[8,0]
+      },{
+        "frame_id":14176,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14177,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14177,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14178,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14178,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14179,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14179,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14163,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":14163,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13883,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13884,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13885,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13841,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13842,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":13842,
+        "boxes":[],
+        "movement":[0,0]
+      }]
+  },
+  "5c10":{
+    "hit_frames":[{
+        "min":4,
+        "max":5
+      }],
+    "frames":[{
+        "frame_id":14299,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14299,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14299,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14300,
+        "boxes":[],
+        "movement":[8,0]
+      },{
+        "frame_id":14301,
+        "boxes":[{
+            "type":"attack",
+            "bottom":0,
+            "height":10,
+            "left":-80,
+            "width":28
+          },{
+            "type":"attack",
+            "bottom":8,
+            "height":9,
+            "left":-54,
+            "width":37
+          }],
+        "movement":[-0,0]
+      },{
+        "frame_id":14301,
+        "boxes":[{
+            "type":"attack",
+            "bottom":0,
+            "height":10,
+            "left":-80,
+            "width":28
+          },{
+            "type":"attack",
+            "bottom":8,
+            "height":9,
+            "left":-54,
+            "width":37
+          }],
+        "movement":[-0,0]
+      },{
+        "frame_id":14301,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14301,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14302,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14302,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14303,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14303,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14304,
+        "boxes":[],
+        "movement":[-4,0]
+      },{
+        "frame_id":14304,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14278,
+        "boxes":[],
+        "movement":[-4,0]
+      },{
+        "frame_id":14278,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14279,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14298,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14298,
+        "boxes":[],
+        "movement":[-0,0]
+      }]
+  },
+  "6d08":{
     "hit_frames":[{
         "min":3,
-        "max":15
+        "max":8
       }],
     "frames":[{
         "frame_id":14368,
@@ -5881,191 +6450,177 @@
       },{
         "frame_id":14368,
         "boxes":[],
-        "movement":[-4,5]
+        "movement":[-5,4]
       },{
         "frame_id":14368,
         "boxes":[],
-        "movement":[-4,5]
+        "movement":[-4,3]
       },{
         "frame_id":14369,
         "boxes":[{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
-          }],
-        "movement":[-5,4]
-      },{
-        "frame_id":14371,
-        "boxes":[{
+            "bottom":15,
+            "height":19,
+            "left":-39,
+            "width":24
+          },{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
+            "bottom":23,
+            "height":24,
+            "left":-23,
+            "width":28
           }],
         "movement":[-4,3]
       },{
         "frame_id":14371,
         "boxes":[{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
-          }],
-        "movement":[-4,3]
-      },{
-        "frame_id":14372,
-        "boxes":[{
+            "bottom":15,
+            "height":19,
+            "left":-39,
+            "width":24
+          },{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
+            "bottom":23,
+            "height":24,
+            "left":-23,
+            "width":28
           }],
         "movement":[-5,2]
       },{
-        "frame_id":14372,
+        "frame_id":14371,
         "boxes":[{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
+            "bottom":15,
+            "height":19,
+            "left":-39,
+            "width":24
+          },{
+            "type":"attack",
+            "bottom":23,
+            "height":24,
+            "left":-23,
+            "width":28
           }],
         "movement":[-4,2]
       },{
-        "frame_id":14371,
+        "frame_id":14372,
         "boxes":[{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
+            "bottom":15,
+            "height":19,
+            "left":-39,
+            "width":24
+          },{
+            "type":"attack",
+            "bottom":23,
+            "height":24,
+            "left":-23,
+            "width":28
           }],
         "movement":[-5,1]
       },{
-        "frame_id":14371,
+        "frame_id":14372,
         "boxes":[{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
+            "bottom":15,
+            "height":19,
+            "left":-39,
+            "width":24
+          },{
+            "type":"attack",
+            "bottom":23,
+            "height":24,
+            "left":-23,
+            "width":28
           }],
         "movement":[-4,1]
       },{
-        "frame_id":14372,
-        "boxes":[{
-            "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
-          }],
-        "movement":[-4,0]
-      },{
-        "frame_id":14372,
-        "boxes":[{
-            "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
-          }],
-        "movement":[-5,-1]
-      },{
         "frame_id":14371,
         "boxes":[{
             "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
+            "bottom":15,
+            "height":19,
+            "left":-39,
+            "width":24
+          },{
+            "type":"attack",
+            "bottom":23,
+            "height":24,
+            "left":-23,
+            "width":28
           }],
         "movement":[-4,0]
-      },{
-        "frame_id":14371,
-        "boxes":[{
-            "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
-          }],
-        "movement":[-4,-2]
-      },{
-        "frame_id":14372,
-        "boxes":[{
-            "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
-          }],
-        "movement":[-5,-2]
-      },{
-        "frame_id":14372,
-        "boxes":[{
-            "type":"attack",
-            "bottom":24,
-            "height":15,
-            "left":-42,
-            "width":13
-          }],
-        "movement":[-4,-2]
       },{
         "frame_id":14374,
+        "boxes":[],
+        "movement":[-5,-1]
+      },{
+        "frame_id":14374,
+        "boxes":[],
+        "movement":[-4,0]
+      },{
+        "frame_id":14375,
+        "boxes":[],
+        "movement":[-4,-2]
+      },{
+        "frame_id":14375,
+        "boxes":[],
+        "movement":[-5,-2]
+      },{
+        "frame_id":14376,
+        "boxes":[],
+        "movement":[-4,-2]
+      },{
+        "frame_id":14376,
         "boxes":[],
         "movement":[-5,-3]
       },{
-        "frame_id":14374,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-4,-4]
       },{
-        "frame_id":14375,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-4,-4]
       },{
-        "frame_id":14375,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-5,-5]
       },{
-        "frame_id":14376,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-4,-5]
       },{
-        "frame_id":14376,
+        "frame_id":13923,
         "boxes":[],
         "movement":[-4,-6]
       },{
-        "frame_id":13922,
+        "frame_id":13923,
         "boxes":[],
         "movement":[-5,-6]
       },{
-        "frame_id":13922,
+        "frame_id":13923,
         "boxes":[],
         "movement":[-4,-7]
       },{
-        "frame_id":13922,
+        "frame_id":13924,
         "boxes":[],
         "movement":[-5,-7]
       },{
-        "frame_id":13922,
+        "frame_id":13924,
         "boxes":[],
         "movement":[-4,-8]
       },{
-        "frame_id":13923,
+        "frame_id":13924,
         "boxes":[],
         "movement":[-4,-8]
       },{
-        "frame_id":13923,
+        "frame_id":13925,
         "boxes":[],
         "movement":[-5,-9]
       },{
-        "frame_id":13923,
+        "frame_id":13925,
         "boxes":[],
         "movement":[-4,-9]
       }]
@@ -6284,10 +6839,10 @@
         "movement":[-3,-13]
       }]
   },
-  "6d08":{
+  "6bf8":{
     "hit_frames":[{
         "min":3,
-        "max":8
+        "max":15
       }],
     "frames":[{
         "frame_id":14368,
@@ -6296,485 +6851,193 @@
       },{
         "frame_id":14368,
         "boxes":[],
-        "movement":[-5,4]
+        "movement":[-4,5]
       },{
         "frame_id":14368,
         "boxes":[],
-        "movement":[-4,3]
+        "movement":[-4,5]
       },{
         "frame_id":14369,
         "boxes":[{
             "type":"attack",
-            "bottom":15,
-            "height":19,
-            "left":-39,
-            "width":24
-          },{
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
+        "movement":[-5,4]
+      },{
+        "frame_id":14371,
+        "boxes":[{
             "type":"attack",
-            "bottom":23,
-            "height":24,
-            "left":-23,
-            "width":28
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
           }],
         "movement":[-4,3]
       },{
         "frame_id":14371,
         "boxes":[{
             "type":"attack",
-            "bottom":15,
-            "height":19,
-            "left":-39,
-            "width":24
-          },{
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
+        "movement":[-4,3]
+      },{
+        "frame_id":14372,
+        "boxes":[{
             "type":"attack",
-            "bottom":23,
-            "height":24,
-            "left":-23,
-            "width":28
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
           }],
         "movement":[-5,2]
       },{
-        "frame_id":14371,
+        "frame_id":14372,
         "boxes":[{
             "type":"attack",
-            "bottom":15,
-            "height":19,
-            "left":-39,
-            "width":24
-          },{
-            "type":"attack",
-            "bottom":23,
-            "height":24,
-            "left":-23,
-            "width":28
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
           }],
         "movement":[-4,2]
       },{
-        "frame_id":14372,
+        "frame_id":14371,
         "boxes":[{
             "type":"attack",
-            "bottom":15,
-            "height":19,
-            "left":-39,
-            "width":24
-          },{
-            "type":"attack",
-            "bottom":23,
-            "height":24,
-            "left":-23,
-            "width":28
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
           }],
         "movement":[-5,1]
-      },{
-        "frame_id":14372,
-        "boxes":[{
-            "type":"attack",
-            "bottom":15,
-            "height":19,
-            "left":-39,
-            "width":24
-          },{
-            "type":"attack",
-            "bottom":23,
-            "height":24,
-            "left":-23,
-            "width":28
-          }],
-        "movement":[-4,1]
       },{
         "frame_id":14371,
         "boxes":[{
             "type":"attack",
-            "bottom":15,
-            "height":19,
-            "left":-39,
-            "width":24
-          },{
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
+        "movement":[-4,1]
+      },{
+        "frame_id":14372,
+        "boxes":[{
             "type":"attack",
-            "bottom":23,
-            "height":24,
-            "left":-23,
-            "width":28
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
           }],
         "movement":[-4,0]
       },{
-        "frame_id":14374,
-        "boxes":[],
+        "frame_id":14372,
+        "boxes":[{
+            "type":"attack",
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
         "movement":[-5,-1]
       },{
-        "frame_id":14374,
-        "boxes":[],
+        "frame_id":14371,
+        "boxes":[{
+            "type":"attack",
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
         "movement":[-4,0]
       },{
-        "frame_id":14375,
-        "boxes":[],
+        "frame_id":14371,
+        "boxes":[{
+            "type":"attack",
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
         "movement":[-4,-2]
       },{
-        "frame_id":14375,
-        "boxes":[],
+        "frame_id":14372,
+        "boxes":[{
+            "type":"attack",
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
         "movement":[-5,-2]
       },{
-        "frame_id":14376,
-        "boxes":[],
+        "frame_id":14372,
+        "boxes":[{
+            "type":"attack",
+            "bottom":24,
+            "height":15,
+            "left":-42,
+            "width":13
+          }],
         "movement":[-4,-2]
       },{
-        "frame_id":14376,
+        "frame_id":14374,
         "boxes":[],
         "movement":[-5,-3]
       },{
-        "frame_id":13922,
+        "frame_id":14374,
         "boxes":[],
         "movement":[-4,-4]
       },{
-        "frame_id":13922,
+        "frame_id":14375,
         "boxes":[],
         "movement":[-4,-4]
       },{
-        "frame_id":13922,
+        "frame_id":14375,
         "boxes":[],
         "movement":[-5,-5]
       },{
-        "frame_id":13922,
+        "frame_id":14376,
         "boxes":[],
         "movement":[-4,-5]
       },{
-        "frame_id":13923,
+        "frame_id":14376,
         "boxes":[],
         "movement":[-4,-6]
       },{
-        "frame_id":13923,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-5,-6]
       },{
-        "frame_id":13923,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-4,-7]
       },{
-        "frame_id":13924,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-5,-7]
       },{
-        "frame_id":13924,
+        "frame_id":13922,
         "boxes":[],
         "movement":[-4,-8]
       },{
-        "frame_id":13924,
+        "frame_id":13923,
         "boxes":[],
         "movement":[-4,-8]
       },{
-        "frame_id":13925,
+        "frame_id":13923,
         "boxes":[],
         "movement":[-5,-9]
       },{
-        "frame_id":13925,
+        "frame_id":13923,
         "boxes":[],
         "movement":[-4,-9]
-      }]
-  },
-  "5c10":{
-    "hit_frames":[{
-        "min":4,
-        "max":5
-      }],
-    "frames":[{
-        "frame_id":14299,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14299,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14299,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14300,
-        "boxes":[],
-        "movement":[8,0]
-      },{
-        "frame_id":14301,
-        "boxes":[{
-            "type":"attack",
-            "bottom":0,
-            "height":10,
-            "left":-80,
-            "width":28
-          },{
-            "type":"attack",
-            "bottom":8,
-            "height":9,
-            "left":-54,
-            "width":37
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14301,
-        "boxes":[{
-            "type":"attack",
-            "bottom":0,
-            "height":10,
-            "left":-80,
-            "width":28
-          },{
-            "type":"attack",
-            "bottom":8,
-            "height":9,
-            "left":-54,
-            "width":37
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14301,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14301,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14302,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14302,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14303,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14303,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14304,
-        "boxes":[],
-        "movement":[-4,0]
-      },{
-        "frame_id":14304,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14278,
-        "boxes":[],
-        "movement":[-4,0]
-      },{
-        "frame_id":14278,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14279,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14298,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14298,
-        "boxes":[],
-        "movement":[-0,0]
-      }]
-  },
-  "4c40":{
-    "hit_frames":[{
-        "min":8,
-        "max":11
-      }],
-    "frames":[{
-        "frame_id":14976,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14976,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14976,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14977,
-        "boxes":[],
-        "movement":[-4,0]
-      },{
-        "frame_id":14977,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14977,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14977,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14978,
-        "boxes":[],
-        "movement":[-4,0]
-      },{
-        "frame_id":14979,
-        "boxes":[{
-            "type":"attack",
-            "bottom":56,
-            "height":15,
-            "left":-94,
-            "width":23
-          },{
-            "type":"attack",
-            "bottom":58,
-            "height":13,
-            "left":-71,
-            "width":26
-          }],
-        "movement":[-11,0]
-      },{
-        "frame_id":14980,
-        "boxes":[{
-            "type":"attack",
-            "bottom":59,
-            "height":12,
-            "left":-91,
-            "width":19
-          },{
-            "type":"attack",
-            "bottom":58,
-            "height":13,
-            "left":-71,
-            "width":26
-          }],
-        "movement":[2,0]
-      },{
-        "frame_id":14980,
-        "boxes":[{
-            "type":"attack",
-            "bottom":59,
-            "height":12,
-            "left":-91,
-            "width":19
-          },{
-            "type":"attack",
-            "bottom":58,
-            "height":13,
-            "left":-71,
-            "width":26
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14980,
-        "boxes":[{
-            "type":"attack",
-            "bottom":59,
-            "height":12,
-            "left":-91,
-            "width":19
-          },{
-            "type":"attack",
-            "bottom":58,
-            "height":13,
-            "left":-71,
-            "width":26
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14981,
-        "boxes":[],
-        "movement":[12,0]
-      },{
-        "frame_id":14981,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14981,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14981,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14982,
-        "boxes":[],
-        "movement":[8,0]
-      },{
-        "frame_id":14982,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14982,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14983,
-        "boxes":[],
-        "movement":[4,0]
-      },{
-        "frame_id":14983,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14983,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14983,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13883,
-        "boxes":[],
-        "movement":[3,0]
-      },{
-        "frame_id":13883,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13883,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13883,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13884,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13884,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13884,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13884,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13885,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13885,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13885,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13885,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":13885,
-        "boxes":[],
-        "movement":[-0,0]
       }]
   },
   "54f0":{
@@ -7322,398 +7585,170 @@
         "movement":[-0,-10]
       }]
   },
-  "5da0":{
+  "49d0":{
     "hit_frames":[{
-        "min":6,
-        "max":9
+        "min":4,
+        "max":4
       }],
     "frames":[{
-        "frame_id":14299,
+        "frame_id":14144,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14299,
+        "frame_id":14144,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14299,
+        "frame_id":14144,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14299,
+        "frame_id":14144,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14300,
-        "boxes":[],
-        "movement":[8,0]
-      },{
-        "frame_id":14300,
-        "boxes":[],
-        "movement":[-0,0]
-      },{
-        "frame_id":14300,
+        "frame_id":14145,
         "boxes":[{
             "type":"attack",
-            "bottom":0,
-            "height":10,
-            "left":-90,
-            "width":43
+            "bottom":51,
+            "height":13,
+            "left":-85,
+            "width":8
           },{
             "type":"attack",
-            "bottom":8,
-            "height":15,
-            "left":-54,
-            "width":45
+            "bottom":54,
+            "height":9,
+            "left":-77,
+            "width":43
           }],
         "movement":[-0,0]
       },{
-        "frame_id":14300,
-        "boxes":[{
-            "type":"attack",
-            "bottom":0,
-            "height":10,
-            "left":-90,
-            "width":43
-          },{
-            "type":"attack",
-            "bottom":8,
-            "height":15,
-            "left":-54,
-            "width":45
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14301,
-        "boxes":[{
-            "type":"attack",
-            "bottom":0,
-            "height":10,
-            "left":-90,
-            "width":43
-          },{
-            "type":"attack",
-            "bottom":8,
-            "height":15,
-            "left":-54,
-            "width":45
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14301,
-        "boxes":[{
-            "type":"attack",
-            "bottom":0,
-            "height":10,
-            "left":-90,
-            "width":43
-          },{
-            "type":"attack",
-            "bottom":8,
-            "height":15,
-            "left":-54,
-            "width":45
-          }],
-        "movement":[-0,0]
-      },{
-        "frame_id":14301,
+        "frame_id":14146,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14301,
+        "frame_id":14146,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14301,
+        "frame_id":14146,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14302,
+        "frame_id":14146,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14302,
+        "frame_id":14146,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14302,
+        "frame_id":14147,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14303,
+        "frame_id":14147,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14303,
+        "frame_id":14148,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14304,
-        "boxes":[],
-        "movement":[-4,0]
-      },{
-        "frame_id":14304,
+        "frame_id":14148,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14278,
-        "boxes":[],
-        "movement":[-4,0]
-      },{
-        "frame_id":14278,
+        "frame_id":14149,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14279,
+        "frame_id":14149,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14298,
+        "frame_id":13883,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14298,
+        "frame_id":13883,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13884,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":13884,
         "boxes":[],
         "movement":[-0,0]
       }]
   },
-  "6888":{
+  "d89c":{
     "hit_frames":[{
         "min":10,
-        "max":17
+        "max":10
       }],
     "frames":[{
-        "frame_id":14320,
+        "frame_id":14448,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id":14320,
+        "frame_id":14448,
         "boxes":[],
-        "movement":[-5,7]
+        "movement":[-0,0]
       },{
-        "frame_id":14321,
+        "frame_id":14448,
         "boxes":[],
-        "movement":[-4,7]
+        "movement":[-0,0]
       },{
-        "frame_id":14321,
+        "frame_id":14448,
         "boxes":[],
-        "movement":[-4,7]
+        "movement":[-0,0]
       },{
-        "frame_id":14322,
+        "frame_id":14449,
         "boxes":[],
-        "movement":[-5,6]
+        "movement":[-0,0]
       },{
-        "frame_id":14322,
+        "frame_id":14449,
         "boxes":[],
-        "movement":[-4,5]
+        "movement":[-0,0]
       },{
-        "frame_id":14323,
+        "frame_id":14449,
         "boxes":[],
-        "movement":[-4,5]
+        "movement":[-0,0]
       },{
-        "frame_id":14323,
+        "frame_id":14450,
         "boxes":[],
-        "movement":[-5,5]
-      },{
-        "frame_id":14324,
-        "boxes":[],
-        "movement":[-4,4]
-      },{
-        "frame_id":14324,
-        "boxes":[],
-        "movement":[-5,3]
-      },{
-        "frame_id":14325,
-        "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
-          }],
-        "movement":[-4,3]
-      },{
-        "frame_id":14325,
-        "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
-          }],
-        "movement":[-4,2]
-      },{
-        "frame_id":14327,
-        "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
-          }],
-        "movement":[-5,2]
-      },{
-        "frame_id":14327,
-        "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
-          }],
-        "movement":[-4,1]
-      },{
-        "frame_id":14328,
-        "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
-          }],
-        "movement":[-4,1]
-      },{
-        "frame_id":14328,
-        "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
-          }],
         "movement":[-5,0]
       },{
-        "frame_id":14327,
+        "frame_id":14450,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14450,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "frame_id":14450,
         "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
+            "type":"throw",
+            "bottom":0,
+            "height":16,
+            "left":-96,
+            "width":62
           }],
-        "movement":[-4,-1]
+        "movement":[-0,0]
       },{
-        "frame_id":14327,
+        "frame_id":14450,
         "boxes":[{
-            "type":"attack",
-            "bottom":35,
-            "height":26,
-            "left":-69,
-            "width":13
-          },{
-            "type":"attack",
-            "bottom":42,
-            "height":15,
-            "left":-56,
-            "width":28
+            "type":"throw",
+            "bottom":0,
+            "height":16,
+            "left":-96,
+            "width":62
           }],
-        "movement":[-5,0]
-      },{
-        "frame_id":14328,
-        "boxes":[],
-        "movement":[-4,-2]
-      },{
-        "frame_id":14328,
-        "boxes":[],
-        "movement":[-4,-2]
-      },{
-        "frame_id":14342,
-        "boxes":[],
-        "movement":[-5,-2]
-      },{
-        "frame_id":14342,
-        "boxes":[],
-        "movement":[-4,-3]
-      },{
-        "frame_id":14343,
-        "boxes":[],
-        "movement":[-4,-4]
-      },{
-        "frame_id":14343,
-        "boxes":[],
-        "movement":[-5,-4]
-      },{
-        "frame_id":14344,
-        "boxes":[],
-        "movement":[-4,-5]
-      },{
-        "frame_id":14344,
-        "boxes":[],
-        "movement":[-5,-5]
-      },{
-        "frame_id":14345,
-        "boxes":[],
-        "movement":[-4,-6]
-      },{
-        "frame_id":14345,
-        "boxes":[],
-        "movement":[-4,-6]
-      },{
-        "frame_id":14346,
-        "boxes":[],
-        "movement":[-5,-7]
-      },{
-        "frame_id":14346,
-        "boxes":[],
-        "movement":[-4,-7]
-      },{
-        "frame_id":14347,
-        "boxes":[],
-        "movement":[-4,-8]
-      },{
-        "frame_id":14347,
-        "boxes":[],
-        "movement":[-5,-8]
-      },{
-        "frame_id":13922,
-        "boxes":[],
-        "movement":[-4,-9]
-      },{
-        "frame_id":13922,
-        "boxes":[],
-        "movement":[-5,-9]
+        "movement":[-0,0]
       }]
   },
   "dd6c":{
