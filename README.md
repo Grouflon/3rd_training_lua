@@ -23,7 +23,7 @@ The right version of Fightcade can be downloaded [here](https://www.fightcade.co
 ## Bug reporting / Contribute
 If you want to be informed when a new version come out and/or discuss the current bugs and features, you can join the [Discord server](https://discord.gg/CDXQyFmcSe) of the project.
 
-This training mode is still in development and you may encounter bugs or missing features while using it. Please report anything weird on the [issues page](https://github.com/Grouflon/3rd_training_lua/issues).
+This training mode is still in development and you may encounter bugs or missing features while using it. Please report any bug on the **#bugs** channel, and any feature request on the **#features** channel of the discord server.
 
 If you wish to contribute or give any feedback, feel free to get in touch or submit pull requests.
 
@@ -33,6 +33,10 @@ If you wish to contribute or give any feedback, feel free to get in touch or sub
 A: Make sure you have the proper roms. You must have at least 2 roms: _sfiii3.zip_ and _sfiii3a.zip_. sfiii3 is the japanese version and the zip contains _sfiii3_japan_nocd.29f400.u2_. sfiiia is the american version and contains _sfiii3_usa.29f400.u2_.
 
 You may need to rename zip files so they match exactly what the emulator expect for.
+
+**Q: When I run the script, the characters can no longer move**
+
+A: You are probably using the script on FBA-RR which is not supported anymore, in order to benefit from the last features and improvement you must run the script on Fightcade2's FBNeo emulator. However if you still want to use FBA-RR, you can go back to v0.6 which was the last version supported on FBA-RR.
 
 **Q: Emulator crash when I run lua script**
 
@@ -50,6 +54,13 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
 ## Changelog
+### v0.9 (???)
+- [Feature] The dummy will now counter-attack on landing after an air recovery
+- [Feature] Yun's Genei Jin is now fully blocked/parried
+- [Bugfix/Improvement] Fixed a lot of bugs in the overall blocking/parrying/counter-attack system
+- [Bugfix/Improvement] Revamped the wake-up / fast wake-up triggering and counter-attack system to be more reliable and maintainable
+
+
 ### v0.8 (23/12/2020)
 - [Feature] Special trainings section + parry special training
 - [Feature] Stun delayed reset mode
