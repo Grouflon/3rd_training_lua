@@ -3117,7 +3117,8 @@ function update_recording(_input)
   if is_in_match and not is_menu_open then
 
     -- manage input
-    if player.input.pressed.coin or dummy.input.pressed.coin then
+    local _input_pressed = (not swap_characters and player.input.pressed.coin) or (swap_characters and dummy.input.pressed.coin)
+    if _input_pressed then
       if frame_number < (last_coin_input_frame + _input_buffer_length) then
         last_coin_input_frame = -1
 
@@ -4049,7 +4050,7 @@ function on_gui()
   if is_in_match then
     update_draw_hitboxes()
 
-    if P1.input.pressed.start or P2.input.pressed.start then
+    if P1.input.pressed.start then
       printed_geometry = {}
     end
 
@@ -4206,9 +4207,9 @@ function on_gui()
   end
 
   if is_in_match then
-    local _should_toggle = P1.input.pressed.start or P2.input.pressed.start
+    local _should_toggle = P1.input.pressed.start
     if log_enabled then
-      _should_toggle = P1.input.released.start or P2.input.released.start
+      _should_toggle = P1.input.released.start
     end
     _should_toggle = not log_start_locked and _should_toggle
     if _should_toggle then
@@ -4313,7 +4314,7 @@ function on_gui()
       end
     end
 
-    if P1.input.pressed.LP or P2.input.pressed.LP then
+    if P1.input.pressed.LP then
       if is_main_menu_selected then
       elseif _current_entry.validate then
         _current_entry:validate()
@@ -4321,7 +4322,7 @@ function on_gui()
       end
     end
 
-    if P1.input.pressed.MP or P2.input.pressed.MP then
+    if P1.input.pressed.MP then
       if is_main_menu_selected then
       elseif _current_entry.reset then
         _current_entry:reset()
@@ -4329,7 +4330,7 @@ function on_gui()
       end
     end
 
-    if P1.input.pressed.LK or P2.input.pressed.LK then
+    if P1.input.pressed.LK then
       if is_main_menu_selected then
       elseif _current_entry.cancel then
         _current_entry:cancel()
