@@ -2146,6 +2146,25 @@ function predict_player_position(_player_obj, _frames_prediction)
   return _result
 end
 
+function predict_frames_before_landing(_player_obj, _max_lookahead_frames)
+  _max_lookahead_frames = _max_lookahead_frames or 15
+  if _player_obj.pos_y == 0 then
+    return 0
+  end
+
+  local _result = -1
+  for _i = 1, _max_lookahead_frames do
+    local _pos = predict_player_position(_player_obj, _i)
+    --local _px, _py = game_to_screen_space(_pos[1], _pos[2])
+    --print_point(_px, _py, 0xFFFF00FF)
+    if _pos[2] <= 3 then
+      _result = _i
+      break
+    end
+  end
+  return _result
+end
+
 function predict_hitboxes(_player_obj, _frames_prediction)
   local _debug = false
   local _result = {
@@ -2594,6 +2613,14 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
     handle_recording()
+  elseif _defender.has_just_entered_air_recovery then
+    clear_input_sequence(_defender)
+    _defender.counter.ref_time = -1
+    _defender.counter.attack_frame = frame_number + 100
+    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.air_recovery = true
+    handle_recording()
+    log(_defender.prefix, "counter_attack", "init ca (air)")
   end
 
   if not _defender.counter.sequence then
@@ -2611,6 +2638,12 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
 
 
   if _defender.counter.sequence then
+    if _defender.counter.air_recovery then
+      local _frames_before_landing = predict_frames_before_landing(_defender)
+      if _frames_before_landing >= 0 then
+        _defender.counter.attack_frame = frame_number + _frames_before_landing + 2
+      end
+    end
     local _frames_remaining = _defender.counter.attack_frame - frame_number
     if _debug then
       print(_frames_remaining)
@@ -2623,6 +2656,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       queue_input_sequence(_defender, _defender.counter.sequence)
       _defender.counter.sequence = nil
       _defender.counter.attack_frame = -1
+      _defender.counter.air_recovery = false
     end
   elseif button_gesture[_button] == "recording" and _defender.counter.recording_slot > 0 then
     if _defender.counter.attack_frame <= (frame_number + 1) then
@@ -2635,6 +2669,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       log(_defender.prefix, "counter_attack", "queue recording")
       _defender.counter.attack_frame = -1
       _defender.counter.recording_slot = -1
+      _defender.counter.air_recovery = false
       set_recording_state(_input, 1)
       set_recording_state(_input, 4)
       override_replay_slot = -1
@@ -3292,6 +3327,7 @@ function read_player_vars(_player_obj)
   _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
 
 
+
   if _player_obj.id == 1 then
     _player_obj.max_meter_gauge = memory.readbyte(0x020695B3)
     _player_obj.max_meter_count = memory.readbyte(0x020695BD)
@@ -3326,7 +3362,7 @@ function read_player_vars(_player_obj)
   if _player_obj.debug_freeze_frames and _player_obj.remaining_freeze_frames > 0 then print(string.format("%d - %d remaining freeze frames", frame_number, _player_obj.remaining_freeze_frames)) end
 
   -- VELOCITY & ACCELERATION
-  local _velocity_frame_sampling_count = 2
+  local _velocity_frame_sampling_count = 10
 
   _player_obj.pos_samples = _player_obj.pos_samples or {}
   _player_obj.velocity_samples = _player_obj.velocity_samples or {}
@@ -3367,6 +3403,27 @@ function read_player_vars(_player_obj)
   _player_obj.has_just_landed = is_state_on_ground(_player_obj.standing_state, _player_obj) and not is_state_on_ground(_player_obj.previous_standing_state, _player_obj)
   if _debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
   if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
+
+  -- AIR RECOVERY STATE
+  local _debug_air_recovery = false
+  local _previous_is_in_air_recovery = _player_obj.is_in_air_recovery or false
+  local _r1 = memory.readbyte(_player_obj.base + 0x12F)
+  local _r2 = memory.readbyte(_player_obj.base + 0x3C7)
+  _player_obj.is_in_air_recovery = _player_obj.standing_state == 0 and _r1 == 0 and _r2 == 0x06 and _player_obj.pos_y ~= 0
+  _player_obj.has_just_entered_air_recovery = not _previous_is_in_air_recovery and _player_obj.is_in_air_recovery
+
+  if not _previous_is_in_air_recovery and _player_obj.is_in_air_recovery then
+    log(_player_obj.prefix, "fight", string.format("air recovery 1"))
+    if _debug_air_recovery then
+      print(string.format("%s entered air recovery", _player_obj.prefix))
+    end
+  end
+  if _previous_is_in_air_recovery and not _player_obj.is_in_air_recovery then
+    log(_player_obj.prefix, "fight", string.format("air recovery 0"))
+    if _debug_air_recovery then
+      print(string.format("%s exited air recovery", _player_obj.prefix))
+    end
+  end
 
   -- IS IDLE
   _player_obj.idle_time = _player_obj.idle_time or 0
@@ -3623,7 +3680,11 @@ function read_player_vars(_player_obj)
     _player_obj.previous_is_wakingup = _player_obj.is_wakingup or false
     _player_obj.is_wakingup = _player_obj.is_wakingup or false
     _player_obj.wakeup_time = _player_obj.wakeup_time or 0
-    if _previous_is_flying_down_flag == 1 and _player_obj.is_flying_down_flag == 0 and _player_obj.standing_state == 0 and _player_obj.movement_type ~= 2 then -- movement type 2 is hugo's running grab
+    if _previous_is_flying_down_flag == 1 and _player_obj.is_flying_down_flag == 0 and _player_obj.standing_state == 0 and
+      (
+        _player_obj.movement_type ~= 2 -- movement type 2 is hugo's running grab
+        and _player_obj.movement_type ~= 5 -- movement type 5 is ryu's reversal DP on landing
+      ) then
       _player_obj.is_wakingup = true
       _player_obj.wakeup_time = 0
       _player_obj.wakeup_animation = _player_obj.animation
