@@ -59,7 +59,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - [Feature] Yun's Genei Jin is now fully blocked/parried
 - [Bugfix/Improvement] Fixed a lot of bugs in the overall blocking/parrying/counter-attack system
 - [Bugfix/Improvement] Revamped the wake-up / fast wake-up triggering and counter-attack system to be more reliable and maintainable
-
+- [Bugfix] Fixed recordings not loading correctly on US-regioned machines
 
 ### v0.8 (23/12/2020)
 - [Feature] Special trainings section + parry special training

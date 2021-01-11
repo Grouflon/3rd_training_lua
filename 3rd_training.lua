@@ -2742,7 +2742,7 @@ function open_load_popup()
 
   load_file_index = 1
 
-  local _cmd = "dir "..string.gsub(saved_recordings_path, "/", "\\")
+  local _cmd = "dir /b "..string.gsub(saved_recordings_path, "/", "\\")
   local _f = io.popen(_cmd)
   if _f == nil then
     print(string.format("Error: Failed to execute command \"%s\"", _cmd))
@@ -2752,7 +2752,7 @@ function open_load_popup()
   load_file_list = {}
   for _line in string.gmatch(_str, '([^\r\n]+)') do -- Split all lines that have ".json" in them
     if string.find(_line, ".json") ~= nil then
-      local _file = _line:sub(37) -- File path always starts at this index
+      local _file = _line
       table.insert(load_file_list, _file)
     end
   end
