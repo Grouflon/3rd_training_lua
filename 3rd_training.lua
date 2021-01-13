@@ -682,6 +682,7 @@ blocking_mode =
   "always",
   "first hit",
   "random",
+  "after first hit",
 }
 
 tech_throws_mode =
@@ -2244,6 +2245,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   local _debug = false
   local _debug_block_string = false
+  
+  local auto_block_frame_count = 90
 
   -- ensure variables
   _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count or 0
@@ -2252,6 +2255,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   _dummy.blocking.last_attack_hit_id = _dummy.blocking.last_attack_hit_id or 0
   _dummy.blocking.is_bypassing_freeze_frames = _dummy.blocking.is_bypassing_freeze_frames or false
   _dummy.blocking.bypassed_freeze_frames = _dummy.blocking.bypassed_freeze_frames or 0
+  _dummy.blocking.auto_block_frames = _dummy.blocking.auto_block_frames or auto_block_frame_count
 
   function reset_parry_cooldowns(_player_obj)
     memory.writebyte(_player_obj.parry_forward_cooldown_time_addr, 0)
@@ -2335,7 +2339,19 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     _dummy.blocking.blocked_hit_count = 0
     return
   end
-
+  
+  if _mode == 5 then
+	_dummy.blocking.auto_block_frames = math.max(_dummy.blocking.auto_block_frames - 1, 0)
+  
+    if (_dummy.has_just_blocked) then
+	  _dummy.blocking.auto_block_frames = auto_block_frame_count
+    end
+  
+    if (_dummy.has_just_been_hit) then
+	  _dummy.blocking.auto_block_frames = auto_block_frame_count
+    end
+  end
+  
   function get_meta_hit(_character_str, _move_id, _hit_id)
     local _character_meta = frame_data_meta[_character_str]
     if _character_meta == nil then return nil end
@@ -2426,7 +2442,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.expected_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
             log(_dummy.prefix, "blocking", string.format("block in %d", _dummy.blocking.expected_attack_animation_hit_frame - _player_relevant_animation_frame))
-
+			
             if _mode == 3 then -- first hit
               if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
                 _dummy.blocking.should_block = false
@@ -2442,6 +2458,12 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
                   _dummy.blocking.wait_for_block_string = true
                 end
               end
+			elseif _mode == 5 then -- after first hit
+				if _dummy.blocking.auto_block_frames > 0 then
+					_dummy.blocking.should_block = true
+				else
+					_dummy.blocking.should_block = false
+				end
             end
 
             if _dummy.blocking.wait_for_block_string then
