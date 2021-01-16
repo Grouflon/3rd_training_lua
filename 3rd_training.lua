@@ -21,23 +21,27 @@ print("")
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
 -- https://github.com/TASVideos/mame-rr/wiki/Lua-scripting-functions
 
+-- Resources
+-- https://github.com/Jesuszilla/mame-rr-scripts/blob/master/framedata.lua
+
 json = require ("lua_libs/dkjson")
 
 recording_slot_count = 8
 
 -- debug options
 developer_mode = false -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
-assert_enabled = false
+assert_enabled = developer_mode or false
 debug_wakeup = false
-log_enabled = false
-log_categories_shown =
+log_enabled = developer_mode or false
+log_categories_display =
 {
-  input = true,
-  fight = true,
-  animation = true,
-  parry_training_FORWARD = false,
-  blocking = true,
-  counter_attack = true,
+  input =                     { history = false, print = false },
+  projectiles =               { history = true, print = true },
+  fight =                     { history = true, print = true },
+  animation =                 { history = false, print = false },
+  parry_training_FORWARD =    { history = false, print = false },
+  blocking =                  { history = true, print = true },
+  counter_attack =            { history = false, print = false },
 }
 
 function t_assert(_condition, _msg)
@@ -1410,6 +1414,11 @@ log_line_count_max = 25
 log_line_offset = 0
 function log(_section_name, _category_name, _event_name)
   if not log_enabled then return end
+
+  if log_categories_display[_category_name] and log_categories_display[_category_name].print then
+    print(string.format("%d - [%s][%s] %s", frame_number, _section_name, _category_name, _event_name))
+  end
+
   if not log_recording_on then return end
 
   _event_name = _event_name or ""
@@ -1417,7 +1426,7 @@ function log(_section_name, _category_name, _event_name)
   _section_name = _section_name or "global"
   if log_sections[_section_name] == nil then _section_name = "global" end
 
-  if not log_categories_shown[_category_name] then return end
+  if not log_categories_display[_category_name] or not log_categories_display[_category_name].history then return end
 
   -- Add category if it does not exists
   if log_categories[_category_name] == nil then
@@ -1458,7 +1467,7 @@ function log_update()
     local _frame = logs[_i]
     local _filtered_frame = { frame = _frame.frame, events = {}}
     for _j, _event in ipairs(_frame.events) do
-      if log_categories_shown[_event.category] then
+      if log_categories_display[_event.category] and log_categories_display[_event.category].history then
         table.insert(_filtered_frame.events, _event)
       end
     end
@@ -1526,7 +1535,7 @@ function history_draw()
     local _frame = _log[_frame_index]
     local _events = {{}, {}, {}}
     for _j, _event in ipairs(_frame.events) do
-      if log_categories_shown[_event.category] then
+      if log_categories_display[_event.category] and log_categories_display[_event.category].history then
         table.insert(_events[log_sections[_event.section]], _event)
       end
     end
@@ -1560,12 +1569,6 @@ is_in_match = false
 
 -- HITBOXES
 frame_data = {}
-frame_data_meta = {}
-for i = 1, #characters do
-  frame_data_meta[characters[i]] = {
-    moves = {}
-  }
-end
 frame_data_file = "frame_data.json"
 
 function save_frame_data()
@@ -1693,8 +1696,6 @@ function define_box(_obj, _ptr, _type)
     if _type ~= "attack" then
       return
     end
-  elseif _obj.projectile then
-    _type = projectile_type[_type] or _type
   end
 
   local _box = {
@@ -1714,7 +1715,7 @@ end
 
 function update_game_object(_obj)
   if memory.readdword(_obj.base + 0x2A0) == 0 then --invalid objects
-    return
+    return false
   end
 
   _obj.friends = memory.readbyte(_obj.base + 0x1)
@@ -1740,6 +1741,7 @@ function update_game_object(_obj)
       define_box(_obj, memory.readdword(_obj.base + _box.offset) + (i-1)*8, _box.type)
     end
   end
+  return true
 end
 
 function update_hitboxes()
@@ -1885,6 +1887,10 @@ function update_draw_hitboxes()
   if training_settings.display_hitboxes then
     draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
     draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
+
+    for _id, _obj in pairs(projectiles) do
+      draw_hitboxes(_obj.pos_x, _obj.pos_y, _obj.flip_x, _obj.boxes)
+    end
   end
 
   if debug_settings.show_predicted_hitbox then
@@ -1952,7 +1958,7 @@ function draw_hitboxes(_pos_x, _pos_y, _flip_x, _boxes, _filter, _dilation)
   local _px, _py = game_to_screen_space(_pos_x, _pos_y)
 
   for __, _box in ipairs(_boxes) do
-    if not _filter or _filter[_box.type] == true then
+    if _filter == nil or _filter[_box.type] == true then
       local _c = 0x0000FFFF
       if (_box.type == "attack") then
         _c = 0xFF0000FF
@@ -2132,14 +2138,14 @@ end
 
 -- BLOCKING
 
-function predict_player_position(_player_obj, _frames_prediction)
+function predict_object_position(_object, _frames_prediction)
   local _result = {
-    _player_obj.pos_x,
-    _player_obj.pos_y,
+    _object.pos_x,
+    _object.pos_y,
   }
-  local _last_velocity_sample = _player_obj.velocity_samples[#_player_obj.velocity_samples]
-  local _velocity_x = _last_velocity_sample.x + _player_obj.acc.x * _frames_prediction
-  local _velocity_y = _last_velocity_sample.y + _player_obj.acc.y * _frames_prediction
+  local _last_velocity_sample = _object.velocity_samples[#_object.velocity_samples]
+  local _velocity_x = _last_velocity_sample.x + _object.acc.x * _frames_prediction
+  local _velocity_y = _last_velocity_sample.y + _object.acc.y * _frames_prediction
 
   _result[1] = _result[1] + _velocity_x * _frames_prediction
   _result[2] = _result[2] + _velocity_y * _frames_prediction
@@ -2154,7 +2160,7 @@ function predict_frames_before_landing(_player_obj, _max_lookahead_frames)
 
   local _result = -1
   for _i = 1, _max_lookahead_frames do
-    local _pos = predict_player_position(_player_obj, _i)
+    local _pos = predict_object_position(_player_obj, _i)
     --local _px, _py = game_to_screen_space(_pos[1], _pos[2])
     --print_point(_px, _py, 0xFFFF00FF)
     if _pos[2] <= 3 then
@@ -2224,7 +2230,7 @@ function predict_hitboxes(_player_obj, _frames_prediction)
         end
       end
     else -- velocity based movement
-      _next_attacker_pos = predict_player_position(_player_obj, _frame_delta)
+      _next_attacker_pos = predict_object_position(_player_obj, _frame_delta)
     end
 
     _result.frame = _frame_to_check
@@ -2326,6 +2332,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       end
       _dummy.blocking.listening = false
       _dummy.blocking.blocked_hit_count = 0
+      _dummy.blocking.should_block = false
       return
     end
   end
@@ -2333,6 +2340,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   if _mode == 1 or _dummy.throw.listening == true then
     _dummy.blocking.listening = false
     _dummy.blocking.blocked_hit_count = 0
+    _dummy.blocking.should_block = false
     return
   end
 
@@ -2354,6 +2362,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     _dummy.blocking.expected_attack_hit_id = 0
     _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
     _dummy.blocking.should_block = false
+    _dummy.blocking.should_block_projectile = false
+    _dummy.blocking.expected_projectile = false
     local _relevant_hit = get_meta_hit(_player.char_str, _player.relevant_animation, _player.last_attack_hit_id)
     if _relevant_hit and _player.remaining_freeze_frames > 0 and _relevant_hit.bypass_freeze then
       _dummy.blocking.is_bypassing_freeze_frames = true
@@ -2399,7 +2409,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         local _predicted_hit = predict_hitboxes(_player, predicted_frame_id)
         if _predicted_hit.frame_data then
           local _frame_delta = _predicted_hit.frame - _player_relevant_animation_frame
-          local _next_defender_pos = predict_player_position(_dummy, _frame_delta)
+          local _next_defender_pos = predict_object_position(_dummy, _frame_delta)
 
           --log(_dummy.prefix, "blocking", string.format("%d,%d", _predicted_hit.frame, _predicted_hit.hit_id))
 
@@ -2461,73 +2471,144 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         end
       end
     end
+  end
 
-    if _dummy.blocking.should_block then
+  -- projectiles
+  local _valid_projectiles = {}
+  for _id, _projectile_obj in pairs(projectiles) do
+    if (_projectile_obj.is_forced_one_hit and _projectile_obj.remaining_hits ~= 0xFF) or _projectile_obj.remaining_hits > 0 then
+      if _projectile_obj.emitter_id ~= _dummy.id or (_projectile_obj.emitter_id == _dummy.id and _projectile_obj.is_converted) then
+        table.insert(_valid_projectiles, _projectile_obj)
+      end
+    end
+  end
+  if #_valid_projectiles > 0 then
+    if not _dummy.blocking.listening_projectiles then
+      log(_dummy.prefix, "blocking", "listening proj 1")
+    end
+    _dummy.blocking.listening_projectiles = true
+  else
+    if _dummy.blocking.listening_projectiles then
+      log(_dummy.prefix, "blocking", "listening proj 0")
+    end
+    _dummy.blocking.listening_projectiles = false
+    if _dummy.blocking.should_block_projectile then
+      log(_dummy.prefix, "blocking", "block proj 0")
+    end
+    _dummy.blocking.should_block_projectile = false
+    _dummy.blocking.expected_projectile = false
+  end
 
-      local _hit_type = 1
-      local _blocking_style = _style -- 1 is block, 2 is parry
+  if _dummy.blocking.listening_projectiles and not _dummy.blocking.should_block_projectile then
+    local _max_prediction_frames = 2
+    local _box_type_matches = {{{"vulnerability", "ext. vulnerability"}, {"attack"}}}
+    for _i = 1, _max_prediction_frames do
+      for _j, _projectile_obj in ipairs(_valid_projectiles) do
+        local _frame_delta = _i - _projectile_obj.remaining_freeze_frames
+        if _frame_delta >= 0 then
+          local _next_defender_pos = predict_object_position(_dummy, _frame_delta)
+          local _next_projectile_pos = predict_object_position(_projectile_obj, _frame_delta)
 
-      if _blocking_style == 3 then -- red parry
-        if _dummy.blocking.blocked_hit_count ~= _red_parry_hit_count then
-          _blocking_style = 1
-        else
-          _blocking_style = 2
+          --if _projectile_obj.remaining_hits == 1 then
+          --  print_hitboxes(_next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, nil, 4)
+          --  print_hitboxes(_next_projectile_pos[1] , _next_projectile_pos[2], _projectile_obj.flip_x, _projectile_obj.boxes, nil, 2)
+          --end
+
+          if test_collision(_next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes,
+          _next_projectile_pos[1] , _next_projectile_pos[2], _projectile_obj.flip_x, _projectile_obj.boxes,
+          _box_type_matches,
+          4, -- defender hitbox dilation
+          2) then
+            _dummy.blocking.should_block_projectile = true
+            _dummy.blocking.projectile_hit_frame = frame_number + _i
+            _dummy.blocking.expected_projectile = _projectile_obj
+            log(_dummy.prefix, "blocking", string.format("block proj %s in %d", _projectile_obj.id, _i))
+            break
+          end
         end
       end
+      if _dummy.blocking.should_block_projectile then
+        break
+      end
+    end
+  end
 
+  if _dummy.blocking.should_block or _dummy.blocking.should_block_projectile then
+    local _hit_type = 1
+    local _blocking_style = _style -- 1 is block, 2 is parry
+
+    if _blocking_style == 3 then -- red parry
+      if _dummy.blocking.blocked_hit_count ~= _red_parry_hit_count then
+        _blocking_style = 1
+      else
+        _blocking_style = 2
+      end
+    end
+
+    if _dummy.blocking.should_block then
       local _frame_data_meta = frame_data_meta[_player.char_str].moves[_player.relevant_animation]
       if _frame_data_meta and _frame_data_meta.hits and _frame_data_meta.hits[_dummy.blocking.expected_attack_hit_id] then
         _hit_type = _frame_data_meta.hits[_dummy.blocking.expected_attack_hit_id].type
       end
+    elseif _dummy.blocking.should_block_projectile then
+      local _frame_data_meta = frame_data_meta[_player.char_str].projectiles[_dummy.blocking.expected_projectile.projectile_type]
+      if _frame_data_meta then
+        _hit_type = _frame_data_meta.type
+      end
+    end
 
-      local _animation_frame_delta = _dummy.blocking.expected_attack_animation_hit_frame - _player_relevant_animation_frame
+    local _animation_frame_delta = 0
+    if _dummy.blocking.should_block_projectile then
+      _animation_frame_delta = _dummy.blocking.projectile_hit_frame - frame_number
+    else
+      _animation_frame_delta = _dummy.blocking.expected_attack_animation_hit_frame - _player_relevant_animation_frame
+    end
 
-      if _blocking_style == 1 then
-        if _animation_frame_delta <= 2 then
-          log(_dummy.prefix, "blocking", string.format("dummy block %d", _dummy.blocking.expected_attack_hit_id))
-          if _debug then
-            print(string.format("%d - %s blocking", frame_number, _dummy.prefix))
-          end
-
-          if not _dummy.flip_input then
-            _input[_dummy.prefix..' Right'] = true
-            _input[_dummy.prefix..' Left'] = false
-          else
-            _input[_dummy.prefix..' Right'] = false
-            _input[_dummy.prefix..' Left'] = true
-          end
-
-          if _hit_type == 2 then
-            _input[_dummy.prefix..' Down'] = true
-          elseif _hit_type == 3 then
-            _input[_dummy.prefix..' Down'] = false
-          end
+    if _blocking_style == 1 then
+      if _animation_frame_delta <= 2 then
+        log(_dummy.prefix, "blocking", string.format("dummy block %d %d", _dummy.blocking.expected_attack_hit_id, to_bit(_dummy.blocking.should_block_projectile)))
+        if _debug then
+          print(string.format("%d - %s blocking", frame_number, _dummy.prefix))
         end
-      elseif _blocking_style == 2 then
-        _input[_dummy.prefix..' Right'] = false
-        _input[_dummy.prefix..' Left'] = false
-        _input[_dummy.prefix..' Down'] = false
 
-        local _parry_low = _hit_type == 2
-
-        if not _dummy.blocking.is_bypassing_freeze_frames then
-          _animation_frame_delta = _animation_frame_delta + _player.remaining_freeze_frames
-        end
-        if _animation_frame_delta == 1 or _animation_frame_delta == 2 then
-          log(_dummy.prefix, "blocking", string.format("parry %d", _dummy.blocking.expected_attack_hit_id))
-          if _debug then
-            print(string.format("%d - %s parrying", frame_number, _dummy.prefix))
-          end
-
-          if _parry_low then
-            _input[_dummy.prefix..' Down'] = true
-          else
-            _input[_dummy.prefix..' Right'] = _dummy.flip_input
-            _input[_dummy.prefix..' Left'] = not _dummy.flip_input
-          end
+        if not _dummy.flip_input then
+          _input[_dummy.prefix..' Right'] = true
+          _input[_dummy.prefix..' Left'] = false
         else
-          log(_dummy.prefix, "blocking", string.format("pre parry %d", _dummy.blocking.expected_attack_hit_id))
+          _input[_dummy.prefix..' Right'] = false
+          _input[_dummy.prefix..' Left'] = true
         end
+
+        if _hit_type == 2 then
+          _input[_dummy.prefix..' Down'] = true
+        elseif _hit_type == 3 then
+          _input[_dummy.prefix..' Down'] = false
+        end
+      end
+    elseif _blocking_style == 2 then
+      _input[_dummy.prefix..' Right'] = false
+      _input[_dummy.prefix..' Left'] = false
+      _input[_dummy.prefix..' Down'] = false
+
+      local _parry_low = _hit_type == 2
+
+      if not _dummy.blocking.is_bypassing_freeze_frames then
+        _animation_frame_delta = _animation_frame_delta + _player.remaining_freeze_frames
+      end
+      if _animation_frame_delta == 1 or _animation_frame_delta == 2 then
+        log(_dummy.prefix, "blocking", string.format("parry %d", _dummy.blocking.expected_attack_hit_id))
+        if _debug then
+          print(string.format("%d - %s parrying", frame_number, _dummy.prefix))
+        end
+
+        if _parry_low then
+          _input[_dummy.prefix..' Down'] = true
+        else
+          _input[_dummy.prefix..' Right'] = _dummy.flip_input
+          _input[_dummy.prefix..' Left'] = not _dummy.flip_input
+        end
+      else
+        log(_dummy.prefix, "blocking", string.format("pre parry %d", _dummy.blocking.expected_attack_hit_id))
       end
     end
   end
@@ -3260,6 +3341,113 @@ function write_game_vars()
   memory.writebyte(0x02078D06, training_settings.music_volume * 8)
 end
 
+function update_object_velocity(_object, _debug)
+  _debug = _debug or false
+  -- VELOCITY & ACCELERATION
+  local _velocity_frame_sampling_count = 10
+
+  _object.pos_samples = _object.pos_samples or {}
+  _object.velocity_samples = _object.velocity_samples or {}
+
+  if _object.remaining_freeze_frames > 0 then
+    return
+  end
+
+  local _pos = { x = _object.pos_x, y = _object.pos_y }
+  table.insert(_object.pos_samples, _pos)
+  while #_object.pos_samples > _velocity_frame_sampling_count do
+    table.remove(_object.pos_samples, 1)
+  end
+  local _velocity = {
+    x = (_pos.x - _object.pos_samples[1].x) / #_object.pos_samples,
+    y = (_pos.y - _object.pos_samples[1].y) / #_object.pos_samples,
+  }
+
+  table.insert(_object.velocity_samples, _velocity)
+  while #_object.velocity_samples > _velocity_frame_sampling_count do
+    table.remove(_object.velocity_samples, 1)
+  end
+  _object.acc = {
+    x = (_velocity.x - _object.velocity_samples[1].x) / #_object.velocity_samples,
+    y = (_velocity.y - _object.velocity_samples[1].y) / #_object.velocity_samples,
+  }
+end
+
+function read_projectiles()
+  local _MAX_OBJECTS = 30
+  projectiles_count = projectiles_count or 0
+  projectiles = projectiles or {}
+
+  -- flag everything as expired by default, we will reset the flag it we update the projectile
+  for _id, _obj in pairs(projectiles) do
+    _obj.expired = true
+  end
+
+  -- how we recover hitboxes data for each projectile is taken almost as is from the cps3-hitboxes.lua script
+  --object = {initial = 0x02028990, index = 0x02068A96},
+  local _index = 0x02068A96
+  local _initial = 0x02028990
+  local _list = 3
+  local _obj_index = memory.readwordsigned(_index + (_list * 2))
+
+  local _obj_slot = 1
+  while _obj_slot <= _MAX_OBJECTS and _obj_index ~= -1 do
+    local _base = _initial + bit.lshift(_obj_index, 11)
+    local _id = string.format("%08X", _base)
+    local _obj = projectiles[_id]
+    local _is_initialization = false
+    if _obj == nil then
+       _obj = {base = _base, projectile = _obj_slot}
+       _obj.id = _id
+       _obj.is_forced_one_hit = true
+       _is_initialization = true
+    end
+    if update_game_object(_obj) then
+      if _is_initialization then
+        _obj.initial_flip_x = _obj.flip_x
+      end
+
+      _obj.expired = false
+      _obj.emitter_id = memory.readbyte(_obj.base + 0x2) + 1
+      _obj.is_converted = _obj.flip_x ~= _obj.initial_flip_x
+      _obj.remaining_hits = memory.readbyte(_obj.base + 0x9C + 2)
+      if _obj.remaining_hits > 0 then
+        _obj.is_forced_one_hit = false
+      end
+      --_obj.remaining_hits2 = memory.readbyte(_obj.base + 0x49 + 0) -- Looks like attack validity or whatever
+      _obj.projectile_type = string.format("%02X", memory.readbyte(_obj.base + 0x91))
+      if _is_initialization then
+        print(_obj.projectile_type)
+      end
+      _obj.remaining_freeze_frames = memory.readbyte(_obj.base + 0x45)
+      if projectiles[_obj.id] == nil then
+        log(player_objects[_obj.emitter_id].prefix, "projectiles", string.format("projectile %s 1", _obj.id))
+      end
+      projectiles[_obj.id] = _obj
+    end
+
+    -- Get the index to the next object in this list.
+    _obj_index = memory.readwordsigned(_obj.base + 0x1C)
+    _obj_slot = _obj_slot + 1
+  end
+
+  -- if a projectile is still expired, we remove it
+  projectiles_count = 0
+  for _id, _obj in pairs(projectiles) do
+    if _obj.expired then
+      log(player_objects[_obj.emitter_id].prefix, "projectiles", string.format("projectile %s 0", _id))
+      projectiles[_id] = nil
+    else
+      projectiles_count = projectiles_count + 1
+    end
+  end
+
+  -- now the list is clean, let's do stuff
+  for _id, _obj in pairs(projectiles) do
+    update_object_velocity(_obj, true)
+  end
+end
+
 P1.debug_state_variables = false
 P1.debug_freeze_frames = false
 P1.debug_animation_frames = false
@@ -3361,29 +3549,7 @@ function read_player_vars(_player_obj)
 
   if _player_obj.debug_freeze_frames and _player_obj.remaining_freeze_frames > 0 then print(string.format("%d - %d remaining freeze frames", frame_number, _player_obj.remaining_freeze_frames)) end
 
-  -- VELOCITY & ACCELERATION
-  local _velocity_frame_sampling_count = 10
-
-  _player_obj.pos_samples = _player_obj.pos_samples or {}
-  _player_obj.velocity_samples = _player_obj.velocity_samples or {}
-
-  local _pos = { x = _player_obj.pos_x, y = _player_obj.pos_y }
-  table.insert(_player_obj.pos_samples, _pos)
-  while #_player_obj.pos_samples > _velocity_frame_sampling_count do
-    table.remove(_player_obj.pos_samples, 1)
-  end
-  local _velocity = {
-    x = (_pos.x - _player_obj.pos_samples[1].x) / #_player_obj.pos_samples,
-    y = (_pos.y - _player_obj.pos_samples[1].y) / #_player_obj.pos_samples,
-  }
-  table.insert(_player_obj.velocity_samples, _velocity)
-  while #_player_obj.velocity_samples > _velocity_frame_sampling_count do
-    table.remove(_player_obj.velocity_samples, 1)
-  end
-  _player_obj.acc = {
-    x = (_velocity.x - _player_obj.velocity_samples[1].x) / #_player_obj.velocity_samples,
-    y = (_velocity.y - _player_obj.velocity_samples[1].y) / #_player_obj.velocity_samples,
-  }
+  update_object_velocity(_player_obj)
 
   -- ATTACKING
   local _previous_is_attacking = _player_obj.is_attacking or false
@@ -3996,6 +4162,9 @@ function before_frame()
   read_player_vars(player_objects[1])
   read_player_vars(player_objects[2])
 
+  -- projectiles
+  read_projectiles()
+
   if is_in_match then
     update_flip_input(player_objects[1], player_objects[2])
     update_flip_input(player_objects[2], player_objects[1])
@@ -4087,9 +4256,19 @@ function before_frame()
   if _debug_position_prediction and player.pos_y > 0 then
     local _px, _py = game_to_screen_space(player.pos_x, player.pos_y)
     print_point(_px, _py, 0x00FFFFFF)
-    local _prediction = predict_player_position(player, 2)
+    local _prediction = predict_object_position(player, 2)
     _px, _py = game_to_screen_space(_prediction[1], _prediction[2])
     print_point(_px, _py, 0xFF0000FF)
+  end
+
+  if _debug_position_prediction then
+    for _id, _obj in pairs(projectiles) do
+      local _px, _py = game_to_screen_space(_obj.pos_x, _obj.pos_y)
+      print_point(_px, _py, 0x00FFFFFF)
+      local _prediction = predict_object_position(_obj, 4)
+      _px, _py = game_to_screen_space(_prediction[1], _prediction[2])
+      print_point(_px, _py, 0xFF0000FF)
+    end
   end
 
   log_update()
@@ -4636,7 +4815,6 @@ savestate.registerload(on_load_state)
 
 
 -- character specific stuff
-
 character_specific = {}
 for i = 1, #characters do
   character_specific[characters[i]] = { timed_sa = {false, false, false} }
@@ -4699,6 +4877,13 @@ character_specific.yang.timed_sa[3] = true;
 character_specific.yun.timed_sa[3] = true;
 
 -- ALEX
+frame_data_meta = {}
+for i = 1, #characters do
+  frame_data_meta[characters[i]] = {
+    moves = {},
+    projectiles = {},
+  }
+end
 frame_data_meta["alex"].moves["b7fc"] = { hits = {{ type = 2 }} } -- Cr LK
 frame_data_meta["alex"].moves["b99c"] = { hits = {{ type = 2 }} } -- Cr MK
 frame_data_meta["alex"].moves["babc"] = { hits = {{ type = 2 }} } -- Cr HK
@@ -5077,6 +5262,12 @@ frame_data_meta["remy"].moves["b450"] = { hits = {{ type = 3 }}, movement_type =
 frame_data_meta["remy"].moves["af40"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air LP
 frame_data_meta["remy"].moves["b040"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air MP
 frame_data_meta["remy"].moves["b140"] = { hits = {{ type = 3 }}, movement_type = 2 } -- Air HP
+
+frame_data_meta["remy"].projectiles["80"] = { type = 2 } -- HCharge ExP
+frame_data_meta["remy"].projectiles["82"] = { type = 2 } -- HCharge LK
+frame_data_meta["remy"].projectiles["83"] = { type = 2 } -- HCharge MK
+frame_data_meta["remy"].projectiles["84"] = { type = 2 } -- HCharge LK
+frame_data_meta["remy"].projectiles["85"] = { type = 2 } -- HCharge ExK
 
 -- TWELVE
 frame_data_meta["twelve"].moves["462c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
