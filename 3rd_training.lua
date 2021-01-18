@@ -2138,6 +2138,11 @@ end
 
 -- BLOCKING
 
+function find_move_frame_data(_char_str, _animation_id)
+  if not frame_data[_char_str] then return nil end
+  return frame_data[_char_str][_animation_id]
+end
+
 function predict_object_position(_object, _frames_prediction)
   local _result = {
     _object.pos_x,
@@ -2182,9 +2187,7 @@ function predict_hitboxes(_player_obj, _frames_prediction)
     pos_y = 0,
   }
 
-  if not frame_data[_player_obj.char_str] then return _result end
-
-  local _frame_data = frame_data[_player_obj.char_str][_player_obj.relevant_animation]
+  local _frame_data = find_move_frame_data(_player_obj.char_str, _player_obj.relevant_animation)
   if not _frame_data then return _result end
 
   local _frame_data_meta = frame_data_meta[_player_obj.char_str].moves[_player_obj.relevant_animation]
@@ -2260,9 +2263,15 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   _dummy.blocking.is_bypassing_freeze_frames = _dummy.blocking.is_bypassing_freeze_frames or false
   _dummy.blocking.bypassed_freeze_frames = _dummy.blocking.bypassed_freeze_frames or 0
 
-  function stop_listening(_player_obj)
+  function stop_listening_hits(_player_obj)
     _dummy.blocking.listening = false
     _dummy.blocking.should_block = false
+  end
+
+  function stop_listening_projectiles(_player_obj)
+    _dummy.blocking.listening_projectiles = false
+    _dummy.blocking.should_block_projectile = false
+    _dummy.blocking.expected_projectile = nil
   end
 
   function reset_parry_cooldowns(_player_obj)
@@ -2278,7 +2287,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   -- exit if playing recording
   if current_recording_state == 4 then
-    stop_listening(_dummy)
+    stop_listening_hits(_dummy)
+    stop_listening_projectiles(_dummy)
     return
   end
 
@@ -2338,14 +2348,15 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         if _debug then
           print(string.format("%d - %s stopped listening for attack animation", frame_number, _dummy.prefix))
         end
-        stop_listening(_dummy)
+        stop_listening_hits(_dummy)
       end
       return
     end
   end
 
   if _mode == 1 or _dummy.throw.listening == true then
-    stop_listening(_dummy)
+    stop_listening_hits(_dummy)
+    stop_listening_projectiles(_dummy)
     return
   end
 
@@ -2360,18 +2371,37 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     return _move_meta.hits[_hit_id]
   end
 
-  -- increment hit id
+  -- update blocked hit count
   if _dummy.has_just_blocked or _dummy.has_just_parried then
     _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
   end
 
-  if _dummy.has_just_blocked or _dummy.has_just_parried or _dummy.has_just_been_hit then
+
+  -- check if the hit we are expecting has expired or not
+  local _hit_expired = false
+  if _dummy.blocking.expected_attack_hit_id > 0 then
+    local _frame_data = find_move_frame_data(_player.char_str, _player.relevant_animation)
+    if _frame_data then
+      local _hit_frame = _frame_data.hit_frames[_dummy.blocking.expected_attack_hit_id]
+      local _last_hit_frame = 0
+      if type(_hit_frame) == "number" then
+        _last_hit_frame = _hit_frame
+      else
+        _last_hit_frame = _hit_frame.max
+      end
+      local _frame = frame_number - _player.current_animation_start_frame - _player.current_animation_freeze_frames
+      _hit_expired = _frame > _last_hit_frame
+    end
+  end
+
+  -- increment hit id
+  if _dummy.has_just_blocked or _dummy.has_just_parried or _dummy.has_just_been_hit or _hit_expired then
     log(_dummy.prefix, "blocking", string.format("next hit %d>%d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id))
     _dummy.blocking.last_attack_hit_id = _dummy.blocking.expected_attack_hit_id
     _dummy.blocking.expected_attack_hit_id = 0
     _dummy.blocking.should_block = false
     _dummy.blocking.should_block_projectile = false
-    _dummy.blocking.expected_projectile = false
+    _dummy.blocking.expected_projectile = nil
     local _relevant_hit = get_meta_hit(_player.char_str, _player.relevant_animation, _player.last_attack_hit_id)
     if _relevant_hit and _player.remaining_freeze_frames > 0 and _relevant_hit.bypass_freeze then
       _dummy.blocking.is_bypassing_freeze_frames = true
@@ -2500,12 +2530,10 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     if _dummy.blocking.listening_projectiles then
       log(_dummy.prefix, "blocking", "listening proj 0")
     end
-    _dummy.blocking.listening_projectiles = false
     if _dummy.blocking.should_block_projectile then
       log(_dummy.prefix, "blocking", "block proj 0")
     end
-    _dummy.blocking.should_block_projectile = false
-    _dummy.blocking.expected_projectile = false
+    stop_listening_projectiles(_dummy)
   end
 
   if _dummy.blocking.listening_projectiles and not _dummy.blocking.should_block_projectile then
