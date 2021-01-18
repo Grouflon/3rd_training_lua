@@ -2357,10 +2357,13 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   -- increment hit id
   if _dummy.has_just_blocked or _dummy.has_just_parried then
+    _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
+  end
+
+  if _dummy.has_just_blocked or _dummy.has_just_parried or _dummy.has_just_been_hit then
     log(_dummy.prefix, "blocking", string.format("next hit %d>%d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id))
     _dummy.blocking.last_attack_hit_id = _dummy.blocking.expected_attack_hit_id
     _dummy.blocking.expected_attack_hit_id = 0
-    _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count + 1
     _dummy.blocking.should_block = false
     _dummy.blocking.should_block_projectile = false
     _dummy.blocking.expected_projectile = false
