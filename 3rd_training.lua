@@ -2571,8 +2571,26 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _attacker_box_dilation = _meta_hit.dilation
           end
 
+          -- If we wake up, we need to foresee the position of the hurtboxes in the frame data so we can block frame 1
+          local _defender_boxes = _dummy.boxes
+          if _dummy.is_wakingup then
+            local _idle_startup_frame_data = frame_data[_dummy.char_str].wakeup_to_idle
+            local _idle_frame_data = frame_data[_dummy.char_str].idle
+            if _idle_startup_frame_data ~= nil and _idle_frame_data ~= nil then
+              local _wakeup_frame = _frame_delta - _dummy.remaining_wakeup_time
+              if _wakeup_frame >= 0 then
+                if _wakeup_frame <= #_idle_startup_frame_data.frames then
+                  _defender_boxes = _idle_startup_frame_data.frames[_wakeup_frame + 1].boxes
+                else
+                  local _frame_index = ((_wakeup_frame - #_idle_startup_frame_data.frames) % #_idle_frame_data.frames) + 1
+                  _defender_boxes = _idle_frame_data.frames[_frame_index].boxes
+                end
+              end
+            end
+          end
+
           if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
-            _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes, -- defender
+            _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _defender_boxes, -- defender
             _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
             _box_type_matches,
             4, -- defender hitbox dilation
@@ -2824,15 +2842,14 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     _defender.counter.sequence = nil
     _defender.counter.recording_slot = -1
   elseif _defender.has_just_started_wake_up or _defender.has_just_started_fast_wake_up then
-    local _duration = find_wake_up(_defender.char_str, _defender.wakeup_animation, _defender.wakeup_other_last_act_animation)
-    if _duration == nil then
+    if _defender.remaining_wakeup_time == 0 then
       return
     end
     if _debug then
       print(frame_number.." - init ca (wake up)")
     end
     log(_defender.prefix, "counter_attack", "init ca (wakeup)")
-    _defender.counter.attack_frame = frame_number + _duration
+    _defender.counter.attack_frame = frame_number + _defender.remaining_wakeup_time + 1 -- the +1 here means that there is an error somehere but I don't know where. the remaining wakeup time seems ok
     _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
     handle_recording()
@@ -4327,9 +4344,15 @@ function before_frame()
     dummy = player_objects[1]
   end
 
+  -- Can't do this inside read_player_vars cause we need both players to have read their stuff
   if dummy.has_just_started_wake_up or dummy.has_just_started_fast_wake_up then
     dummy.wakeup_other_last_act_animation = player.last_act_animation
+    dummy.remaining_wakeup_time = find_wake_up(dummy.char_str, dummy.wakeup_animation, dummy.wakeup_other_last_act_animation) or 0
   end
+  if dummy.remaining_wakeup_time ~= nil then
+    dummy.remaining_wakeup_time = math.max(dummy.remaining_wakeup_time - 1, 0)
+  end
+
 
   -- pose
   update_pose(_input, dummy, training_settings.pose)

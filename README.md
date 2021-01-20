@@ -57,6 +57,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 ### v0.9 (???)
 - [Feature] The dummy will now counter-attack on landing after an air recovery
 - [Feature] Yun's Genei Jin is now fully blocked/parried
+- [Bugfix/Improvement] All characters can now block/parry meaties and all first frame wake up hits
 - [Bugfix/Improvement] Fixed a lot of bugs in the overall blocking/parrying/counter-attack system
 - [Bugfix/Improvement] Revamped the wake-up / fast wake-up triggering and counter-attack system to be more reliable and maintainable
 - [Bugfix] Fixed recordings not loading correctly on US-regioned machines
