@@ -1691,6 +1691,108 @@ function record_framedata(_player_obj)
   end
 end
 
+function reset_current_recording_idle_animation()
+  if is_recording_idle_animation then
+    print(string.format("Dropped recording idle animation"))
+  end
+  is_recording_idle_animation = false
+  current_recording_idle_startup_animation = nil
+  current_recording_idle_animation = nil
+  wait_for_idle_start = false
+end
+
+function record_idle_framedata(_player_obj)
+  -- arm recording
+  if _player_obj.is_wakingup then
+    wait_for_idle_start = true
+  end
+
+  -- start recording
+  if wait_for_idle_start and _player_obj.is_idle then
+    current_recording_idle_startup_animation = {
+      frames = {}
+    }
+    current_recording_idle_animation = {
+      id = _player_obj.animation,
+      frames = {}
+    }
+    wait_for_idle_start = false
+    is_recording_idle_animation = true
+    print(string.format("Started recording idle animation"))
+  end
+
+  if is_recording_idle_animation and not _player_obj.is_idle then
+    reset_current_recording_idle_animation()
+  elseif is_recording_idle_animation then
+
+    -- if animation has changed, transfer already recorded frame to the startup animation
+    if _player_obj.has_animation_just_changed then
+      for __, _frame in ipairs(current_recording_idle_animation.frames) do
+        table.insert(current_recording_idle_startup_animation.frames, _frame)
+      end
+      current_recording_idle_animation.id = _player_obj.animation
+      current_recording_idle_animation.frames = {}
+    end
+
+    -- record frame
+    local _frame = {
+      id = _player_obj.animation_frame_id,
+      boxes = {}
+    }
+    for __, _box in ipairs(_player_obj.boxes) do
+      table.insert(_frame.boxes, copytable(_box))
+    end
+    table.insert(current_recording_idle_animation.frames, _frame)
+
+    -- detect loop
+    local _minimum_loop_size = 5
+    local _loop_size = 0
+    local _frames = current_recording_idle_animation.frames
+    for _i = 2, #_frames do
+      if _frames[_i].id == _frames[1].id then
+        for _j = 1, #_frames do
+          local _looped_index = _i + _j - 1
+          if _looped_index > #_frames then
+            break
+          end
+          if _frames[_j].id ~= _frames[_looped_index].id then
+            break
+          end
+
+          if _j == _i then
+            _loop_size = _i - 1
+            break
+          end
+        end
+      end
+      if _loop_size > _minimum_loop_size then
+        break
+      end
+    end
+
+    -- write into frame data
+    -- exceptions
+    if #current_recording_idle_animation.frames > 30 and _player_obj.char_str == "makoto" then
+      _loop_size = #current_recording_idle_animation.frames
+    end
+    if #current_recording_idle_animation.frames > 30 and _player_obj.char_str == "hugo" then
+      _loop_size = #current_recording_idle_animation.frames
+    end
+    if _loop_size > _minimum_loop_size then
+      while #current_recording_idle_animation.frames > _loop_size do
+        table.remove(current_recording_idle_animation.frames)
+      end
+      frame_data[_player_obj.char_str].wakeup_to_idle = current_recording_idle_startup_animation
+      frame_data[_player_obj.char_str].idle = current_recording_idle_animation
+      frame_data[_player_obj.char_str].dirty = true
+      print(string.format("Recorded idle animation \"%s\" of size %d/%d", current_recording_idle_animation.id, #current_recording_idle_startup_animation.frames, _loop_size))
+      is_recording_idle_animation = false
+      reset_current_recording_idle_animation()
+    end
+  end
+end
+
+
 function define_box(_obj, _ptr, _type)
   if _obj.friends > 1 then --Yang SA3
     if _type ~= "attack" then
@@ -1750,10 +1852,18 @@ function update_hitboxes()
 end
 
 function update_framedata_recording(_player_obj)
-  if debug_settings.record_framedata and is_in_match then
+  if debug_settings.record_framedata and is_in_match and not is_menu_open then
     record_framedata(_player_obj)
   else
     reset_current_recording_animation()
+  end
+end
+
+function update_idle_framedata_recording(_player_obj)
+  if debug_settings.record_idle_framedata and is_in_match and not is_menu_open then
+    record_idle_framedata(_player_obj)
+  else
+    reset_current_recording_idle_animation()
   end
 end
 
@@ -2974,6 +3084,7 @@ training_settings = {
 debug_settings = {
   show_predicted_hitbox = false,
   record_framedata = false,
+  record_idle_framedata = false,
   record_wakeupdata = false,
   debug_character = "",
   debug_move = "",
@@ -3096,6 +3207,7 @@ if developer_mode then
     entries = {
       checkbox_menu_item("Show Predicted Hitboxes", debug_settings, "show_predicted_hitbox"),
       checkbox_menu_item("Record Frame Data", debug_settings, "record_framedata"),
+      checkbox_menu_item("Record Idle Frame Data", debug_settings, "record_idle_framedata"),
       checkbox_menu_item("Record Wake-Up Data", debug_settings, "record_wakeupdata"),
       button_menu_item("Save Frame Data", save_frame_data),
       map_menu_item("Debug Character", debug_settings, "debug_character", _G, "frame_data"),
@@ -4280,6 +4392,7 @@ function before_frame()
   joypad.set(_input)
 
   update_framedata_recording(player_objects[1])
+  update_idle_framedata_recording(player_objects[2])
   update_wakeupdata_recording(player_objects[2])
 
   local _debug_position_prediction = false
