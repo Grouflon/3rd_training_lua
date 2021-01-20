@@ -1977,7 +1977,7 @@ function update_wakeupdata_recording(_dummy_obj)
     if _duration == nil then
       print(string.format("Unknown wakeup animation: %s", _wakeup_animation))
     elseif _duration ~= _wakeup_time then
-      print(string.format("Mismatching wakeup animation time %s: %d against default %d. last act animation: \"%s\"", _wakeup_animation, _wakeup_time, _duration, _dummy_obj.wakeup_other_last_act_animation))
+      print(string.format("Mismatching %s wakeup animation time %s: %d against default %d. last %s act animation: \"%s\"", dummy.char_str, _wakeup_animation, _wakeup_time, _duration, player.char_str, _dummy_obj.wakeup_other_last_act_animation))
     end
   end
 
@@ -2277,8 +2277,6 @@ function predict_frames_before_landing(_player_obj, _max_lookahead_frames)
   local _result = -1
   for _i = 1, _max_lookahead_frames do
     local _pos = predict_object_position(_player_obj, _i)
-    --local _px, _py = game_to_screen_space(_pos[1], _pos[2])
-    --print_point(_px, _py, 0xFFFF00FF)
     if _pos[2] <= 3 then
       _result = _i
       break
@@ -2506,7 +2504,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
 
   -- increment hit id
   if _dummy.has_just_blocked or _dummy.has_just_parried or _dummy.has_just_been_hit or _hit_expired then
-    log(_dummy.prefix, "blocking", string.format("next hit %d>%d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id))
+    log(_dummy.prefix, "blocking", string.format("next hit %d>%d %d", _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id, to_bit(_hit_expired)))
     _dummy.blocking.last_attack_hit_id = _dummy.blocking.expected_attack_hit_id
     _dummy.blocking.expected_attack_hit_id = 0
     _dummy.blocking.should_block = false
