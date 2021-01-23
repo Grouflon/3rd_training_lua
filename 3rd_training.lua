@@ -2113,11 +2113,13 @@ function draw_point(_x, _y, _color)
   gui.box(_x, _t, _x, _b, 0x00000000, _color)
 end
 
-function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _box_type_matches, _defender_hurtbox_dilation, _attacker_hitbox_dilation)
+function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_boxes, _attacker_x, _attacker_y, _attacker_flip_x, _attacker_boxes, _box_type_matches, _defender_hurtbox_dilation_x, _defender_hurtbox_dilation_y, _attacker_hitbox_dilation_x, _attacker_hitbox_dilation_y)
 
   local _debug = false
-  if (_defender_hurtbox_dilation == nil) then _defender_hurtbox_dilation = 0 end
-  if (_attacker_hitbox_dilation == nil) then _attacker_hitbox_dilation = 0 end
+  if (_defender_hurtbox_dilation_x == nil) then _defender_hurtbox_dilation_x = 0 end
+  if (_defender_hurtbox_dilation_y == nil) then _defender_hurtbox_dilation_y = 0 end
+  if (_attacker_hitbox_dilation_x == nil) then _attacker_hitbox_dilation_x = 0 end
+  if (_attacker_hitbox_dilation_y == nil) then _attacker_hitbox_dilation_y = 0 end
   if (_test_throws == nil) then _test_throws = false end
   if (_box_type_matches == nil) then _box_type_matches = {{{"vulnerability", "ext. vulnerability"}, {"attack"}}} end
 
@@ -2154,10 +2156,10 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
         local _d_b = _defender_y + _d_box.bottom
         local _d_t = _d_b + _d_box.height
 
-        _d_l = _d_l - _defender_hurtbox_dilation
-        _d_r = _d_r + _defender_hurtbox_dilation
-        _d_b = _d_b - _defender_hurtbox_dilation
-        _d_t = _d_t + _defender_hurtbox_dilation
+        _d_l = _d_l - _defender_hurtbox_dilation_x
+        _d_r = _d_r + _defender_hurtbox_dilation_x
+        _d_b = _d_b - _defender_hurtbox_dilation_y
+        _d_t = _d_t + _defender_hurtbox_dilation_y
 
         for j = 1, #_attacker_boxes do
           local _a_box = _attacker_boxes[j]
@@ -2183,10 +2185,10 @@ function test_collision(_defender_x, _defender_y, _defender_flip_x, _defender_bo
             local _a_b = _attacker_y + _a_box.bottom
             local _a_t = _a_b + _a_box.height
 
-            _a_l = _a_l - _attacker_hitbox_dilation
-            _a_r = _a_r + _attacker_hitbox_dilation
-            _a_b = _a_b - _attacker_hitbox_dilation
-            _a_t = _a_t + _attacker_hitbox_dilation
+            _a_l = _a_l - _attacker_hitbox_dilation_x
+            _a_r = _a_r + _attacker_hitbox_dilation_x
+            _a_b = _a_b - _attacker_hitbox_dilation_y
+            _a_t = _a_t + _attacker_hitbox_dilation_y
 
             if _debug then print(string.format("   testing (%d,%d,%d,%d)(%s) against (%d,%d,%d,%d)(%s)", _d_t, _d_r, _d_b, _d_l, _d_box.type, _a_t, _a_r, _a_b, _a_l, _a_box.type)) end
 
@@ -2593,8 +2595,10 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _defender_boxes, -- defender
             _predicted_hit.pos_x, _predicted_hit.pos_y, _player.flip_x, _predicted_hit.frame_data.boxes, -- attacker
             _box_type_matches,
-            4, -- defender hitbox dilation
-            _attacker_box_dilation
+            0, -- defender hitbox dilation x
+            4, -- defender hitbox dilation y
+            _attacker_box_dilation, -- x
+            _attacker_box_dilation -- y
           ) then
             _dummy.blocking.expected_attack_animation_hit_frame = _predicted_hit.frame
             _dummy.blocking.expected_attack_hit_id = _predicted_hit.hit_id
@@ -2676,6 +2680,8 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
           _next_projectile_pos[1] , _next_projectile_pos[2], _projectile_obj.flip_x, _projectile_obj.boxes,
           _box_type_matches,
           0, -- defender hitbox dilation
+          0, -- defender hitbox dilation
+          2,
           2) then
             _dummy.blocking.should_block_projectile = true
             _dummy.blocking.has_pre_parried = false
@@ -2948,7 +2954,8 @@ function update_tech_throws(_input, _attacker, _defender, _mode)
       _defender.pos_x, _defender.pos_y, _defender.flip_x, _defender.boxes, -- defender
       _attacker.pos_x, _attacker.pos_y, _attacker.flip_x, _attacker.boxes, -- attacker
       {{{"throwable"},{"throw"}}},
-      0 -- defender hitbox dilation
+      0, -- defender hitbox dilation
+      0
     ) then
       _defender.throw.listening = false
       if _debug then
