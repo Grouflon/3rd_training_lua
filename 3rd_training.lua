@@ -35,10 +35,10 @@ debug_wakeup = false
 log_enabled = developer_mode or false
 log_categories_display =
 {
-  input =                     { history = false, print = false },
-  projectiles =               { history = true, print = true },
+  input =                     { history = true, print = true },
+  projectiles =               { history = false, print = false },
   fight =                     { history = true, print = true },
-  animation =                 { history = false, print = false },
+  animation =                 { history = true, print = true },
   parry_training_FORWARD =    { history = false, print = false },
   blocking =                  { history = true, print = true },
   counter_attack =            { history = false, print = false },
@@ -1599,7 +1599,7 @@ function reset_current_recording_animation()
 end
 reset_current_recording_animation()
 
-function record_framedata(_player_obj)
+function record_framedata(_player_obj, _projectiles)
   local _debug = true
 
   local _force_recording = current_recording_animation and frame_data_meta[_player_obj.char_str].moves[current_recording_animation.id] ~= nil and frame_data_meta[_player_obj.char_str].moves[current_recording_animation.id].force_recording
@@ -1687,6 +1687,31 @@ function record_framedata(_player_obj)
         if (_box.type == "attack") or (_box.type == "throw") then
           table.insert(current_recording_animation.frames[_frame + 1].boxes, copytable(_box))
           current_recording_animation.attack_box_count = current_recording_animation.attack_box_count + 1
+        end
+      end
+
+      local _move_framedata_meta = frame_data_meta[_player_obj.char_str].moves[current_recording_animation.id]
+      if _move_framedata_meta and _move_framedata_meta.record_projectile then
+        local _inserted_projectile = false
+        for _id, _obj in pairs(_projectiles) do
+          if _obj.emitter_animation == current_recording_animation.id then
+            local _dx, _dy = _player_obj.pos_x - _obj.pos_x, _player_obj.pos_y - _obj.pos_y
+            if _player_obj.flip_x then _dx = _dx * -1 end
+            for __, _box in ipairs(_obj.boxes) do
+              if (_box.type == "attack") or (_box.type == "throw") then
+                local _temp_box = copytable(_box)
+                _temp_box.bottom = _temp_box.bottom - _dy
+                _temp_box.left = _temp_box.left + _dx
+                table.insert(current_recording_animation.frames[_frame + 1].boxes, _temp_box)
+                current_recording_animation.attack_box_count = current_recording_animation.attack_box_count + 1
+                _inserted_projectile = true
+              end
+            end
+          end
+        end
+
+        if _inserted_projectile and #current_recording_animation.hit_frames == 0 then
+          table.insert(current_recording_animation.hit_frames, _frame)
         end
       end
     end
@@ -1889,9 +1914,9 @@ function update_hitboxes()
   update_game_object(player_objects[2])
 end
 
-function update_framedata_recording(_player_obj)
+function update_framedata_recording(_player_obj, _projectiles)
   if debug_settings.record_framedata and is_in_match and not is_menu_open then
-    record_framedata(_player_obj)
+    record_framedata(_player_obj, _projectiles)
   else
     reset_current_recording_animation()
   end
@@ -2424,6 +2449,29 @@ function predict_hitboxes(_player_obj, _frames_prediction)
   return _result
 end
 
+function predict_hurtboxes(_player_obj, _frames_prediction)
+  -- There don't seem to be a need for exact idle animation hurtboxes prediction, so let's return the current hurtboxes for the general case
+  local _result = _player_obj.boxes
+
+  -- If we wake up, we need to foresee the position of the hurtboxes in the frame data so we can block frame 1
+  if _player_obj.is_wakingup then
+    local _idle_startup_frame_data = frame_data[_player_obj.char_str].wakeup_to_idle
+    local _idle_frame_data = frame_data[_player_obj.char_str].idle
+    if _idle_startup_frame_data ~= nil and _idle_frame_data ~= nil then
+      local _wakeup_frame = _frames_prediction - _player_obj.remaining_wakeup_time
+      if _wakeup_frame >= 0 then
+        if _wakeup_frame <= #_idle_startup_frame_data.frames then
+          _result = _idle_startup_frame_data.frames[_wakeup_frame + 1].boxes
+        else
+          local _frame_index = ((_wakeup_frame - #_idle_startup_frame_data.frames) % #_idle_frame_data.frames) + 1
+          _result = _idle_frame_data.frames[_frame_index].boxes
+        end
+      end
+    end
+  end
+  return _result
+end
+
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
   local _debug = false
@@ -2572,6 +2620,9 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
       _hit_expired = _frame > _last_hit_frame
     end
   end
+  if _dummy.blocking.should_block_projectile and _dummy.blocking.projectile_hit_frame < frame_number then
+    _hit_expired = true
+  end
 
   -- increment hit id
   if _dummy.has_just_blocked or _dummy.has_just_parried or _dummy.has_just_been_hit or _hit_expired then
@@ -2642,23 +2693,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _attacker_box_dilation = _meta_hit.dilation
           end
 
-          -- If we wake up, we need to foresee the position of the hurtboxes in the frame data so we can block frame 1
-          local _defender_boxes = _dummy.boxes
-          if _dummy.is_wakingup then
-            local _idle_startup_frame_data = frame_data[_dummy.char_str].wakeup_to_idle
-            local _idle_frame_data = frame_data[_dummy.char_str].idle
-            if _idle_startup_frame_data ~= nil and _idle_frame_data ~= nil then
-              local _wakeup_frame = _frame_delta - _dummy.remaining_wakeup_time
-              if _wakeup_frame >= 0 then
-                if _wakeup_frame <= #_idle_startup_frame_data.frames then
-                  _defender_boxes = _idle_startup_frame_data.frames[_wakeup_frame + 1].boxes
-                else
-                  local _frame_index = ((_wakeup_frame - #_idle_startup_frame_data.frames) % #_idle_frame_data.frames) + 1
-                  _defender_boxes = _idle_frame_data.frames[_frame_index].boxes
-                end
-              end
-            end
-          end
+          local _defender_boxes = predict_hurtboxes(_dummy, _frame_delta)
 
           if _predicted_hit.hit_id > _dummy.blocking.last_attack_hit_id and test_collision(
             _next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _defender_boxes, -- defender
@@ -2756,7 +2791,9 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             end
           end
 
-          if test_collision(_next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _dummy.boxes,
+          local _defender_boxes = predict_hurtboxes(_dummy, _frame_delta)
+
+          if test_collision(_next_defender_pos[1], _next_defender_pos[2], _dummy.flip_x, _defender_boxes,
           _next_projectile_pos[1] , _next_projectile_pos[2], _projectile_obj.flip_x, _projectile_boxes,
           _box_type_matches,
           0, -- defender hitbox dilation
@@ -2816,7 +2853,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
         _blocking_delta_threshold = 1
       end
       if _animation_frame_delta <= _blocking_delta_threshold then
-        log(_dummy.prefix, "blocking", string.format("dummy block %d %d", _dummy.blocking.expected_attack_hit_id, to_bit(_dummy.blocking.should_block_projectile)))
+        log(_dummy.prefix, "blocking", string.format("dummy block %d %d %d", _dummy.blocking.expected_attack_hit_id, to_bit(_dummy.blocking.should_block_projectile), _animation_frame_delta))
         if _debug then
           print(string.format("%d - %s blocking", frame_number, _dummy.prefix))
         end
@@ -3658,27 +3695,19 @@ function read_projectiles()
        _is_initialization = true
     end
     if update_game_object(_obj) then
+      _obj.emitter_id = memory.readbyte(_obj.base + 0x2) + 1
+
       if _is_initialization then
         _obj.initial_flip_x = _obj.flip_x
+        _obj.emitter_animation = player_objects[_obj.emitter_id].animation
       else
         _obj.lifetime = _obj.lifetime + 1
       end
 
       if #_obj.boxes > 0 then
-        if not _obj.has_activated then
-          local _dx = _obj.pos_x - player_objects[1].pos_x
-          local _dy = _obj.pos_y - player_objects[1].pos_y
-          print(player.animation_frame)
-          for _, _box in ipairs(_obj.boxes) do
-            _box.left = _box.left + _dx
-            _box.bottom = _box.bottom + _dy
-            print(_box)
-          end
-        end
         _obj.has_activated = true
       end
       _obj.expired = false
-      _obj.emitter_id = memory.readbyte(_obj.base + 0x2) + 1
       _obj.is_converted = _obj.flip_x ~= _obj.initial_flip_x
       _obj.previous_remaining_hits = _obj.remaining_hits or 0
       _obj.remaining_hits = memory.readbyte(_obj.base + 0x9C + 2)
@@ -4532,7 +4561,7 @@ function before_frame()
 
   joypad.set(_input)
 
-  update_framedata_recording(player_objects[1])
+  update_framedata_recording(player_objects[1], projectiles)
   update_idle_framedata_recording(player_objects[2])
   update_projectiles_recording(projectiles)
   update_wakeupdata_recording(player_objects[2])
@@ -5324,7 +5353,7 @@ frame_data_meta["urien"].moves["f1f4"] = { hits = {{ type = 3 }}, movement_type 
 
 frame_data_meta["urien"].moves["6aac"] = { hits = {{ type = 2 }} } -- Taunt
 
-frame_data_meta["urien"].moves["774c"] = { force_recording = true } -- Ex Aegis
+frame_data_meta["urien"].moves["774c"] = { record_projectile = true } -- Ex Aegis
 
 -- GOUKI
 frame_data_meta["gouki"].moves["1f68"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }, { type = 2 }}, force_recording = true } -- Cr LK
