@@ -4434,9 +4434,15 @@ function on_load_state()
   reset_player_objects()
   read_player_vars(player_objects[1])
   read_player_vars(player_objects[2])
-  if current_recording_state ~= 2 then
+
+  -- reset recording states in a useful way
+  if current_recording_state == 3 then
+    set_recording_state({}, 2)
+  elseif current_recording_state == 4 and (training_settings.replay_mode == 3 or training_settings.replay_mode == 4) then
     set_recording_state({}, 1)
+    set_recording_state({}, 4)
   end
+
   input_history[1] = {}
   input_history[2] = {}
   printed_geometry = {}
