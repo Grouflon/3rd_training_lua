@@ -454,7 +454,7 @@ stick_gesture = {
   "Kongou Kokuretsu Zan", -- Gouki hidden SA2
 }
 if is_4rd_strike then
-  table.add(stick_gesture, "Demon Armageddon") -- Gouki SA3
+  table.insert(stick_gesture, "Demon Armageddon") -- Gouki SA3
 end
 
 button_gesture =
