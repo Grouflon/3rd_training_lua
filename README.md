@@ -54,11 +54,11 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
 ## Changelog
-### v0.9 (???)
+### v0.9 (04/04/2021)
 - [Feature] Projectiles are now blocked/parried
 - [Feature] The dummy will now counter-attack on landing after an air recovery
-- [Feature] Yun's Genei Jin is now fully blocked/parried
-- [Feature] Added 4rd Strike rom support, thanks to @speedmccool25 work on frame data
+- [Feature] Yun's Genei Jin is now fully blocked/parried by the dummy
+- [Feature] Added 4rd Strike rom support in collaboration with @speedmccool25, but no frame data recorded yet.
 - [Improvement] When loading a save state, the recording state is reset to a useful state depending on the state you were before
 - [Bugfix/Improvement] All characters can now block/parry meaties and all first frame wake up hits
 - [Bugfix/Improvement] Fixed a lot of bugs in the overall blocking/parrying/counter-attack system

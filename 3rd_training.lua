@@ -15,7 +15,7 @@ else
 end
 
 print("-----------------------------")
-print("  3rd_training.lua - v0.9 dev")
+print("  3rd_training.lua - v0.9")
 print("  Training mode for "..game_name..", on Fightcade v2.0.91")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
