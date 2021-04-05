@@ -54,6 +54,9 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
 ## Changelog
+### v0.10 (???)
+- [Feature] New 3rd_spectator.lua script for displaying info during replays without messing with input
+
 ### v0.9 (04/04/2021)
 - [Feature] Projectiles are now blocked/parried
 - [Feature] The dummy will now counter-attack on landing after an air recovery
