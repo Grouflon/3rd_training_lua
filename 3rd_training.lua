@@ -2003,16 +2003,18 @@ function before_frame()
   end
 
   -- cap training settings
-  training_settings.p1_meter = math.min(training_settings.p1_meter, player_objects[1].max_meter_count * player_objects[1].max_meter_gauge)
-  training_settings.p2_meter = math.min(training_settings.p2_meter, player_objects[2].max_meter_count * player_objects[2].max_meter_gauge)
-  p1_meter_gauge_item.gauge_max = player_objects[1].max_meter_gauge * player_objects[1].max_meter_count
-  p1_meter_gauge_item.subdivision_count = player_objects[1].max_meter_count
-  p2_meter_gauge_item.gauge_max = player_objects[2].max_meter_gauge * player_objects[2].max_meter_count
-  p2_meter_gauge_item.subdivision_count = player_objects[2].max_meter_count
-  training_settings.p1_stun_reset_value = math.min(training_settings.p1_stun_reset_value, player_objects[1].stun_max)
-  training_settings.p2_stun_reset_value = math.min(training_settings.p2_stun_reset_value, player_objects[2].stun_max)
-  p1_stun_reset_value_gauge_item.gauge_max = player_objects[1].stun_max
-  p2_stun_reset_value_gauge_item.gauge_max = player_objects[2].stun_max
+  if is_in_match then
+    training_settings.p1_meter = math.min(training_settings.p1_meter, player_objects[1].max_meter_count * player_objects[1].max_meter_gauge)
+    training_settings.p2_meter = math.min(training_settings.p2_meter, player_objects[2].max_meter_count * player_objects[2].max_meter_gauge)
+    p1_meter_gauge_item.gauge_max = player_objects[1].max_meter_gauge * player_objects[1].max_meter_count
+    p1_meter_gauge_item.subdivision_count = player_objects[1].max_meter_count
+    p2_meter_gauge_item.gauge_max = player_objects[2].max_meter_gauge * player_objects[2].max_meter_count
+    p2_meter_gauge_item.subdivision_count = player_objects[2].max_meter_count
+    training_settings.p1_stun_reset_value = math.min(training_settings.p1_stun_reset_value, player_objects[1].stun_max)
+    training_settings.p2_stun_reset_value = math.min(training_settings.p2_stun_reset_value, player_objects[2].stun_max)
+    p1_stun_reset_value_gauge_item.gauge_max = player_objects[1].stun_max
+    p2_stun_reset_value_gauge_item.gauge_max = player_objects[2].stun_max
+  end
 
   local _write_game_vars_settings = 
   {
