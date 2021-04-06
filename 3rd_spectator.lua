@@ -8,15 +8,16 @@ print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
 print("")
 print("Command List:")
-print("- Lua Hotkey 1 (alt+1) to toggle the menu")
-print("- Lua Hotkey 2 (alt+2) to navigate up")
-print("- Lua Hotkey 3 (alt+3) to navigate down")
-print("- Lua Hotkey 4 (alt+4) to switch option")
+print("- Lua Hotkey 1 (alt+1) to toggle controller display")
+print("- Lua Hotkey 2 (alt+2) to toggle input history")
+print("- Lua Hotkey 3 (alt+3) to toggle hitboxes")
+print("- Lua Hotkey 4 (alt+4) to toggle gauges numbers")
+print("")
+print("* settings are saved between script sessions")
 print("")
 
 require("src/tools")
 require("src/display")
-require("src/menu_widgets")
 require("src/framedata")
 require("src/gamestate")
 require("src/input_history")
@@ -27,9 +28,10 @@ developer_mode = false
 spectator_settings_file = "spectator_settings.json"
 spectator_settings =
 {
-  display_input_history = false,
-  display_controllers = false,
-  display_hitboxes = false,
+  display_controllers = 0,
+  display_input_history = 0,
+  display_hitboxes = 0,
+  display_gauges = 0,
 }
 
 function save_spectator_settings()
@@ -46,39 +48,12 @@ function load_spectator_settings()
   end
 
   for _key, _value in pairs(_spectator_settings) do
-    spectator_settings[_key] = _value
+    if type(_value) == "number" then
+      spectator_settings[_key] = _value
+    end
   end
 end
 -- !settings
-
--- menu
-is_menu_open = false
-
-menu = make_menu(
-  71, 61, 312, 105, -- screen size 383,223
-  {
-    checkbox_menu_item("Display Input History", spectator_settings, "display_input_history"),
-    checkbox_menu_item("Display Controllers", spectator_settings, "display_controllers"),
-    checkbox_menu_item("Display Hitboxes", spectator_settings, "display_hitboxes"),
-  },
-  function()
-    save_spectator_settings()
-  end,
-  false -- no legend
-)
--- !menu
-
-
-function reset_user_input()
-  user_input = 
-  {
-    start = false,
-    up = false,
-    down = false,
-    A = false
-  }
-end
-reset_user_input()
 
 function on_start()
   load_spectator_settings()
@@ -113,51 +88,68 @@ end
 
 function on_gui()
 
-  if user_input.start then
-    is_menu_open = not is_menu_open
-    if is_menu_open then
-      menu_stack_push(menu)
-    else
-      menu_stack_pop(menu)
-    end
-  end
-
-  local _input =
-  {
-    up = user_input.up,
-    down = user_input.down,
-    left = false,
-    right = user_input.A,
-    validate = false,
-    reset = false
-  }
-  menu_stack_update(_input)
-
   if is_in_match then
 
-    if spectator_settings.display_input_history then
+    -- input history
+    if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 3 then
       input_history_draw(input_history[1], 4, 50, true)
+    end
+
+    if spectator_settings.display_input_history == 2 or spectator_settings.display_input_history == 3 then
       input_history_draw(input_history[2], 335, 50, false)
     end
 
-    if spectator_settings.display_hitboxes then
-      display_draw_hitboxes()
+    -- controllers
+    local _i = joypad.get()
+    if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 3 then
+      local _p1 = make_input_history_entry("P1", _i)
+      draw_controller(_p1, 44, 34)
     end
 
-    if spectator_settings.display_controllers then
-      local _i = joypad.get()
-      local _p1 = make_input_history_entry("P1", _i)
+    if spectator_settings.display_controllers == 2 or spectator_settings.display_controllers == 3 then
       local _p2 = make_input_history_entry("P2", _i)
-      draw_controller(_p1, 44, 34)
       draw_controller(_p2, 310, 34)
     end
+
+    -- hitboxes
+    if spectator_settings.display_hitboxes == 1 or spectator_settings.display_hitboxes == 3 then
+      draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
+
+      -- projectiles
+      for _id, _obj in pairs(projectiles) do
+        if _obj.emitter_id == 1 then
+          draw_hitboxes(_obj.pos_x, _obj.pos_y, _obj.flip_x, _obj.boxes)
+        end
+      end
+    end
+
+    if spectator_settings.display_hitboxes == 2 or spectator_settings.display_hitboxes == 3 then
+      draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
+
+      -- projectiles
+      for _id, _obj in pairs(projectiles) do
+        if _obj.emitter_id == 2 then
+          draw_hitboxes(_obj.pos_x, _obj.pos_y, _obj.flip_x, _obj.boxes)
+        end
+      end
+    end
+
+    -- input history
+    if spectator_settings.display_gauges == 1 or spectator_settings.display_gauges == 3 then
+      display_draw_life(player_objects[1])
+      display_draw_meter(player_objects[1])
+      display_draw_stun_gauge(player_objects[1])
+    end
+
+    if spectator_settings.display_gauges == 2 or spectator_settings.display_gauges == 3 then
+      display_draw_life(player_objects[2])
+      display_draw_meter(player_objects[2])
+      display_draw_stun_gauge(player_objects[2])
+    end
+
   end
 
-  menu_stack_draw()
-
   gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
-
-  reset_user_input()
 end
 
 emu.registerstart(on_start)
@@ -167,17 +159,22 @@ savestate.registerload(on_load_state)
 
 
 function hotkey1()
-  user_input.start = true
+  spectator_settings.display_controllers = (spectator_settings.display_controllers + 1) % 4
+  save_spectator_settings()
 end
 function hotkey2()
-  user_input.up = true
+  spectator_settings.display_input_history = (spectator_settings.display_input_history + 1) % 4
+  save_spectator_settings()
 end
 function hotkey3()
-  user_input.down = true
+  spectator_settings.display_hitboxes = (spectator_settings.display_hitboxes + 1) % 4
+  save_spectator_settings()
 end
 function hotkey4()
-  user_input.A = true
+  spectator_settings.display_gauges = (spectator_settings.display_gauges + 1) % 4
+  save_spectator_settings()
 end
+
 
 input.registerhotkey(1, hotkey1) 
 input.registerhotkey(2, hotkey2) 

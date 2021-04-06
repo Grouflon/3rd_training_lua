@@ -1,5 +1,8 @@
 -- # api
 
+screen_width = 383
+screen_height = 223
+
 -- push a persistent set of hitboxes to be drawn on the screen each frame
 function print_hitboxes(_pos_x, _pos_y, _flip_x, _boxes, _filter, _dilation)
   local _g = {
@@ -166,6 +169,7 @@ function display_update()
 
 end
 
+
 function display_draw_printed_geometry()
   -- printed geometry
   for _i, _geometry in ipairs(printed_geometry) do
@@ -188,12 +192,67 @@ function display_draw_hitboxes()
   end
 end
 
+
+function display_draw_life(_player_object)
+  local _x = 0
+  local _y = 17
+
+  local _t = string.format("%d/160", _player_object.life)
+
+  if _player_object.id == 1 then
+    _x = 13
+  elseif _player_object.id == 2 then
+    _x = screen_width - 11 - get_text_width(_t)
+  end
+
+  gui.text(_x, _y, _t, 0xFFFB63FF)
+end
+
+
+function display_draw_meter(_player_object)
+  local _x = 0
+  local _y = 210
+
+  local _gauge = _player_object.meter_gauge
+
+  if _player_object.meter_count == _player_object.max_meter_count then
+    _gauge = _player_object.max_meter_gauge
+  end
+
+  local _t = string.format("%d/%d", _gauge, _player_object.max_meter_gauge)
+
+  if _player_object.id == 1 then
+    _x = 51
+  elseif _player_object.id == 2 then
+    _x = screen_width - 49 - get_text_width(_t)
+  end
+
+  gui.text(_x, _y, _t, 0x00FFCEFF, 0x001433FF)
+end
+
+
+function display_draw_stun_gauge(_player_object)
+  local _x = 0
+  local _y = 23
+
+  local _t = string.format("%d/%d", _player_object.stun_bar, _player_object.stun_max)
+
+  if _player_object.id == 1 then
+    _x = 147
+  elseif _player_object.id == 2 then
+    _x = screen_width - 143 - get_text_width(_t)
+  end
+
+  gui.text(_x, _y, _t, 0xE70000FF, 0x001433FF)
+end
+
 -- # tools
 function game_to_screen_space(_x, _y)
   local _px = _x - screen_x + emu.screenwidth()/2
   local _py = emu.screenheight() - (_y - screen_y) - ground_offset
   return _px, _py
 end
+
 
 function get_text_width(_text)
   if #_text == 0 then

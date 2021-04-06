@@ -44,6 +44,8 @@ function make_player_object(_id, _base, _prefix)
       recording_slot = -1,
     },
     throw = {},
+    meter_gauge = 0,
+    meter_count = 0,
     max_meter_gauge = 0,
     max_meter_count = 0,
   }
@@ -260,6 +262,8 @@ function read_player_vars(_player_obj)
   _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
   _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
 
+  _player_obj.meter_gauge = memory.readbyte(_player_obj.gauge_addr)
+  _player_obj.meter_count = memory.readbyte(_player_obj.meter_addr[2])
   if _player_obj.id == 1 then
     _player_obj.max_meter_gauge = memory.readbyte(0x020695B3)
     _player_obj.max_meter_count = memory.readbyte(0x020695BD)
@@ -271,6 +275,9 @@ function read_player_vars(_player_obj)
     _player_obj.selected_sa = memory.readbyte(0x0201138C) + 1
     _player_obj.superfreeze_decount = memory.readbyte(0x02069088) -- seems to be in P1 memory space, don't know why
   end
+
+  -- LIFE
+  _player_obj.life = memory.readbyte(_player_obj.base + 0x9F)
 
   -- THROW
   _player_obj.throw_countdown = _player_obj.throw_countdown or 0
@@ -713,9 +720,9 @@ function read_player_vars(_player_obj)
   read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
 
   -- STUN
-  _player_obj.stun_max = bit.lshift(memory.readbyte(_player_obj.stun_max_addr) + 1, 16)
+  _player_obj.stun_max = memory.readbyte(_player_obj.stun_max_addr)
   _player_obj.stun_timer = memory.readbyte(_player_obj.stun_timer_addr)
-  _player_obj.stun_bar = bit.rshift(memory.readdword(_player_obj.stun_bar_addr), 8)
+  _player_obj.stun_bar = bit.rshift(memory.readdword(_player_obj.stun_bar_addr), 24)
 end
 
 

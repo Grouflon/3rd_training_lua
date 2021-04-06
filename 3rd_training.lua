@@ -1423,6 +1423,7 @@ training_settings = {
   p2_stun_reset_value = 0,
   stun_reset_delay = 20,
   display_input = true,
+  display_gauges = false,
   display_p1_input_history = false,
   display_p2_input_history = false,
   display_hitboxes = false,
@@ -1456,8 +1457,10 @@ life_refill_delay_item.is_disabled = function()
   return training_settings.life_mode ~= 2
 end
 
-p1_stun_reset_value_gauge_item = gauge_menu_item("P1 Stun reset value", training_settings, "p1_stun_reset_value", 0x10000, 0xFF0000FF)
-p2_stun_reset_value_gauge_item = gauge_menu_item("P2 Stun reset value", training_settings, "p2_stun_reset_value", 0x10000, 0xFF0000FF)
+p1_stun_reset_value_gauge_item = gauge_menu_item("P1 Stun reset value", training_settings, "p1_stun_reset_value", 64, 0xFF0000FF)
+p2_stun_reset_value_gauge_item = gauge_menu_item("P2 Stun reset value", training_settings, "p2_stun_reset_value", 64, 0xFF0000FF)
+p1_stun_reset_value_gauge_item.unit = 1
+p2_stun_reset_value_gauge_item.unit = 1
 stun_reset_delay_item = integer_menu_item("Stun reset delay", training_settings, "stun_reset_delay", 1, 100, false, 20)
 p1_stun_reset_value_gauge_item.is_disabled = function()
   return training_settings.stun_mode ~= 3
@@ -1544,6 +1547,7 @@ main_menu = make_multitab_menu(
       name = "Display",
       entries = {
         checkbox_menu_item("Display Controllers", training_settings, "display_input"),
+        checkbox_menu_item("Display Gauges Numbers", training_settings, "display_gauges"),
         checkbox_menu_item("Display P1 Input logs", training_settings, "display_p1_input_history"),
         checkbox_menu_item("Display P2 Input logs", training_settings, "display_p2_input_history"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
@@ -1860,6 +1864,7 @@ function write_player_vars(_player_obj)
       _life = 160
     end
     memory.writebyte(_player_obj.base + 0x9F, _life)
+    _player_obj.life = _life
   end
 
   -- METER
@@ -1943,14 +1948,14 @@ function write_player_vars(_player_obj)
       else
         _wanted_stun = training_settings.p2_stun_reset_value
       end
-      _wanted_stun = math.max(_wanted_stun - 1, 0)
+      _wanted_stun = math.max(_wanted_stun, 0)
 
       if _player_obj.stun_bar < _wanted_stun then
-        memory.writedword(_player_obj.stun_bar_addr, bit.lshift(_wanted_stun, 8));
+        memory.writedword(_player_obj.stun_bar_addr, bit.lshift(_wanted_stun, 24));
       elseif _player_obj.is_idle and _player_obj.idle_time > training_settings.stun_reset_delay then
         local _stun = _player_obj.stun_bar
-        _stun = math.max(_stun - 0x30000, _wanted_stun)
-        memory.writedword(_player_obj.stun_bar_addr, bit.lshift(_stun, 8));
+        _stun = math.max(_stun - 1, _wanted_stun)
+        memory.writedword(_player_obj.stun_bar_addr, bit.lshift(_stun, 24));
       end
     end
   end
@@ -2165,6 +2170,17 @@ function on_gui()
   if is_in_match then
 
     display_draw_printed_geometry()
+
+    if training_settings.display_gauges then
+      display_draw_life(player_objects[1])
+      display_draw_life(player_objects[2])
+
+      display_draw_meter(player_objects[1])
+      display_draw_meter(player_objects[2])
+
+      display_draw_stun_gauge(player_objects[1])
+      display_draw_stun_gauge(player_objects[2])
+    end
 
     -- hitboxes
     if training_settings.display_hitboxes then
