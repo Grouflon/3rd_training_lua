@@ -2180,6 +2180,9 @@ function on_gui()
 
       display_draw_stun_gauge(player_objects[1])
       display_draw_stun_gauge(player_objects[2])
+
+      display_draw_bonuses(player_objects[1])
+      display_draw_bonuses(player_objects[2])
     end
 
     -- hitboxes

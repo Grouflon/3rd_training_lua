@@ -195,7 +195,7 @@ end
 
 function display_draw_life(_player_object)
   local _x = 0
-  local _y = 17
+  local _y = 20
 
   local _t = string.format("%d/160", _player_object.life)
 
@@ -211,7 +211,7 @@ end
 
 function display_draw_meter(_player_object)
   local _x = 0
-  local _y = 210
+  local _y = 214
 
   local _gauge = _player_object.meter_gauge
 
@@ -222,9 +222,9 @@ function display_draw_meter(_player_object)
   local _t = string.format("%d/%d", _gauge, _player_object.max_meter_gauge)
 
   if _player_object.id == 1 then
-    _x = 51
+    _x = 53
   elseif _player_object.id == 2 then
-    _x = screen_width - 49 - get_text_width(_t)
+    _x = screen_width - 51 - get_text_width(_t)
   end
 
   gui.text(_x, _y, _t, 0x00FFCEFF, 0x001433FF)
@@ -244,6 +244,57 @@ function display_draw_stun_gauge(_player_object)
   end
 
   gui.text(_x, _y, _t, 0xE70000FF, 0x001433FF)
+end
+
+function display_draw_bonuses(_player_object)
+
+  if _player_object.damage_bonus > 0 then
+    local _x = 0
+    local _y = 7
+
+    local _t = string.format("+%d dmg", _player_object.damage_bonus)
+
+    if _player_object.id == 1 then
+      _x = 43
+    elseif _player_object.id == 2 then
+      _x = screen_width - 40 - get_text_width(_t)
+    end
+
+    gui.text(_x, _y, _t, 0xFF7184FF, 0x392031FF)
+  end
+
+  if _player_object.defense_bonus > 0 then
+
+    local _x = 0
+    local _y = 7
+
+    local _t = string.format("+%d def", _player_object.defense_bonus)
+
+    if _player_object.id == 1 then
+      _x = 10
+    elseif _player_object.id == 2 then
+      _x = screen_width - 7 - get_text_width(_t)
+    end
+
+    gui.text(_x, _y, _t, 0xD6E3EFFF, 0x000029FF)
+  end
+
+  if _player_object.stun_bonus > 0 then
+
+    local _x = 0
+    local _y = 33
+
+    local _t = string.format("+%d stun", _player_object.stun_bonus)
+
+    if _player_object.id == 1 then
+      _x = 103
+    elseif _player_object.id == 2 then
+      _x = screen_width - 101 - get_text_width(_t)
+    end
+
+    gui.text(_x, _y, _t, 0xD6E3EFFF, 0x000029FF)
+  end
+  
 end
 
 -- # tools

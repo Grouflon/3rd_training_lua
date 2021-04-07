@@ -279,6 +279,11 @@ function read_player_vars(_player_obj)
   -- LIFE
   _player_obj.life = memory.readbyte(_player_obj.base + 0x9F)
 
+  -- BONUSES
+  _player_obj.damage_bonus = memory.readword(_player_obj.base + 0x43A)
+  _player_obj.stun_bonus = memory.readword(_player_obj.base + 0x43E)
+  _player_obj.defense_bonus = memory.readword(_player_obj.base + 0x440)
+
   -- THROW
   _player_obj.throw_countdown = _player_obj.throw_countdown or 0
   _player_obj.previous_throw_countdown = _player_obj.throw_countdown

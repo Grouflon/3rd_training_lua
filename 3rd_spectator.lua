@@ -25,9 +25,13 @@ require("src/input_history")
 developer_mode = false
 
 -- settings
+settings_version = 1
 spectator_settings_file = "spectator_settings.json"
 spectator_settings =
 {
+  version = settings_version,
+
+  -- 0 is nothing, 1 is both players, 2 is P1 only, 3 is P2 only
   display_controllers = 0,
   display_input_history = 0,
   display_hitboxes = 0,
@@ -47,9 +51,11 @@ function load_spectator_settings()
     _spectator_settings = {}
   end
 
-  for _key, _value in pairs(_spectator_settings) do
-    if type(_value) == "number" then
-      spectator_settings[_key] = _value
+  if _spectator_settings.version == spectator_settings.version then
+    for _key, _value in pairs(_spectator_settings) do
+      if type(_value) == "number" then
+        spectator_settings[_key] = _value
+      end
     end
   end
 end
@@ -91,28 +97,28 @@ function on_gui()
   if is_in_match then
 
     -- input history
-    if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 3 then
+    if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 2 then
       input_history_draw(input_history[1], 4, 50, true)
     end
 
-    if spectator_settings.display_input_history == 2 or spectator_settings.display_input_history == 3 then
+    if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 3 then
       input_history_draw(input_history[2], 335, 50, false)
     end
 
     -- controllers
     local _i = joypad.get()
-    if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 3 then
+    if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 2 then
       local _p1 = make_input_history_entry("P1", _i)
       draw_controller(_p1, 44, 34)
     end
 
-    if spectator_settings.display_controllers == 2 or spectator_settings.display_controllers == 3 then
+    if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 3 then
       local _p2 = make_input_history_entry("P2", _i)
       draw_controller(_p2, 310, 34)
     end
 
     -- hitboxes
-    if spectator_settings.display_hitboxes == 1 or spectator_settings.display_hitboxes == 3 then
+    if spectator_settings.display_hitboxes == 1 or spectator_settings.display_hitboxes == 2 then
       draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
 
       -- projectiles
@@ -123,7 +129,7 @@ function on_gui()
       end
     end
 
-    if spectator_settings.display_hitboxes == 2 or spectator_settings.display_hitboxes == 3 then
+    if spectator_settings.display_hitboxes == 1 or spectator_settings.display_hitboxes == 3 then
       draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
 
       -- projectiles
@@ -134,17 +140,19 @@ function on_gui()
       end
     end
 
-    -- input history
-    if spectator_settings.display_gauges == 1 or spectator_settings.display_gauges == 3 then
+    -- gauges
+    if spectator_settings.display_gauges == 1 or spectator_settings.display_gauges == 2 then
       display_draw_life(player_objects[1])
       display_draw_meter(player_objects[1])
       display_draw_stun_gauge(player_objects[1])
+      display_draw_bonuses(player_objects[1])
     end
 
-    if spectator_settings.display_gauges == 2 or spectator_settings.display_gauges == 3 then
+    if spectator_settings.display_gauges == 1 or spectator_settings.display_gauges == 3 then
       display_draw_life(player_objects[2])
       display_draw_meter(player_objects[2])
       display_draw_stun_gauge(player_objects[2])
+      display_draw_bonuses(player_objects[2])
     end
 
   end
