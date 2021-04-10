@@ -253,7 +253,10 @@ function read_player_vars(_player_obj)
     --print(string.format("%d: %d(%d)",  _player_obj.id, _player_obj.remaining_freeze_frames, _player_obj.freeze_type))
   end
 
+  local _previous_action = _player_obj.action or 0x00
+
   _player_obj.is_attacking_ext = memory.readbyte(_player_obj.base + 0x429) > 0
+  _player_obj.previous_input_capacity = _player_obj.input_capacity or 0
   _player_obj.input_capacity = memory.readword(_player_obj.base + 0x46C)
   _player_obj.action = memory.readdword(_player_obj.base + 0xAC)
   _player_obj.action_ext = memory.readdword(_player_obj.base + 0x12C)
@@ -261,6 +264,16 @@ function read_player_vars(_player_obj)
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
   _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
   _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
+
+  _player_obj.busy_flag = memory.readword(_player_obj.base + 0x3D1)
+
+  local _previous_is_in_basic_action = _player_obj.is_in_basic_action or false
+  _player_obj.is_in_basic_action = _player_obj.action < 0xFF and _previous_action < 0xFF -- this triggers one frame early than it should, so we delay it artificially
+  _player_obj.has_just_entered_basic_action = not _previous_is_in_basic_action and _player_obj.is_in_basic_action
+
+  local _previous_recovery_flag = _player_obj.recovery_flag or 1
+  _player_obj.recovery_flag = memory.readbyte(_player_obj.base + 0x3B)
+  _player_obj.has_just_ended_recovery = _previous_recovery_flag ~= 0 and _player_obj.recovery_flag == 0
 
   _player_obj.meter_gauge = memory.readbyte(_player_obj.gauge_addr)
   _player_obj.meter_count = memory.readbyte(_player_obj.meter_addr[2])
@@ -340,6 +353,7 @@ function read_player_vars(_player_obj)
   end
 
   -- IS IDLE
+  local _previous_is_idle = _player_obj.is_idle or false
   _player_obj.idle_time = _player_obj.idle_time or 0
   _player_obj.is_idle = (
     not _player_obj.is_attacking and
@@ -347,6 +361,7 @@ function read_player_vars(_player_obj)
     not _player_obj.is_blocking and
     not _player_obj.is_wakingup and
     not _player_obj.is_fast_wakingup and
+    _player_obj.movement_type ~= 5 and -- leap
     _player_obj.recovery_time == _player_obj.previous_recovery_time and
     _player_obj.remaining_freeze_frames == 0 and
     _player_obj.input_capacity > 0
@@ -356,6 +371,10 @@ function read_player_vars(_player_obj)
     _player_obj.idle_time = _player_obj.idle_time + 1
   else
     _player_obj.idle_time = 0
+  end
+
+  if not _previous_is_idle and _player_obj.is_idle then
+    log(_player_obj.prefix, "blocking", string.format("idle"))
   end
 
   -- ANIMATION

@@ -36,6 +36,7 @@ require("src/menu_widgets")
 require("src/framedata")
 require("src/gamestate")
 require("src/input_history")
+require("src/frame_advantage")
 
 recording_slot_count = 8
 
@@ -1426,6 +1427,7 @@ training_settings = {
   display_gauges = false,
   display_p1_input_history = false,
   display_p2_input_history = false,
+  display_frame_advantage = false,
   display_hitboxes = false,
   auto_crop_recording = false,
   current_recording_slot = 1,
@@ -1548,8 +1550,9 @@ main_menu = make_multitab_menu(
       entries = {
         checkbox_menu_item("Display Controllers", training_settings, "display_input"),
         checkbox_menu_item("Display Gauges Numbers", training_settings, "display_gauges"),
-        checkbox_menu_item("Display P1 Input logs", training_settings, "display_p1_input_history"),
-        checkbox_menu_item("Display P2 Input logs", training_settings, "display_p2_input_history"),
+        checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
+        checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history"),
+        checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
         integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
       }
@@ -1966,6 +1969,8 @@ function on_load_state()
   read_player_vars(player_objects[1])
   read_player_vars(player_objects[2])
 
+  frame_advantage_reset()
+
   -- reset recording states in a useful way
   if current_recording_state == 3 then
     set_recording_state({}, 2)
@@ -2046,6 +2051,9 @@ function before_frame()
     dummy = player_objects[1]
   end
 
+  -- frame advantage
+  frame_advantage_update(player, dummy)
+
   -- Can't do this inside read_player_vars cause we need both players to have read their stuff
   if dummy.has_just_started_wake_up or dummy.has_just_started_fast_wake_up then
     dummy.wakeup_other_last_act_animation = player.last_act_animation
@@ -2054,7 +2062,6 @@ function before_frame()
   if dummy.remaining_wakeup_time ~= nil then
     dummy.remaining_wakeup_time = math.max(dummy.remaining_wakeup_time - 1, 0)
   end
-
 
   -- pose
   update_pose(_input, dummy, training_settings.pose)
@@ -2082,6 +2089,7 @@ function before_frame()
     input_history_update(input_history[2], "P2", _input)
   else
     clear_input_history()
+    frame_advantage_reset()
   end
 
   -- Log input
@@ -2154,12 +2162,6 @@ function before_frame()
 end
 
 is_menu_open = false
---[[
-main_menu_selected_index = 1
-is_main_menu_selected = true
-sub_menu_selected_index = 1
-current_popup = nil
-]]
 
 function on_gui()
 
@@ -2201,6 +2203,11 @@ function on_gui()
       local _p2 = make_input_history_entry("P2", _i)
       draw_controller(_p1, 44, 34)
       draw_controller(_p2, 310, 34)
+    end
+
+    -- move advantage
+    if training_settings.display_frame_advantage then
+      frame_advantage_display()
     end
 
     -- debug

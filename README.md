@@ -56,6 +56,8 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 ## Changelog
 ### v0.10 (???)
 - [Feature] New 3rd_spectator.lua script for displaying info during replays without messing with input
+- [Feature] Number display for all gauges and bonuses
+- [Feature] Frame advantage display
 
 ### v0.9 (04/04/2021)
 - [Feature] Projectiles are now blocked/parried
