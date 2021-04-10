@@ -233,14 +233,14 @@ end
 
 function display_draw_stun_gauge(_player_object)
   local _x = 0
-  local _y = 23
+  local _y = 29
 
   local _t = string.format("%d/%d", _player_object.stun_bar, _player_object.stun_max)
 
   if _player_object.id == 1 then
-    _x = 147
+    _x = 118
   elseif _player_object.id == 2 then
-    _x = screen_width - 143 - get_text_width(_t)
+    _x = screen_width - 116 - get_text_width(_t)
   end
 
   gui.text(_x, _y, _t, 0xE70000FF, 0x001433FF)
@@ -287,9 +287,9 @@ function display_draw_bonuses(_player_object)
     local _t = string.format("+%d stun", _player_object.stun_bonus)
 
     if _player_object.id == 1 then
-      _x = 103
+      _x = 81
     elseif _player_object.id == 2 then
-      _x = screen_width - 101 - get_text_width(_t)
+      _x = screen_width - 79 - get_text_width(_t)
     end
 
     gui.text(_x, _y, _t, 0xD6E3EFFF, 0x000029FF)
