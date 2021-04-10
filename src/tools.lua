@@ -307,3 +307,26 @@ function log_draw()
     _last_displayed_frame = _frame_index
   end
 end
+
+function print_memory_line(_addr)
+  _addr = _addr - _addr % 0x10
+
+  print(string.format("%02X %02X %02X %02X %02X %02X %02X %02X   %02X %02X %02X %02X %02X %02X %02X %02X",
+    memory.readbyte(_addr + 0x0),
+    memory.readbyte(_addr + 0x1),
+    memory.readbyte(_addr + 0x2),
+    memory.readbyte(_addr + 0x3),
+    memory.readbyte(_addr + 0x4),
+    memory.readbyte(_addr + 0x5),
+    memory.readbyte(_addr + 0x6),
+    memory.readbyte(_addr + 0x7),
+    memory.readbyte(_addr + 0x8),
+    memory.readbyte(_addr + 0x9),
+    memory.readbyte(_addr + 0xA),
+    memory.readbyte(_addr + 0xB),
+    memory.readbyte(_addr + 0xC),
+    memory.readbyte(_addr + 0xD),
+    memory.readbyte(_addr + 0xE),
+    memory.readbyte(_addr + 0xF)
+  ))
+end
