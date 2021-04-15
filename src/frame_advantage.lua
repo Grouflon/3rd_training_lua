@@ -1,9 +1,25 @@
 move_advantage = {}
 
+-- known bugs:
+-- - throws startup and hit frame are sometimes wrong
+-- - Ken's MK is not detected (busy flag is always 0)
+
 function frame_advantage_update(_attacker, _defender)
   local _debug = false
 
-  if not move_advantage.armed and (_attacker.has_just_attacked or (_attacker.input_capacity == 0 and _attacker.previous_input_capacity ~= 0) or (_attacker.movement_type == 4 and _attacker.last_movement_type_change_frame == 0)) then
+  function has_just_attacked(_player_obj)
+    return _player_obj.has_just_attacked or (_player_obj.recovery_time == 0 and _player_obj.freeze_frames == 0 and _player_obj.input_capacity == 0 and _player_obj.previous_input_capacity ~= 0) or (_player_obj.movement_type == 4 and _player_obj.last_movement_type_change_frame == 0)
+  end
+
+  function has_ended_attack(_player_obj)
+    return (_player_obj.busy_flag == 0  or _player_obj.is_in_jump_startup)
+  end
+
+  function has_ended_recovery(_player_obj)
+    return (_player_obj.is_idle or has_just_attacked(_player_obj) or _player_obj.is_in_jump_startup)
+  end
+
+  if not move_advantage.armed and has_just_attacked(_attacker) then
     move_advantage = {
       armed = true,
       player_id = _attacker.id,
@@ -11,6 +27,7 @@ function frame_advantage_update(_attacker, _defender)
       hitbox_start_frame = nil,
       hit_frame = nil,
       end_frame = nil,
+      end_frame_offset = 0,
       opponent_end_frame = nil,
     }
 
@@ -48,24 +65,35 @@ function frame_advantage_update(_attacker, _defender)
       if _attacker.busy_flag ~= 0 then
         move_advantage.end_frame = nil
       end
+
+      -- all hit advantages are detected 1 frame too late
+      if _defender.has_just_been_hit then
+        move_advantage.end_frame_offset = -1
+        if _debug then print(string.format("%d - end offset %d", frame_number, move_advantage.end_frame_offset)) end
+      end
+
       if _debug then print(string.format("%d - hit", frame_number)) end
     end
 
     if move_advantage.hit_frame ~= nil then
       if move_advantage.hitbox_start_frame ~= nil and frame_number > move_advantage.hit_frame then
-        if move_advantage.end_frame == nil and (--[[_attacker.has_just_ended_recovery or _attacker.has_just_entered_basic_action or]] _attacker.busy_flag == 0) then
+        if move_advantage.end_frame == nil and has_ended_attack(_attacker) then
           if _debug then print(string.format("%d - attacker_end", frame_number)) end
           move_advantage.end_frame = frame_number
+          if _attacker.is_in_jump_startup then
+            move_advantage.end_frame_offset = 0
+        if _debug then print(string.format("%d - end offset %d", frame_number, move_advantage.end_frame_offset)) end
+          end
         end
 
-        if move_advantage.opponent_end_frame == nil and frame_number > move_advantage.hit_frame and _defender.is_idle then
+        if move_advantage.opponent_end_frame == nil and frame_number > move_advantage.hit_frame and has_ended_recovery(_defender) then
           if _debug then print(string.format("%d - defender_end", frame_number)) end
           move_advantage.opponent_end_frame = frame_number
         end 
       end
     end
 
-    if (move_advantage.end_frame ~= nil and move_advantage.opponent_end_frame ~= nil) or (_attacker.busy_flag == 0 and _defender.is_idle) then
+    if (move_advantage.end_frame ~= nil and move_advantage.opponent_end_frame ~= nil) or (has_ended_attack(_attacker) and has_ended_recovery(_defender)) then
       move_advantage.armed = false
       if _debug then print(string.format("%d - unarm", frame_number)) end
       if _debug then print("") end
@@ -108,13 +136,13 @@ function frame_advantage_display()
   gui.text(_x1 + _text_width1, _y, string.format("%d", _startup))
 
   if move_advantage.hit_frame ~= nil then
-    local _hit_frame = move_advantage.hit_frame - move_advantage.start_frame
+    local _hit_frame = move_advantage.hit_frame - move_advantage.start_frame + 1
     gui.text(_x2, _y + 10, string.format("hit frame: "))
     gui.text(_x2 + _text_width2, _y + 10, string.format("%d", _hit_frame))  
   end
 
   if move_advantage.hit_frame ~= nil and move_advantage.end_frame ~= nil and move_advantage.opponent_end_frame ~= nil then
-    local _advantage = move_advantage.opponent_end_frame - move_advantage.end_frame
+    local _advantage = move_advantage.opponent_end_frame - (move_advantage.end_frame + move_advantage.end_frame_offset)
 
     local _sign = ""
     if _advantage > 0 then _sign = "+" end

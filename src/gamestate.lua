@@ -263,6 +263,7 @@ function read_player_vars(_player_obj)
   _player_obj.previous_recovery_time = _player_obj.recovery_time or 0
   _player_obj.recovery_time = memory.readbyte(_player_obj.base + 0x187)
   _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
+  _player_obj.movement_type2 = memory.readbyte(_player_obj.base + 0x0AF) -- seems that we can know which basic movement the player is doing from there
   _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
 
   _player_obj.busy_flag = memory.readword(_player_obj.base + 0x3D1)
@@ -298,6 +299,7 @@ function read_player_vars(_player_obj)
   _player_obj.defense_bonus = memory.readword(_player_obj.base + 0x440)
 
   -- THROW
+  _player_obj.is_being_thrown = memory.readbyte(_player_obj.base + 0x3CF) ~= 0
   _player_obj.throw_countdown = _player_obj.throw_countdown or 0
   _player_obj.previous_throw_countdown = _player_obj.throw_countdown
 
@@ -325,6 +327,7 @@ function read_player_vars(_player_obj)
   if _debug_state_variables and _player_obj.has_just_acted then print(string.format("%d - %s acted (%d > %d)", frame_number, _player_obj.prefix, _previous_action_count, _player_obj.action_count)) end
 
   -- LANDING
+  _player_obj.is_in_jump_startup = _player_obj.movement_type2 == 0x0C and not _player_obj.is_blocking
   _player_obj.previous_standing_state = _player_obj.standing_state or 0
   _player_obj.standing_state = memory.readbyte(_player_obj.base + 0x297)
   _player_obj.has_just_landed = is_state_on_ground(_player_obj.standing_state, _player_obj) and not is_state_on_ground(_player_obj.previous_standing_state, _player_obj)
@@ -361,6 +364,7 @@ function read_player_vars(_player_obj)
     not _player_obj.is_blocking and
     not _player_obj.is_wakingup and
     not _player_obj.is_fast_wakingup and
+    not _player_obj.is_being_thrown and
     _player_obj.movement_type ~= 5 and -- leap
     _player_obj.recovery_time == _player_obj.previous_recovery_time and
     _player_obj.remaining_freeze_frames == 0 and
