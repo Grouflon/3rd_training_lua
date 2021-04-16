@@ -1,4 +1,4 @@
-input_history_size_max = 12
+input_history_size_max = 15
 input_history = {
   {},
   {}
@@ -66,16 +66,20 @@ function input_history_update(_history, _prefix, _input)
   end
 end
 
-function input_history_draw(_history, _x, _y, _is_left)
-  local _step_y = 12
+function input_history_draw(_history, _x, _y, _is_right)
+  local _step_y = 10
   local _j = 0
   for _i = #_history, 1, -1 do
     local _current_y = _y + _j * _step_y
     local _entry = _history[_i]
 
-    local _entry_offset = 0
-    if _is_left then _entry_offset = 13 end
-    draw_controller(_entry, _x + _entry_offset, _current_y)
+    local _sign = 1
+    if _is_right then
+      _sign = -1
+    end
+
+    local _controller_offset = 14 * _sign
+    draw_controller_small(_entry, _x + _controller_offset, _current_y, _is_right)
 
     local _next_frame = frame_number
     if _i < #_history then
@@ -87,18 +91,16 @@ function input_history_draw(_history, _x, _y, _is_left)
       _text = string.format("%d", _frame_diff)
     end
 
-    local _offset = 0
-    if _is_left then
+    local _offset = -11
+    if not _is_right then
       _offset = 8
       if (_frame_diff < 999) then
         if (_frame_diff >= 100) then _offset = 0
         elseif (_frame_diff >= 10) then _offset = 4 end
       end
-    else
-      _offset = 33
     end
 
-    gui.text(_x + _offset, _current_y + 2, _text, 0xd6e3efff, 0x101000ff)
+    gui.text(_x + _offset, _current_y + 1, _text, 0xd6e3efff, 0x101000ff)
 
     _j = _j + 1
   end

@@ -2193,16 +2193,16 @@ function on_gui()
     end
 
     -- input history
-    if training_settings.display_p1_input_history then input_history_draw(input_history[1], 4, 50, true) end
-    if training_settings.display_p2_input_history then input_history_draw(input_history[2], 335, 50, false) end
+    if training_settings.display_p1_input_history then input_history_draw(input_history[1], 4, 49, false) end
+    if training_settings.display_p2_input_history then input_history_draw(input_history[2], screen_width - 4, 49, true) end
 
     -- controllers
     if training_settings.display_input then
       local _i = joypad.get()
       local _p1 = make_input_history_entry("P1", _i)
       local _p2 = make_input_history_entry("P2", _i)
-      draw_controller(_p1, 44, 34)
-      draw_controller(_p2, 310, 34)
+      draw_controller_big(_p1, 44, 34)
+      draw_controller_big(_p2, 310, 34)
     end
 
     -- move advantage

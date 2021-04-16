@@ -98,23 +98,23 @@ function on_gui()
 
     -- input history
     if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 2 then
-      input_history_draw(input_history[1], 4, 50, true)
+      input_history_draw(input_history[1], 4, 49, false)
     end
 
     if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 3 then
-      input_history_draw(input_history[2], 335, 50, false)
+      input_history_draw(input_history[2], screen_width - 4, 49, true)
     end
 
     -- controllers
     local _i = joypad.get()
     if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 2 then
       local _p1 = make_input_history_entry("P1", _i)
-      draw_controller(_p1, 44, 34)
+      draw_controller_big(_p1, 44, 34)
     end
 
     if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 3 then
       local _p2 = make_input_history_entry("P2", _i)
-      draw_controller(_p2, 310, 34)
+      draw_controller_big(_p2, 310, 34)
     end
 
     -- hitboxes

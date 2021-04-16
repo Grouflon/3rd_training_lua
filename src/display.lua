@@ -86,46 +86,75 @@ end
 
 
 require "gd"
-img_1_dir = gd.createFromPng("images/1_dir.png"):gdStr()
-img_2_dir = gd.createFromPng("images/2_dir.png"):gdStr()
-img_3_dir = gd.createFromPng("images/3_dir.png"):gdStr()
-img_4_dir = gd.createFromPng("images/4_dir.png"):gdStr()
-img_5_dir = gd.createFromPng("images/5_dir.png"):gdStr()
-img_6_dir = gd.createFromPng("images/6_dir.png"):gdStr()
-img_7_dir = gd.createFromPng("images/7_dir.png"):gdStr()
-img_8_dir = gd.createFromPng("images/8_dir.png"):gdStr()
-img_9_dir = gd.createFromPng("images/9_dir.png"):gdStr()
-img_L_button = gd.createFromPng("images/L_button.png"):gdStr()
-img_M_button = gd.createFromPng("images/M_button.png"):gdStr()
-img_H_button = gd.createFromPng("images/H_button.png"):gdStr()
-img_no_button = gd.createFromPng("images/no_button.png"):gdStr()
-img_dir = {
-  img_1_dir,
-  img_2_dir,
-  img_3_dir,
-  img_4_dir,
-  img_5_dir,
-  img_6_dir,
-  img_7_dir,
-  img_8_dir,
-  img_9_dir
-}
--- draw a controller representation
-function draw_controller(_entry, _x, _y)
-  gui.image(_x, _y, img_dir[_entry.direction])
 
-  local _img_LP = img_no_button
-  local _img_MP = img_no_button
-  local _img_HP = img_no_button
-  local _img_LK = img_no_button
-  local _img_MK = img_no_button
-  local _img_HK = img_no_button
-  if _entry.buttons[1] then _img_LP = img_L_button end
-  if _entry.buttons[2] then _img_MP = img_M_button end
-  if _entry.buttons[3] then _img_HP = img_H_button end
-  if _entry.buttons[4] then _img_LK = img_L_button end
-  if _entry.buttons[5] then _img_MK = img_M_button end
-  if _entry.buttons[6] then _img_HK = img_H_button end
+img_1_dir_big = gd.createFromPng("images/big/1_dir.png"):gdStr()
+img_2_dir_big = gd.createFromPng("images/big/2_dir.png"):gdStr()
+img_3_dir_big = gd.createFromPng("images/big/3_dir.png"):gdStr()
+img_4_dir_big = gd.createFromPng("images/big/4_dir.png"):gdStr()
+img_5_dir_big = gd.createFromPng("images/big/5_dir.png"):gdStr()
+img_6_dir_big = gd.createFromPng("images/big/6_dir.png"):gdStr()
+img_7_dir_big = gd.createFromPng("images/big/7_dir.png"):gdStr()
+img_8_dir_big = gd.createFromPng("images/big/8_dir.png"):gdStr()
+img_9_dir_big = gd.createFromPng("images/big/9_dir.png"):gdStr()
+img_no_button_big = gd.createFromPng("images/big/no_button.png"):gdStr()
+img_L_button_big = gd.createFromPng("images/big/L_button.png"):gdStr()
+img_M_button_big = gd.createFromPng("images/big/M_button.png"):gdStr()
+img_H_button_big = gd.createFromPng("images/big/H_button.png"):gdStr()
+img_dir_big = {
+  img_1_dir_big,
+  img_2_dir_big,
+  img_3_dir_big,
+  img_4_dir_big,
+  img_5_dir_big,
+  img_6_dir_big,
+  img_7_dir_big,
+  img_8_dir_big,
+  img_9_dir_big
+}
+
+img_1_dir_small = gd.createFromPng("images/small/1_dir.png"):gdStr()
+img_2_dir_small = gd.createFromPng("images/small/2_dir.png"):gdStr()
+img_3_dir_small = gd.createFromPng("images/small/3_dir.png"):gdStr()
+img_4_dir_small = gd.createFromPng("images/small/4_dir.png"):gdStr()
+img_5_dir_small = gd.createFromPng("images/small/5_dir.png"):gdStr()
+img_6_dir_small = gd.createFromPng("images/small/6_dir.png"):gdStr()
+img_7_dir_small = gd.createFromPng("images/small/7_dir.png"):gdStr()
+img_8_dir_small = gd.createFromPng("images/small/8_dir.png"):gdStr()
+img_9_dir_small = gd.createFromPng("images/small/9_dir.png"):gdStr()
+img_LP_button_small = gd.createFromPng("images/small/LP_button.png"):gdStr()
+img_MP_button_small = gd.createFromPng("images/small/MP_button.png"):gdStr()
+img_HP_button_small = gd.createFromPng("images/small/HP_button.png"):gdStr()
+img_LK_button_small = gd.createFromPng("images/small/LK_button.png"):gdStr()
+img_MK_button_small = gd.createFromPng("images/small/MK_button.png"):gdStr()
+img_HK_button_small = gd.createFromPng("images/small/HK_button.png"):gdStr()
+img_dir_small = {
+  img_1_dir_small,
+  img_2_dir_small,
+  img_3_dir_small,
+  img_4_dir_small,
+  img_5_dir_small,
+  img_6_dir_small,
+  img_7_dir_small,
+  img_8_dir_small,
+  img_9_dir_small
+}
+
+-- draw a controller representation
+function draw_controller_big(_entry, _x, _y)
+  gui.image(_x, _y, img_dir_big[_entry.direction])
+
+  local _img_LP = img_no_button_big
+  local _img_MP = img_no_button_big
+  local _img_HP = img_no_button_big
+  local _img_LK = img_no_button_big
+  local _img_MK = img_no_button_big
+  local _img_HK = img_no_button_big
+  if _entry.buttons[1] then _img_LP = img_L_button_big end
+  if _entry.buttons[2] then _img_MP = img_M_button_big end
+  if _entry.buttons[3] then _img_HP = img_H_button_big end
+  if _entry.buttons[4] then _img_LK = img_L_button_big end
+  if _entry.buttons[5] then _img_MK = img_M_button_big end
+  if _entry.buttons[6] then _img_HK = img_H_button_big end
 
   gui.image(_x + 13, _y, _img_LP)
   gui.image(_x + 18, _y, _img_MP)
@@ -133,6 +162,54 @@ function draw_controller(_entry, _x, _y)
   gui.image(_x + 13, _y + 5, _img_LK)
   gui.image(_x + 18, _y + 5, _img_MK)
   gui.image(_x + 23, _y + 5, _img_HK)
+end
+
+-- draw a controller representation
+function draw_controller_small(_entry, _x, _y, _is_right)
+  local _x_offset = 0
+  local _sign = 1
+  if _is_right then
+    _x_offset = _x_offset - 9
+    _sign = -1
+  end
+
+  gui.image(_x + _x_offset, _y, img_dir_small[_entry.direction])
+  _x_offset = _x_offset + _sign * 2
+
+
+  local _interval = 8
+  _x_offset = _x_offset + _sign * _interval
+
+  if _entry.buttons[1] then
+    gui.image(_x + _x_offset, _y, img_LP_button_small)
+    _x_offset = _x_offset + _sign * _interval
+  end
+
+  if _entry.buttons[2] then
+    gui.image(_x + _x_offset, _y, img_MP_button_small)
+    _x_offset = _x_offset + _sign * _interval
+  end
+
+  if _entry.buttons[3] then
+    gui.image(_x + _x_offset, _y, img_HP_button_small)
+    _x_offset = _x_offset + _sign * _interval
+  end
+
+  if _entry.buttons[4] then
+    gui.image(_x + _x_offset, _y, img_LK_button_small)
+    _x_offset = _x_offset + _sign * _interval
+  end
+
+  if _entry.buttons[5] then
+    gui.image(_x + _x_offset, _y, img_MK_button_small)
+    _x_offset = _x_offset + _sign * _interval
+  end
+
+  if _entry.buttons[6] then
+    gui.image(_x + _x_offset, _y, img_HK_button_small)
+    _x_offset = _x_offset + _sign * _interval
+  end
+
 end
 
 -- draw a gauge
