@@ -777,133 +777,118 @@ function read_player_vars(_player_obj)
 
 
   function read_charge_state(_charge_object, _valid_charge, _charge_addr, _reset_addr)
-    -- read data
-    --_parry_object.last_hit_or_block_frame =  _parry_object.last_hit_or_block_frame or 0
-    --if _player_obj.has_just_blocked or _player_obj.has_just_been_hit then
-    --  _parry_object.last_hit_or_block_frame = frame_number
-    --end
-    --_parry_object.last_validity_start_frame = _parry_object.last_validity_start_frame or 0
     if _valid_charge == false then
-	  _charge_object.charge_time = 0
-	  _charge_object.reset_time = 0
-	  return 
-	end
+      _charge_object.charge_time = 0
+      _charge_object.reset_time = 0
+      return 
+    end
     _charge_object.overcharge = _charge_object.overcharge or 0
     _charge_object.last_overcharge = _charge_object.last_overcharge or 0
-	_charge_object.overcharge_start = _charge_object.overcharge_start or 0
-	_charge_object.enabled = true
+    _charge_object.overcharge_start = _charge_object.overcharge_start or 0
+    _charge_object.enabled = true
     local _previous_charge_time = _charge_object.charge_time or 0
-	local _previous_reset_time = _charge_object.reset_time or 0
+    local _previous_reset_time = _charge_object.reset_time or 0
     _charge_object.charge_time = memory.readbyte(_charge_addr)
     _charge_object.reset_time = memory.readbyte(_reset_addr)
     if _charge_object.charge_time == 0xFF then _charge_object.charge_time = 0 end
-	if _charge_object.reset_time == 0xFF then _charge_object.reset_time = 0 end
-	if _charge_object.charge_time == 0 then
+    if _charge_object.reset_time == 0xFF then _charge_object.reset_time = 0 end
+    if _charge_object.charge_time == 0 then
       if _charge_object.overcharge_start == 0 then
-	    _charge_object.overcharge_start = frame_number
-	  else
-	    _charge_object.overcharge = frame_number - _charge_object.overcharge_start
+        _charge_object.overcharge_start = frame_number
+      else
+        _charge_object.overcharge = frame_number - _charge_object.overcharge_start
       end
     end
-	if _charge_object.charge_time == _charge_object.max_charge then 
+    if _charge_object.charge_time == _charge_object.max_charge then 
       if _charge_object.overcharge ~= 0 then _charge_object.last_overcharge = _charge_object.overcharge end
-	  _charge_object.overcharge = 0 
-	  _charge_object.overcharge_start = 0
-	end -- reset overcharge
-    --if _previous_validity_time == 0 and _parry_object.validity_time ~= 0 then
-    --  _parry_object.last_validity_start_frame = frame_number
-    --  _parry_object.delta = nil
-    --  _parry_object.success = nil
-    --  _parry_object.armed = true
-    --  log(_player_obj.prefix, "parry_training_".._parry_object.name, "armed")
-    --end
-
+        _charge_object.overcharge = 0 
+        _charge_object.overcharge_start = 0
+    end -- reset overcharge
   end
 
   if _player_obj.char_str == "alex" then
     _charge_1_addr = _player_obj.charge_1_addr
-	_reset_1_addr = _player_obj.charge_1_reset_addr
-	_player_obj.charge_1.name= "Elbow"
-	_valid_1 = true
-	_charge_2_addr = _player_obj.charge_2_addr
-	_reset_2_addr = _player_obj.charge_2_reset_addr
-	_player_obj.charge_2.name= "Stomp"
-	_valid_2 = true
-	_charge_3_addr = _player_obj.charge_3_addr
-	_reset_3_addr = _player_obj.charge_3_reset_addr
-	_valid_3 = false
+    _reset_1_addr = _player_obj.charge_1_reset_addr
+    _player_obj.charge_1.name= "Elbow"
+    _valid_1 = true
+    _charge_2_addr = _player_obj.charge_2_addr
+    _reset_2_addr = _player_obj.charge_2_reset_addr
+    _player_obj.charge_2.name= "Stomp"
+    _valid_2 = true
+    _charge_3_addr = _player_obj.charge_3_addr
+    _reset_3_addr = _player_obj.charge_3_reset_addr
+    _valid_3 = false
   elseif _player_obj.char_str == "oro" then
     _charge_1_addr = _player_obj.charge_3_addr
-	_reset_1_addr = _player_obj.charge_3_reset_addr
-	_player_obj.charge_1.name= "Sun Disk"
-	_valid_1 = true
-	_charge_2_addr = _player_obj.charge_5_addr
-	_reset_2_addr = _player_obj.charge_5_reset_addr
-	_player_obj.charge_2.name= "Yanma"
-	_valid_2 = true
-	_charge_3_addr = _player_obj.charge_3_addr
-	_reset_3_addr = _player_obj.charge_3_reset_addr
-	_valid_3 = false
+    _reset_1_addr = _player_obj.charge_3_reset_addr
+    _player_obj.charge_1.name= "Sun Disk"
+    _valid_1 = true
+    _charge_2_addr = _player_obj.charge_5_addr
+    _reset_2_addr = _player_obj.charge_5_reset_addr
+    _player_obj.charge_2.name= "Yanma"
+    _valid_2 = true
+    _charge_3_addr = _player_obj.charge_3_addr
+    _reset_3_addr = _player_obj.charge_3_reset_addr
+    _valid_3 = false
   elseif _player_obj.char_str == "urien" then
     _charge_1_addr = _player_obj.charge_5_addr
-	_reset_1_addr = _player_obj.charge_5_reset_addr
-	_player_obj.charge_1.name= "Tackle"
-	_valid_1 = true
-	_charge_2_addr = _player_obj.charge_2_addr
-	_reset_2_addr = _player_obj.charge_2_reset_addr
-	_player_obj.charge_2.name= "Kneedrop"
-	_valid_2 = true
-	_charge_3_addr = _player_obj.charge_4_addr
-	_reset_3_addr = _player_obj.charge_4_reset_addr
-	_player_obj.charge_3.name= "Headbutt"
-	_valid_3 = True
+    _reset_1_addr = _player_obj.charge_5_reset_addr
+    _player_obj.charge_1.name= "Tackle"
+    _valid_1 = true
+    _charge_2_addr = _player_obj.charge_2_addr
+    _reset_2_addr = _player_obj.charge_2_reset_addr
+    _player_obj.charge_2.name= "Kneedrop"
+    _valid_2 = true
+    _charge_3_addr = _player_obj.charge_4_addr
+    _reset_3_addr = _player_obj.charge_4_reset_addr
+    _player_obj.charge_3.name= "Headbutt"
+    _valid_3 = True
   elseif _player_obj.char_str == "remy" then
     _charge_1_addr = _player_obj.charge_4_addr
-	_reset_1_addr = _player_obj.charge_4_reset_addr
-	_player_obj.charge_1.name= "LoV High"
-	_valid_1 = true
-	_charge_2_addr = _player_obj.charge_3_addr
-	_reset_2_addr = _player_obj.charge_3_reset_addr
-	_player_obj.charge_2.name= "Lov Low"
-	_valid_2 = true
-	_charge_3_addr = _player_obj.charge_5_addr
-	_reset_3_addr = _player_obj.charge_5_reset_addr
-	_player_obj.charge_3.name= "Rising"
-	_valid_3 = true
-
+    _reset_1_addr = _player_obj.charge_4_reset_addr
+    _player_obj.charge_1.name= "LoV High"
+    _valid_1 = true
+    _charge_2_addr = _player_obj.charge_3_addr
+    _reset_2_addr = _player_obj.charge_3_reset_addr
+    _player_obj.charge_2.name= "Lov Low"
+    _valid_2 = true
+    _charge_3_addr = _player_obj.charge_5_addr
+    _reset_3_addr = _player_obj.charge_5_reset_addr
+    _player_obj.charge_3.name= "Rising"
+    _valid_3 = true
   elseif _player_obj.char_str == "q" then
     _charge_1_addr = _player_obj.charge_5_addr
-	_reset_1_addr = _player_obj.charge_5_reset_addr
-	_player_obj.charge_1.name= "Dash Atk"
-	_valid_1 = true
-	_charge_2_addr = _player_obj.charge_4_addr
-	_reset_2_addr = _player_obj.charge_4_reset_addr
-	_player_obj.charge_2.name= "Dash Low"
-	_valid_2 = true
-	_charge_3_addr = _player_obj.charge_1_addr
-	_reset_3_addr = _player_obj.charge_1_reset_addr
-	_valid_3 = false
+    _reset_1_addr = _player_obj.charge_5_reset_addr
+    _player_obj.charge_1.name= "Dash Atk"
+    _valid_1 = true
+    _charge_2_addr = _player_obj.charge_4_addr
+    _reset_2_addr = _player_obj.charge_4_reset_addr
+    _player_obj.charge_2.name= "Dash Low"
+    _valid_2 = true
+    _charge_3_addr = _player_obj.charge_1_addr
+    _reset_3_addr = _player_obj.charge_1_reset_addr
+    _valid_3 = false
   elseif _player_obj.char_str == "chunli" then
     _charge_1_addr = _player_obj.charge_5_addr
-	_reset_1_addr = _player_obj.charge_5_reset_addr
-	_player_obj.charge_1.name= "Bird Kick"
-	_valid_1 = true
-	_charge_2_addr = _player_obj.charge_1_addr
-	_reset_2_addr = _player_obj.charge_1_reset_addr
-	_valid_2 = false
-	_charge_3_addr = _player_obj.charge_1_addr
-	_reset_3_addr = _player_obj.charge_1_reset_addr
-	_valid_3 = false
+    _reset_1_addr = _player_obj.charge_5_reset_addr
+    _player_obj.charge_1.name= "Bird Kick"
+    _valid_1 = true
+    _charge_2_addr = _player_obj.charge_1_addr
+    _reset_2_addr = _player_obj.charge_1_reset_addr
+    _valid_2 = false
+    _charge_3_addr = _player_obj.charge_1_addr
+    _reset_3_addr = _player_obj.charge_1_reset_addr
+    _valid_3 = false
   else
     _charge_1_addr = _player_obj.charge_1_addr
-	_reset_1_addr = _player_obj.charge_1_reset_addr
-	_valid_1 = false
-	_charge_2_addr = _player_obj.charge_1_addr
-	_reset_2_addr = _player_obj.charge_1_reset_addr
-	_valid_2 = false
-	_charge_3_addr = _player_obj.charge_1_addr
-	_reset_3_addr = _player_obj.charge_1_reset_addr
-	_valid_3 = false
+    _reset_1_addr = _player_obj.charge_1_reset_addr
+    _valid_1 = false
+    _charge_2_addr = _player_obj.charge_1_addr
+    _reset_2_addr = _player_obj.charge_1_reset_addr
+    _valid_2 = false
+    _charge_3_addr = _player_obj.charge_1_addr
+    _reset_3_addr = _player_obj.charge_1_reset_addr
+    _valid_3 = false
   end
 
   read_charge_state(_player_obj.charge_1, _valid_1, _charge_1_addr, _reset_1_addr)

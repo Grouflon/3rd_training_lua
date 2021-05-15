@@ -1571,7 +1571,7 @@ main_menu = make_multitab_menu(
         parry_down_on_item,
         parry_air_on_item,
         parry_antiair_on_item,
-		charge_overcharge_on_item
+        charge_overcharge_on_item
       }
     },
   },
@@ -2372,7 +2372,7 @@ function on_gui()
     end
 
     local _y_offset = 0
-	local _x_offset = 0
+    local _x_offset = 0
     local _group_y_margin = 6
     local _group_x_margin = 12
 
@@ -2403,8 +2403,8 @@ function on_gui()
       end
       
       _charge_time_text = string.format("%d", _charge_object.max_charge - _charge_object.charge_time)
-	  _overcharge_time_text = string.format("[%d]", _charge_object.overcharge)
-	  _last_overcharge_time_text = string.format("[%d]", _charge_object.last_overcharge)
+      _overcharge_time_text = string.format("[%d]", _charge_object.overcharge)
+      _last_overcharge_time_text = string.format("[%d]", _charge_object.last_overcharge)
       _reset_time_text = string.format("%d", _charge_object.reset_time)
 
 
@@ -2416,15 +2416,13 @@ function on_gui()
       draw_gauge(_charge_gauge_left, _y + 8, _charge_gauge_width, _gauge_height + 1, _charge_object.charge_time / _charge_object.max_charge, _gauge_valid_fill_color, _gauge_background_color, nil, true)
       draw_gauge(_reset_gauge_left, _y + 8 + _gauge_height + 2, _reset_gauge_width, _gauge_height, _charge_object.reset_time / _charge_object.max_reset, _gauge_cooldown_fill_color, _gauge_background_color, nil, true)
       if training_settings.special_training_charge_overcharge_on and _charge_object.overcharge ~=0 and _charge_object.overcharge < 42 then
-	    draw_gauge(_charge_gauge_left, _y + 8, _charge_gauge_width, _gauge_height + 1, _charge_object.overcharge / _charge_object.max_charge, 0x08FF0044, _gauge_background_color, nil, true)
-		gui.text(_reset_gauge_right + 16, _y + 7, _overcharge_time_text, _success_color, text_default_border_color)
+        draw_gauge(_charge_gauge_left, _y + 8, _charge_gauge_width, _gauge_height + 1, _charge_object.overcharge / _charge_object.max_charge, 0x08FF0044, _gauge_background_color, nil, true)
+        gui.text(_reset_gauge_right + 16, _y + 7, _overcharge_time_text, _success_color, text_default_border_color)
       end
-	  if training_settings.special_training_charge_overcharge_on and _charge_object.overcharge == 0 and _charge_object.last_overcharge > 0 and _charge_object.last_overcharge < 42 then
-	    gui.text(_reset_gauge_right + 16, _y + 7, _last_overcharge_time_text, _success_color, text_default_border_color)
-	  end
-	    
-      -- gui.box(_charge_gauge_left + 3 * _gauge_x_scale, _y + 8, _charge_gauge_left + 2 + 3 * _gauge_x_scale,  _y + 8 + _gauge_height + 2, 0xFF000077, 0x00000000)
-
+      if training_settings.special_training_charge_overcharge_on and _charge_object.overcharge == 0 and _charge_object.last_overcharge > 0 and _charge_object.last_overcharge < 42 then
+        gui.text(_reset_gauge_right + 16, _y + 7, _last_overcharge_time_text, _success_color, text_default_border_color)
+      end
+    
 
       gui.text(_reset_gauge_right + 4, _y + 7, _charge_time_text, _charge_text_color, text_default_border_color)  
       gui.text(_reset_gauge_right + 4, _y + 13, _reset_time_text, text_default_color, text_default_border_color)
