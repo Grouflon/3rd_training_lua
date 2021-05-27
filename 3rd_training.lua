@@ -21,6 +21,7 @@ print("")
 -- *crytal_cube99* for his prior work on 3s training & trial scripts : https://ameblo.jp/3fv/
 
 -- Thanks to *speedmccool25* for recording all the 4rd strike frame data
+-- Thanks to *ProfessorAnon* for the Charge special training mode
 
 -- FBA-RR Scripting reference:
 -- http://tasvideos.org/EmulatorResources/VBA/LuaScriptingFunctions.html
