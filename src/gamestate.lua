@@ -77,6 +77,17 @@ function reset_player_objects()
   P1.parry_antiair_validity_time_addr = 0x02026347
   P1.parry_antiair_cooldown_time_addr = 0x0202582D
 
+  P1.charge_1_reset_addr = 0x02025A47 -- Alex_1(Elbow)
+  P1.charge_1_addr = 0x02025A49
+  P1.charge_2_reset_addr = 0x02025A2B -- Alex_2(Stomp), Urien_2(Knee?)
+  P1.charge_2_addr = 0x02025A2D
+  P1.charge_3_reset_addr = 0x02025A0F -- Oro_1(Shou), Remy_2(LoVKick?)
+  P1.charge_3_addr = 0x02025A11
+  P1.charge_4_reset_addr = 0x020259F3 -- Urien_3(headbutt?), Q_2(DashLeg), Remy_1(LoVPunch?)
+  P1.charge_4_addr = 0x020259F5
+  P1.charge_5_reset_addr = 0x020259D7 -- Oro_2(Yanma), Urien_1(tackle), Chun_4, Q_1(DashHead), Remy_3(Rising)
+  P1.charge_5_addr = 0x020259D9
+
   P2.gauge_addr = 0x020695E1
   P2.meter_addr = { 0x020286DF, 0x020695EB} -- 2nd address is the master variable
   P2.stun_max_addr = 0x0206960B
@@ -92,6 +103,17 @@ function reset_player_objects()
   P2.parry_air_cooldown_time_addr = P1.parry_air_cooldown_time_addr + 0x620
   P2.parry_antiair_validity_time_addr = P1.parry_antiair_validity_time_addr + 0x406
   P2.parry_antiair_cooldown_time_addr = P1.parry_antiair_cooldown_time_addr + 0x620
+  
+  P2.charge_1_reset_addr = 0x02025FF7
+  P2.charge_1_addr = 0x02025FF9
+  P2.charge_2_reset_addr = 0x0202602F
+  P2.charge_2_addr = 0x02026031
+  P2.charge_3_reset_addr = 0x02026013
+  P2.charge_3_addr = 0x02026013
+  P2.charge_4_reset_addr = 0x0202604B
+  P2.charge_4_addr = 0x0202604D
+  P2.charge_5_reset_addr = 0x02026067
+  P2.charge_5_addr = 0x02026069
 end
 
 
@@ -747,6 +769,77 @@ function read_player_vars(_player_obj)
   read_parry_state(_player_obj.parry_air, _player_obj.parry_air_validity_time_addr, _player_obj.parry_air_cooldown_time_addr)
   read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
 
+-- CHARGE STATE
+  -- global game consts
+  _player_obj.charge_1 = _player_obj.charge_1 or { name = "Charge1", max_charge = 42, max_reset = 42, enabled = false }
+  _player_obj.charge_2 = _player_obj.charge_2 or { name = "Charge2", max_charge = 42, max_reset = 42, enabled = false }
+  _player_obj.charge_3 = _player_obj.charge_3 or { name = "Charge3", max_charge = 42, max_reset = 42, enabled = false }
+
+
+  function read_charge_state(_charge_object, _valid_charge, _charge_addr, _reset_addr)
+    if _valid_charge == false then
+      _charge_object.charge_time = 0
+      _charge_object.reset_time = 0
+      _charge_object.enabled = false
+      return 
+    end
+    _charge_object.overcharge = _charge_object.overcharge or 0
+    _charge_object.last_overcharge = _charge_object.last_overcharge or 0
+    _charge_object.overcharge_start = _charge_object.overcharge_start or 0
+    _charge_object.enabled = true
+    local _previous_charge_time = _charge_object.charge_time or 0
+    local _previous_reset_time = _charge_object.reset_time or 0
+    _charge_object.charge_time = memory.readbyte(_charge_addr)
+    _charge_object.reset_time = memory.readbyte(_reset_addr)
+    if _charge_object.charge_time == 0xFF then _charge_object.charge_time = 0 end
+    if _charge_object.reset_time == 0xFF then _charge_object.reset_time = 0 end
+    if _charge_object.charge_time == 0 then
+      if _charge_object.overcharge_start == 0 then
+        _charge_object.overcharge_start = frame_number
+      else
+        _charge_object.overcharge = frame_number - _charge_object.overcharge_start
+      end
+    end
+    if _charge_object.charge_time == _charge_object.max_charge then 
+      if _charge_object.overcharge ~= 0 then _charge_object.last_overcharge = _charge_object.overcharge end
+        _charge_object.overcharge = 0 
+        _charge_object.overcharge_start = 0
+    end -- reset overcharge
+  end
+  
+  charge_table = {
+    ["alex"] = { _charge_1_addr = _player_obj.charge_1_addr, _reset_1_addr = _player_obj.charge_1_reset_addr, _name1 = "Elbow", _valid_1 = true, 
+      _charge_2_addr = _player_obj.charge_2_addr, _reset_2_addr = _player_obj.charge_2_reset_addr, _name2= "Stomp", _valid_2 = true,
+      _charge_3_addr = _player_obj.charge_3_addr, _reset_3_addr = _player_obj.charge_3_reset_addr, _valid_3 = false},
+    ["oro"] = { _charge_1_addr = _player_obj.charge_3_addr, _reset_1_addr = _player_obj.charge_3_reset_addr, _name1= "Sun Disk", _valid_1 = true, 
+      _charge_2_addr = _player_obj.charge_5_addr, _reset_2_addr = _player_obj.charge_5_reset_addr, _name2= "Yanma", _valid_2 = true, 
+      _charge_3_addr = _player_obj.charge_3_addr, _reset_3_addr = _player_obj.charge_3_reset_addr, _valid_3 = false},
+    ["urien"] = { _charge_1_addr = _player_obj.charge_5_addr, _reset_1_addr = _player_obj.charge_5_reset_addr, _name1= "Tackle", _valid_1 = true, 
+      _charge_2_addr = _player_obj.charge_2_addr, _reset_2_addr = _player_obj.charge_2_reset_addr, _name2= "Kneedrop", _valid_2 = true, 
+      _charge_3_addr = _player_obj.charge_4_addr, _reset_3_addr = _player_obj.charge_4_reset_addr, _name3= "Headbutt", _valid_3 = true},
+    ["remy"] = { _charge_1_addr = _player_obj.charge_4_addr, _reset_1_addr = _player_obj.charge_4_reset_addr, _name1= "LoV High", _valid_1 = true, 
+      _charge_2_addr = _player_obj.charge_3_addr, _reset_2_addr = _player_obj.charge_3_reset_addr, _name2= "LoV Low", _valid_2 = true, 
+      _charge_3_addr = _player_obj.charge_5_addr, _reset_3_addr = _player_obj.charge_5_reset_addr, _name3= "Rising", _valid_3 = true},
+    ["q"] = { _charge_1_addr = _player_obj.charge_5_addr, _reset_1_addr = _player_obj.charge_5_reset_addr, _name1= "Dash Atk", _valid_1 = true, 
+      _charge_2_addr = _player_obj.charge_4_addr, _reset_2_addr = _player_obj.charge_4_reset_addr, _name2= "Dash Low", _valid_2 = true, 
+      _charge_3_addr = _player_obj.charge_3_addr, _reset_3_addr = _player_obj.charge_3_reset_addr, _valid_3 = false},
+    ["chunli"] = { _charge_1_addr = _player_obj.charge_5_addr, _reset_1_addr = _player_obj.charge_5_reset_addr, _name1= "Bird Kick", _valid_1 = true, 
+      _charge_2_addr = _player_obj.charge_2_addr, _reset_2_addr = _player_obj.charge_2_reset_addr, _valid_2 = false, 
+      _charge_3_addr = _player_obj.charge_3_addr, _reset_3_addr = _player_obj.charge_3_reset_addr, _valid_3 = false}
+  }
+
+  if charge_table[_player_obj.char_str] then
+    _player_obj.charge_1.name= charge_table[_player_obj.char_str]._name1
+    read_charge_state(_player_obj.charge_1, charge_table[_player_obj.char_str]._valid_1, charge_table[_player_obj.char_str]._charge_1_addr, charge_table[_player_obj.char_str]._reset_1_addr)
+    if charge_table[_player_obj.char_str]._name2 then _player_obj.charge_2.name= charge_table[_player_obj.char_str]._name2 end
+    read_charge_state(_player_obj.charge_2, charge_table[_player_obj.char_str]._valid_2, charge_table[_player_obj.char_str]._charge_2_addr, charge_table[_player_obj.char_str]._reset_2_addr)
+    if charge_table[_player_obj.char_str]._name3 then _player_obj.charge_3.name= charge_table[_player_obj.char_str]._name3 end
+    read_charge_state(_player_obj.charge_3, charge_table[_player_obj.char_str]._valid_3, charge_table[_player_obj.char_str]._charge_3_addr, charge_table[_player_obj.char_str]._reset_3_addr)
+  else
+    read_charge_state(_player_obj.charge_1, false, _player_obj.charge_1_addr, _player_obj.charge_1_reset_addr)
+    read_charge_state(_player_obj.charge_2, false, _player_obj.charge_1_addr, _player_obj.charge_1_reset_addr)
+    read_charge_state(_player_obj.charge_3, false, _player_obj.charge_1_addr, _player_obj.charge_1_reset_addr)
+  end
   -- STUN
   _player_obj.stun_max = memory.readbyte(_player_obj.stun_max_addr)
   _player_obj.stun_timer = memory.readbyte(_player_obj.stun_timer_addr)
