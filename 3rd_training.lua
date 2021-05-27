@@ -2252,8 +2252,8 @@ function on_gui()
   if is_in_match and special_training_mode[training_settings.special_training_current_mode] == "parry" then
 
     local _player = P1
-    local _x = 65
-    local _y = 48
+    local _x = 235 --96
+    local _y = 40
     local _flip_gauge = false
     local _gauge_x_scale = 4
 
