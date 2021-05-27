@@ -48,13 +48,14 @@ debug_wakeup = false
 log_enabled = developer_mode or log_enabled
 log_categories_display =
 {
-  input =                     { history = true, print = true },
+  input =                     { history = true, print = false },
   projectiles =               { history = false, print = false },
-  fight =                     { history = true, print = true },
-  animation =                 { history = true, print = true },
+  fight =                     { history = true, print = false },
+  animation =                 { history = false, print = false },
   parry_training_FORWARD =    { history = false, print = false },
-  blocking =                  { history = true, print = true },
+  blocking =                  { history = true, print = false },
   counter_attack =            { history = false, print = false },
+  block_string =              { history = false, print = true },
 } or log_categories_display
 
 saved_recordings_path = "saved/recordings/"
@@ -699,7 +700,6 @@ end
 function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_count)
 
   local _debug = false
-  local _debug_block_string = false
 
   -- ensure variables
   _dummy.blocking.blocked_hit_count = _dummy.blocking.blocked_hit_count or 0
@@ -749,19 +749,23 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
   end
 
   -- blockstring detection
+  if ((_dummy.blocking.should_block and not _dummy.blocking.randomized_out) or (_dummy.blocking.should_block_projectile and not _dummy.blocking.projectile_randomized_out)) and _dummy.blocking.wait_for_block_string then
+    _dummy.blocking.block_string = true
+    _dummy.blocking.wait_for_block_string = false
+    log(_dummy.prefix, "block_string", string.format("blockstring 1"))
+  end
   if _dummy.blocking.block_string then
-    if _dummy.remaining_freeze_frames == 0 and _dummy.recovery_time == 0 and _dummy.previous_recovery_time == 1 then
+    if _dummy.has_just_parried or _dummy.has_just_been_hit or (_dummy.remaining_freeze_frames == 0 and _dummy.recovery_time == 0 and _dummy.previous_recovery_time == 1 and not _dummy.blocking.should_block) then
       _dummy.blocking.block_string = false
-      if _debug_block_string then
-        print(string.format("%d - ended block string (%d, %d, %d)", frame_number, _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id, _dummy.recovery_time))
-      end
+      log(_dummy.prefix, "block_string", string.format("blockstring 0 (%d, %d, %d, %d, %d)", to_bit(_dummy.has_just_parried), to_bit(_dummy.has_just_been_hit), _dummy.blocking.last_attack_hit_id, _dummy.blocking.expected_attack_hit_id, _dummy.recovery_time))
     end
   elseif not _dummy.blocking.wait_for_block_string then
-    if ((_dummy.blocking.expected_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20) then
+    if (
+        _dummy.has_just_parried or 
+        ((_dummy.blocking.expected_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20)
+       ) then
       _dummy.blocking.wait_for_block_string = true
-      if _debug_block_string then
-        print(string.format("%d - wait for block string (%d, %d, %d)", frame_number, _dummy.blocking.expected_attack_hit_id, _dummy.blocking.last_attack_hit_id, _dummy.idle_time))
-      end
+      log(_dummy.prefix, "block_string", string.format("wait blockstring (%d, %d, %d)",  _dummy.blocking.expected_attack_hit_id, _dummy.blocking.last_attack_hit_id, _dummy.idle_time))
     end
   end
 
@@ -931,6 +935,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
             _dummy.blocking.expected_attack_animation_hit_frame = _predicted_hit.frame
             _dummy.blocking.expected_attack_hit_id = _predicted_hit.hit_id
             _dummy.blocking.should_block = true
+            _dummy.blocking.randomized_out = false
             _dummy.blocking.has_pre_parried = false
             _dummy.blocking.is_precise_timing = false
             log(_dummy.prefix, "blocking", string.format("block in %d", _dummy.blocking.expected_attack_animation_hit_frame - _player_relevant_animation_frame))
@@ -941,22 +946,13 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
               end
             elseif _mode == 4 then -- random
               if not _dummy.blocking.block_string then
-                if  math.random() > 0.5 then
-                  _dummy.blocking.should_block = false
+                local _r = math.random()
+                if _r > 0.5 then
+                  _dummy.blocking.randomized_out = true
                   if _debug then
                     print(string.format(" %d: next hit randomized out", frame_number))
                   end
-                else
-                  _dummy.blocking.wait_for_block_string = true
                 end
-              end
-            end
-
-            if _dummy.blocking.wait_for_block_string then
-              _dummy.blocking.block_string = true
-              _dummy.blocking.wait_for_block_string = false
-              if _debug_block_string then
-                print(string.format("%d - start block string", frame_number))
               end
             end
 
@@ -1025,11 +1021,29 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
           0,
           0) then
             _dummy.blocking.should_block_projectile = true
+            _dummy.blocking.projectile_randomized_out = false
             _dummy.blocking.has_pre_parried = false
             _dummy.blocking.projectile_hit_frame = frame_number + _i
             _dummy.blocking.expected_projectile = _projectile_obj
             _dummy.blocking.is_precise_timing = _movement ~= nil
             log(_dummy.prefix, "blocking", string.format("block proj %s in %d", _projectile_obj.id, _i))
+
+            if _mode == 3 then -- first hit
+              if not _dummy.blocking.block_string and not _dummy.blocking.wait_for_block_string then
+                _dummy.blocking.should_block_projectile = false
+              end
+            elseif _mode == 4 then -- random
+              if not _dummy.blocking.block_string then
+                local _r = math.random()
+                if _r > 0.5 then
+                  _dummy.blocking.projectile_randomized_out = true
+                  if _debug then
+                    print(string.format(" %d: next hit randomized out", frame_number))
+                  end
+                end
+              end
+            end
+
             break
           end
         end
@@ -1040,7 +1054,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     end
   end
 
-  if _dummy.blocking.should_block or _dummy.blocking.should_block_projectile then
+  if (_dummy.blocking.should_block and not _dummy.blocking.randomized_out) or (_dummy.blocking.should_block_projectile and not _dummy.blocking.projectile_randomized_out) then
     local _hit_type = 1
     local _blocking_style = _style -- 1 is block, 2 is parry
 
