@@ -2,7 +2,9 @@ move_advantage = {}
 
 -- known bugs:
 -- - throws startup and hit frame are sometimes wrong
--- - Ken's MK is not detected (busy flag is always 0)
+-- - Undetected moves:
+--   - Ken's MK (busy flag is always 0)
+--   - Gouki's close MK
 
 function frame_advantage_update(_attacker, _defender)
   local _debug = false
