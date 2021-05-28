@@ -330,3 +330,21 @@ function print_memory_line(_addr)
     memory.readbyte(_addr + 0xF)
   ))
 end
+
+function log_state(_obj, _names)
+  local _str = ""
+  for _i, _name in ipairs(_names) do
+    if _i > 0 then
+      _str = _str..", "
+    end
+    _str = _str.._name..":"
+    local _value = _obj[_name]
+    local _type = type(_value)
+    if _type == "boolean" then
+      _str = _str..string.format("%d", to_bit(_value))
+    elseif _type == "number" then
+      _str = _str..string.format("%d", _value)
+    end
+  end
+  print(_str)
+end
