@@ -771,9 +771,9 @@ function read_player_vars(_player_obj)
 
 -- CHARGE STATE
   -- global game consts
-  _player_obj.charge_1 = _player_obj.charge_1 or { name = "Charge1", max_charge = 42, max_reset = 42, enabled = false }
-  _player_obj.charge_2 = _player_obj.charge_2 or { name = "Charge2", max_charge = 42, max_reset = 42, enabled = false }
-  _player_obj.charge_3 = _player_obj.charge_3 or { name = "Charge3", max_charge = 42, max_reset = 42, enabled = false }
+  _player_obj.charge_1 = _player_obj.charge_1 or { name = "Charge1", max_charge = 43, max_reset = 43, enabled = false }
+  _player_obj.charge_2 = _player_obj.charge_2 or { name = "Charge2", max_charge = 43, max_reset = 43, enabled = false }
+  _player_obj.charge_3 = _player_obj.charge_3 or { name = "Charge3", max_charge = 43, max_reset = 43, enabled = false }
 
 
   function read_charge_state(_charge_object, _valid_charge, _charge_addr, _reset_addr)
@@ -791,8 +791,8 @@ function read_player_vars(_player_obj)
     local _previous_reset_time = _charge_object.reset_time or 0
     _charge_object.charge_time = memory.readbyte(_charge_addr)
     _charge_object.reset_time = memory.readbyte(_reset_addr)
-    if _charge_object.charge_time == 0xFF then _charge_object.charge_time = 0 end
-    if _charge_object.reset_time == 0xFF then _charge_object.reset_time = 0 end
+    if _charge_object.charge_time == 0xFF then _charge_object.charge_time = 0 else _charge_object.charge_time = _charge_object.charge_time + 1 end
+    if _charge_object.reset_time == 0xFF then _charge_object.reset_time = 0 else _charge_object.reset_time = _charge_object.reset_time + 1 end
     if _charge_object.charge_time == 0 then
       if _charge_object.overcharge_start == 0 then
         _charge_object.overcharge_start = frame_number
