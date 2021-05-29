@@ -29,6 +29,7 @@ print("")
 
 -- Resources
 -- https://github.com/Jesuszilla/mame-rr-scripts/blob/master/framedata.lua
+-- https://imgur.com/gallery/0Tsl7di
 
 -- Includes
 require("src/tools")
@@ -1236,6 +1237,18 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       end
       log(_defender.prefix, "counter_attack", "setup ca")
       _defender.counter.attack_frame = frame_number + _defender.recovery_time + 2
+
+      -- special character cases
+      if _defender.is_crouched then
+        if (_defender.char_str == "q" or _defender.char_str == "ryu" or _defender.char_str == "chunli") then
+          _defender.counter.attack_frame = _defender.counter.attack_frame + 2
+        end
+      else
+        if _defender.char_str == "q" then
+          _defender.counter.attack_frame = _defender.counter.attack_frame + 1
+        end
+      end
+
       _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
       _defender.counter.ref_time = -1
       handle_recording()

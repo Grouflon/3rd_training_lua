@@ -287,6 +287,7 @@ function read_player_vars(_player_obj)
   _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
   _player_obj.movement_type2 = memory.readbyte(_player_obj.base + 0x0AF) -- seems that we can know which basic movement the player is doing from there
   _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
+  _player_obj.posture = memory.readbyte(_player_obj.base + 0x20E)
 
   _player_obj.busy_flag = memory.readword(_player_obj.base + 0x3D1)
 
@@ -311,6 +312,9 @@ function read_player_vars(_player_obj)
     _player_obj.selected_sa = memory.readbyte(0x0201138C) + 1
     _player_obj.superfreeze_decount = memory.readbyte(0x02069088) -- seems to be in P1 memory space, don't know why
   end
+
+  -- CROUCHED
+  _player_obj.is_crouched = _player_obj.posture == 0x20
 
   -- LIFE
   _player_obj.life = memory.readbyte(_player_obj.base + 0x9F)
