@@ -63,7 +63,8 @@ saved_recordings_path = "saved/recordings/"
 training_settings_file = "training_settings.json"
 
 -- players
-function queue_input_sequence(_player_obj, _sequence)
+function queue_input_sequence(_player_obj, _sequence, _offset)
+  _offset = _offset or 0
   if _sequence == nil or #_sequence == 0 then
     return
   end
@@ -74,7 +75,7 @@ function queue_input_sequence(_player_obj, _sequence)
 
   local _seq = {}
   _seq.sequence = copytable(_sequence)
-  _seq.current_frame = 1
+  _seq.current_frame = 1 - _offset
 
   _player_obj.pending_input_sequence = _seq
 end
@@ -124,64 +125,65 @@ function process_pending_input_sequence(_player_obj, _input)
   end
   local _gauges_offsets = { 0x0, 0x1C, 0x38, 0x54, 0x70 }
 
-  local _s = ""
-  local _current_frame_input = _player_obj.pending_input_sequence.sequence[_player_obj.pending_input_sequence.current_frame]
-  for i = 1, #_current_frame_input do
-    local _input_name = _player_obj.prefix.." "
-    if _current_frame_input[i] == "forward" then
-      if _player_obj.flip_input then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
-    elseif _current_frame_input[i] == "back" then
-      if _player_obj.flip_input then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
-    elseif _current_frame_input[i] == "up" then
-      _input_name = _input_name.."Up"
-    elseif _current_frame_input[i] == "down" then
-      _input_name = _input_name.."Down"
-    elseif _current_frame_input[i] == "LP" then
-      _input_name = _input_name.."Weak Punch"
-    elseif _current_frame_input[i] == "MP" then
-      _input_name = _input_name.."Medium Punch"
-    elseif _current_frame_input[i] == "HP" then
-      _input_name = _input_name.."Strong Punch"
-    elseif _current_frame_input[i] == "LK" then
-      _input_name = _input_name.."Weak Kick"
-    elseif _current_frame_input[i] == "MK" then
-      _input_name = _input_name.."Medium Kick"
-    elseif _current_frame_input[i] == "HK" then
-      _input_name = _input_name.."Strong Kick"
-    elseif _current_frame_input[i] == "h_charge" then
-      if _player_obj.char_str == "urien" then
-        memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-      elseif _player_obj.char_str == "oro" then
-        memory.writeword(_gauges_base + _gauges_offsets[3], 0xFFFF)
-      elseif _player_obj.char_str == "chunli" then
-      elseif _player_obj.char_str == "q" then
-        memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-        memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
-      elseif _player_obj.char_str == "remy" then
-        memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
-        memory.writeword(_gauges_base + _gauges_offsets[3], 0xFFFF)
-      elseif _player_obj.char_str == "alex" then
-        memory.writeword(_gauges_base + _gauges_offsets[5], 0xFFFF)
+  if _player_obj.pending_input_sequence.current_frame >= 1 then
+    local _s = ""
+    local _current_frame_input = _player_obj.pending_input_sequence.sequence[_player_obj.pending_input_sequence.current_frame]
+    for i = 1, #_current_frame_input do
+      local _input_name = _player_obj.prefix.." "
+      if _current_frame_input[i] == "forward" then
+        if _player_obj.flip_input then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
+      elseif _current_frame_input[i] == "back" then
+        if _player_obj.flip_input then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
+      elseif _current_frame_input[i] == "up" then
+        _input_name = _input_name.."Up"
+      elseif _current_frame_input[i] == "down" then
+        _input_name = _input_name.."Down"
+      elseif _current_frame_input[i] == "LP" then
+        _input_name = _input_name.."Weak Punch"
+      elseif _current_frame_input[i] == "MP" then
+        _input_name = _input_name.."Medium Punch"
+      elseif _current_frame_input[i] == "HP" then
+        _input_name = _input_name.."Strong Punch"
+      elseif _current_frame_input[i] == "LK" then
+        _input_name = _input_name.."Weak Kick"
+      elseif _current_frame_input[i] == "MK" then
+        _input_name = _input_name.."Medium Kick"
+      elseif _current_frame_input[i] == "HK" then
+        _input_name = _input_name.."Strong Kick"
+      elseif _current_frame_input[i] == "h_charge" then
+        if _player_obj.char_str == "urien" then
+          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
+        elseif _player_obj.char_str == "oro" then
+          memory.writeword(_gauges_base + _gauges_offsets[3], 0xFFFF)
+        elseif _player_obj.char_str == "chunli" then
+        elseif _player_obj.char_str == "q" then
+          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
+          memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
+        elseif _player_obj.char_str == "remy" then
+          memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
+          memory.writeword(_gauges_base + _gauges_offsets[3], 0xFFFF)
+        elseif _player_obj.char_str == "alex" then
+          memory.writeword(_gauges_base + _gauges_offsets[5], 0xFFFF)
+        end
+      elseif _current_frame_input[i] == "v_charge" then
+        if _player_obj.char_str == "urien" then
+          memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
+          memory.writeword(_gauges_base + _gauges_offsets[4], 0xFFFF)
+        elseif _player_obj.char_str == "oro" then
+          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
+        elseif _player_obj.char_str == "chunli" then
+          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
+        elseif _player_obj.char_str == "q" then
+        elseif _player_obj.char_str == "remy" then
+          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
+        elseif _player_obj.char_str == "alex" then
+          memory.writeword(_gauges_base + _gauges_offsets[4], 0xFFFF)
+        end
       end
-    elseif _current_frame_input[i] == "v_charge" then
-      if _player_obj.char_str == "urien" then
-        memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
-        memory.writeword(_gauges_base + _gauges_offsets[4], 0xFFFF)
-      elseif _player_obj.char_str == "oro" then
-        memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-      elseif _player_obj.char_str == "chunli" then
-        memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-      elseif _player_obj.char_str == "q" then
-      elseif _player_obj.char_str == "remy" then
-        memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-      elseif _player_obj.char_str == "alex" then
-        memory.writeword(_gauges_base + _gauges_offsets[4], 0xFFFF)
-      end
+      _input[_input_name] = true
+      _s = _s.._input_name
     end
-    _input[_input_name] = true
-    _s = _s.._input_name
   end
-
   --print(_s)
 
   _player_obj.pending_input_sequence.current_frame = _player_obj.pending_input_sequence.current_frame + 1
@@ -232,10 +234,6 @@ pose = {
 
 stick_gesture = {
   "none",
-  "forward",
-  "back",
-  "down",
-  "up",
   "QCF",
   "QCB",
   "HCF",
@@ -247,8 +245,20 @@ stick_gesture = {
   "360",
   "DQCF",
   "720",
+  "forward",
+  "back",
+  "down",
+  "jump",
+  "super jump",
+  "forward jump",
+  "forward super jump",
+  "back jump",
+  "back super jump",
   "back dash",
   "forward dash",
+  "guard jump",
+  "guard back jump",
+  "guard forward jump",
   "Shun Goku Satsu", -- Gouki hidden SA1
   "Kongou Kokuretsu Zan", -- Gouki hidden SA2
 }
@@ -280,11 +290,35 @@ function make_input_sequence(_stick, _button)
   end
 
   local _sequence = {}
+  local _offset = 0
   if      _stick == "none"    then _sequence = { { } }
   elseif  _stick == "forward" then _sequence = { { "forward" } }
   elseif  _stick == "back"    then _sequence = { { "back" } }
   elseif  _stick == "down"    then _sequence = { { "down" } }
-  elseif  _stick == "up"      then _sequence = { { "up" } }
+  elseif  _stick == "jump"    then _sequence = { { "up" } }
+  elseif  _stick == "super jump" then _sequence = { { "down" }, { "up" } }
+  elseif  _stick == "forward jump" then
+    _sequence = { { "forward", "up" }, { "forward", "up" }, { "forward", "up" } }
+    _offset = 2
+  elseif  _stick == "forward super jump" then
+    _sequence = { { "down" }, { "forward", "up" }, { "forward", "up" } }
+    _offset = 2
+  elseif  _stick == "back jump" then
+    _sequence = { { "back", "up" }, { "back", "up" } }
+    _offset = 2
+  elseif  _stick == "back super jump" then
+    _sequence = { { "down" }, { "back", "up" }, { "back", "up" } }
+    _offset = 2
+
+  elseif  _stick == "guard jump" then
+    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "up" } }
+    _offset = 6
+  elseif  _stick == "guard forward jump" then
+    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "forward", "up" },{ "forward", "up" } }
+    _offset = 7
+  elseif  _stick == "guard back jump" then
+    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "back", "up" },{ "back", "up" } }
+    _offset = 7
   elseif  _stick == "QCF"     then _sequence = { { "down" }, {"down", "forward"}, {"forward"} }
   elseif  _stick == "QCB"     then _sequence = { { "down" }, {"down", "back"}, {"back"} }
   elseif  _stick == "HCF"     then _sequence = { { "back" }, {"down", "back"}, {"down"}, {"down", "forward"}, {"forward"} }
@@ -329,7 +363,7 @@ function make_input_sequence(_stick, _button)
     table.insert(_sequence[#_sequence], _button)
   end
 
-  return _sequence
+  return _sequence, _offset
 end
 
 fast_wakeup_mode =
@@ -1194,7 +1228,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     end
     log(_defender.prefix, "counter_attack", "init ca (parry)")
     _defender.counter.attack_frame = frame_number + 15
-    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.sequence, _defender.counter.offset = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
     handle_recording()
 
@@ -1217,14 +1251,14 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     end
     log(_defender.prefix, "counter_attack", "init ca (wakeup)")
     _defender.counter.attack_frame = frame_number + _defender.remaining_wakeup_time + 1 -- the +1 here means that there is an error somehere but I don't know where. the remaining wakeup time seems ok
-    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.sequence, _defender.counter.offset = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.ref_time = -1
     handle_recording()
   elseif _defender.has_just_entered_air_recovery then
     clear_input_sequence(_defender)
     _defender.counter.ref_time = -1
     _defender.counter.attack_frame = frame_number + 100
-    _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+    _defender.counter.sequence, _defender.counter.offset = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
     _defender.counter.air_recovery = true
     handle_recording()
     log(_defender.prefix, "counter_attack", "init ca (air)")
@@ -1249,7 +1283,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
         end
       end
 
-      _defender.counter.sequence = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
+      _defender.counter.sequence, _defender.counter.offset = make_input_sequence(stick_gesture[_stick], button_gesture[_button])
       _defender.counter.ref_time = -1
       handle_recording()
     end
@@ -1261,6 +1295,8 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
       local _frames_before_landing = predict_frames_before_landing(_defender)
       if _frames_before_landing >= 0 then
         _defender.counter.attack_frame = frame_number + _frames_before_landing + 2
+      else
+        _defender.counter.attack_frame = frame_number
       end
     end
     local _frames_remaining = _defender.counter.attack_frame - frame_number
@@ -1272,7 +1308,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
         print(frame_number.." - queue ca")
       end
       log(_defender.prefix, "counter_attack", string.format("queue ca %d", _frames_remaining))
-      queue_input_sequence(_defender, _defender.counter.sequence)
+      queue_input_sequence(_defender, _defender.counter.sequence, _defender.counter.offset)
       _defender.counter.sequence = nil
       _defender.counter.attack_frame = -1
       _defender.counter.air_recovery = false
