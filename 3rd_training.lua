@@ -196,6 +196,10 @@ function clear_input_sequence(_player_obj)
   _player_obj.pending_input_sequence = nil
 end
 
+function is_playing_input_sequence(_player_obj)
+  return _player_obj.pending_input_sequence ~= nil and _player_obj.pending_input_sequence.current_frame >= 1
+end
+
 function make_input_empty(_input)
   if _input == nil then
     return
@@ -564,7 +568,7 @@ if current_recording_state == 4 then -- Replaying
 end
 
   -- pose
-if is_in_match and not is_menu_open and _player_obj.pending_input_sequence == nil then
+if is_in_match and not is_menu_open and not is_playing_input_sequence(_player_obj) then
   local _on_ground = is_state_on_ground(_player_obj.standing_state, _player_obj)
 
   if _pose == 2 and _on_ground then -- crouch
@@ -572,7 +576,7 @@ if is_in_match and not is_menu_open and _player_obj.pending_input_sequence == ni
   elseif _pose == 3 and _on_ground then -- jump
     _input[_player_obj.prefix..' Up'] = true
   elseif _pose == 4 then -- high jump
-    if _on_ground and _player_obj.pending_input_sequence == nil then
+    if _on_ground and not is_playing_input_sequence(_player_obj) then
       queue_input_sequence(_player_obj, {{"down"}, {"up"}})
     end
   end
