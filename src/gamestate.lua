@@ -472,6 +472,7 @@ function read_player_vars(_player_obj)
   end
 
   _player_obj.animation_frame_id = memory.readword(_player_obj.base + 0x21A)
+  _player_obj.animation_frame_id2 = memory.readbyte(_player_obj.base + 0x214)
   _player_obj.animation_frame = frame_number - _player_obj.current_animation_start_frame - _player_obj.current_animation_freeze_frames
   _player_obj.relevant_animation_frame = frame_number - _player_obj.relevant_animation_start_frame - _player_obj.relevant_animation_freeze_frames
 
@@ -485,11 +486,17 @@ function read_player_vars(_player_obj)
   if _player_obj.relevant_animation_frame_data ~= nil then
 
     -- Resync animation
+    -- NOTE: frame_id2 has been added at some point and might not present on all frame data
+    local _relevant_frame_data = _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1]
+
     if _player_obj.relevant_animation_frame >= 0
     and _player_obj.remaining_freeze_frames == 0
-    and _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1] ~= nil
-    and _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id ~= nil
-    and _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id ~= _player_obj.animation_frame_id
+    and _relevant_frame_data ~= nil
+    and _relevant_frame_data.frame_id ~= nil
+    and (
+      (_relevant_frame_data.frame_id2 == nil and _relevant_frame_data.frame_id ~= _player_obj.animation_frame_id)
+      or (_relevant_frame_data.frame_id2 ~= nil and (_relevant_frame_data.frame_id ~= _player_obj.animation_frame_id or _relevant_frame_data.frame_id2 ~= _player_obj.animation_frame_id2))
+    )
     then
       local _frame_count =  #_player_obj.relevant_animation_frame_data.frames
       local _resync_range_begin = -1
@@ -499,7 +506,7 @@ function read_player_vars(_player_obj)
       for _i = 1, _frame_count do
         local _frame_index = _i
         local _frame = _player_obj.relevant_animation_frame_data.frames[_frame_index]
-        if _frame.frame_id == _player_obj.animation_frame_id then
+        if _frame.frame_id == _player_obj.animation_frame_id and (_frame.frame_id2 == nil or _frame.frame_id2 == _player_obj.animation_frame_id2) then
           if _resync_range_begin == -1 then
             _resync_range_begin = _frame_index
           end
