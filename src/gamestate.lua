@@ -472,7 +472,13 @@ function read_player_vars(_player_obj)
   end
 
   _player_obj.animation_frame_id = memory.readword(_player_obj.base + 0x21A)
-  _player_obj.animation_frame_id2 = memory.readbyte(_player_obj.base + 0x214)
+  local _frame_id2 = memory.readbyte(_player_obj.base + 0x214)
+  local _frame_id3 = 0--memory.readbyte(_player_obj.base + 0x205)
+  local _complex_id = ""
+  for _i = 0, 0x4 do
+    _complex_id = _complex_id..string.format("%08X",memory.readdword(_player_obj.base + 0x214 + _i * 0x04))
+  end
+  _player_obj.animation_frame_hash = string_hash(_complex_id)
   _player_obj.animation_frame = frame_number - _player_obj.current_animation_start_frame - _player_obj.current_animation_freeze_frames
   _player_obj.relevant_animation_frame = frame_number - _player_obj.relevant_animation_start_frame - _player_obj.relevant_animation_freeze_frames
 
@@ -494,8 +500,8 @@ function read_player_vars(_player_obj)
     and _relevant_frame_data ~= nil
     and _relevant_frame_data.frame_id ~= nil
     and (
-      (_relevant_frame_data.frame_id2 == nil and _relevant_frame_data.frame_id ~= _player_obj.animation_frame_id)
-      or (_relevant_frame_data.frame_id2 ~= nil and (_relevant_frame_data.frame_id ~= _player_obj.animation_frame_id or _relevant_frame_data.frame_id2 ~= _player_obj.animation_frame_id2))
+      (_relevant_frame_data.hash == nil and _relevant_frame_data.frame_id ~= _player_obj.animation_frame_id)
+      or (_relevant_frame_data.hash ~= nil and (_relevant_frame_data.hash ~= _player_obj.animation_frame_hash))
     )
     then
       local _frame_count =  #_player_obj.relevant_animation_frame_data.frames
@@ -506,7 +512,7 @@ function read_player_vars(_player_obj)
       for _i = 1, _frame_count do
         local _frame_index = _i
         local _frame = _player_obj.relevant_animation_frame_data.frames[_frame_index]
-        if _frame.frame_id == _player_obj.animation_frame_id and ((_frame.frame_id2 == nil) or (_frame.frame_id2 == _player_obj.animation_frame_id2)) then
+        if (_frame.hash == nil and _frame.frame_id == _player_obj.animation_frame_id) or (_frame.hash ~= nil and _frame.hash == _player_obj.animation_frame_hash) then
           if _resync_range_begin == -1 then
             _resync_range_begin = _frame_index
           end
@@ -529,7 +535,7 @@ function read_player_vars(_player_obj)
       end
 
       if _resync_target >= 0 then
-        log(_player_obj.prefix, "animation", string.format("resynced %s (%d->%d)(%d.%d->%d.%d)", _player_obj.relevant_animation, _player_obj.relevant_animation_frame, (_resync_target - 1), _player_obj.animation_frame, _player_obj.animation_frame_id2, _player_obj.relevant_animation_frame_data.frames[_resync_target].frame_id, _player_obj.relevant_animation_frame_data.frames[_resync_target].frame_id2 or -1))
+        log(_player_obj.prefix, "animation", string.format("resynced %s (%d->%d)(%d.%d->%d.%d)", _player_obj.relevant_animation, _player_obj.relevant_animation_frame, (_resync_target - 1), _player_obj.animation_frame_id, _player_obj.animation_frame_hash, _player_obj.relevant_animation_frame_data.frames[_resync_target].frame_id, _player_obj.relevant_animation_frame_data.frames[_resync_target].hash or -1))
         if _player_obj.debug_animation_frames then
           print(string.format("%d: resynced anim %s from frame %d to %d (%d -> %d)", frame_number, _player_obj.relevant_animation, _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id, _frame.frame_id, _player_obj.relevant_animation_frame, (_resync_target - 1)))
         end

@@ -218,7 +218,7 @@ function record_framedata(_player_obj, _projectiles)
           (_player_obj.pos_y - current_recording_animation_previous_pos[2]),
         },
         frame_id = _player_obj.animation_frame_id,
-        frame_id2 = _player_obj.animation_frame_id2,
+        hash = _player_obj.animation_frame_hash,
       }
       current_recording_animation_previous_pos = { _player_obj.pos_x, _player_obj.pos_y }
 
