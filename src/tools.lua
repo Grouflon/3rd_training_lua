@@ -21,7 +21,7 @@ function string_hash(_str)
   local _DJB2_INIT = 5381;
 	local _hash = _DJB2_INIT
   for _i = 1, #_str do
-    local _c = _str.byte(_i)
+    local _c = string.byte(_str,_i)
     _hash = bit.lshift(_hash, 5) + _hash + _c
   end
 	return _hash
