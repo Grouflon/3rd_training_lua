@@ -62,6 +62,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - [Feature] Added back jump, forward jump, super jump, super forward jump, super back jump counter-attack options
 - [Feature] Added guard jump, guard back jump, guard forward jump counter-attack options
 - [Bugfix] Fixed random parry not behaving properly
+- [Bugfix] Fixed self-cancellable LP/LK not correctly blocked on various characters
 
 ### v0.9 (04/04/2021)
 - [Feature] Projectiles are now blocked/parried
