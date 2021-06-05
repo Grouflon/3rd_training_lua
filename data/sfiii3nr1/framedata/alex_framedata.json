@@ -3041,31 +3041,36 @@
   },
   "a444":{
     "hit_frames":[{
-        "min":4,
-        "max":5
+        "min":5,
+        "max":6
       }],
     "frames":[{
-        "frame_id2":3,
-        "frame_id":1856,
+        "hash":-5525803096,
+        "frame_id":1860,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":2,
-        "frame_id":1856,
+        "hash":2332426546,
+        "frame_id":1865,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
-        "frame_id":1856,
+        "hash":3373334641,
+        "frame_id":1865,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
-        "frame_id":1856,
+        "hash":17299144624,
+        "frame_id":1865,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":14045085423,
+        "frame_id":1865,
+        "boxes":[],
+        "movement":[-0,0]
+      },{
+        "hash":591607982,
         "frame_id":1857,
         "boxes":[{
             "type":"attack",
@@ -3082,7 +3087,7 @@
           }],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":-1220277480,
         "frame_id":1858,
         "boxes":[{
             "type":"attack",
@@ -3099,97 +3104,97 @@
           }],
         "movement":[-0,0]
       },{
-        "frame_id2":2,
+        "hash":-3750965573,
         "frame_id":1859,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":-2710057478,
         "frame_id":1859,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":2,
+        "hash":-8577205738,
         "frame_id":1860,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":-3241330347,
         "frame_id":1860,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":3,
+        "hash":8019608514,
         "frame_id":1861,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":2,
+        "hash":4765549313,
         "frame_id":1861,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":1511490112,
         "frame_id":1861,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":3,
+        "hash":7575528862,
         "frame_id":1862,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":2,
+        "hash":2104930905,
         "frame_id":1862,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":-1149128296,
         "frame_id":1862,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":4,
+        "hash":-1384577316,
         "frame_id":1863,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":3,
+        "hash":12541232667,
         "frame_id":1863,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":2,
+        "hash":697238874,
         "frame_id":1863,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":-2556820327,
         "frame_id":1863,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":4,
+        "hash":1502697949,
         "frame_id":1864,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":3,
+        "hash":-1751361252,
         "frame_id":1864,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":2,
+        "hash":-710453157,
         "frame_id":1864,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":1,
+        "hash":-3964512358,
         "frame_id":1864,
         "boxes":[],
         "movement":[-0,0]
       },{
-        "frame_id2":250,
+        "hash":-7843688468,
         "frame_id":1864,
         "boxes":[],
         "movement":[-0,0]
@@ -4089,132 +4094,148 @@
         "movement":[-3,-9]
       }]
   },
-  "wakeups":{
-    "3e1c":{
-      "exceptions":{
-        "ebd8":{
-          "duration":58
-        }
-      },
-      "duration":58
-    },
-    "1928":{
-      "exceptions":{
-        "f170":{
-          "duration":60
-        }
-      },
-      "duration":60
-    },
-    "389c":{
-      "exceptions":{
-        "899c":{
-          "duration":68
-        }
-      },
-      "duration":68
-    },
-    "365c":{
-      "exceptions":{
-        "4624":{
-          "duration":58
-        }
-      },
-      "duration":58
-    },
-    "362c":{
-      "exceptions":{
-        "babc":{
-          "duration":36
-        }
-      },
-      "duration":36
-    },
-    "1fb8":{
-      "exceptions":{
-        "4434":{
-          "duration":30
-        }
-      },
-      "duration":30
-    },
-    "39bc":{
-      "exceptions":{
-        "a850":{
-          "duration":68
-        }
-      },
-      "duration":68
-    },
-    "39fc":{
-      "exceptions":{
-        "4434":{
-          "duration":53
-        }
-      },
-      "duration":53
-    },
-    "46ec":{
-      "exceptions":{
-        "f944":{
-          "duration":40
-        }
-      },
-      "duration":40
-    },
-    "2098":{
-      "exceptions":{
-        "babc":{
-          "duration":29
-        }
-      },
-      "duration":29
-    },
-    "3a8c":{
-      "exceptions":{
-        "5e54":{
-          "duration":53
-        }
-      },
-      "duration":53
-    },
-    "378c":{
-      "exceptions":{
-        "e968":{
-          "duration":66
-        },
-        "b118":{
-          "duration":66
-        },
-        "0da4":{
-          "duration":59
-        },
-        "d8d4":{
-          "duration":66
-        },
-        "b590":{
-          "duration":66
-        },
-        "fe3c":{
-          "duration":59
-        },
-        "710c":{
-          "duration":65
-        },
-        "0af4":{
-          "duration":59
-        }
-      },
-      "duration":66
-    },
-    "19d8":{
-      "exceptions":{
-        "70e4":{
-          "duration":35
-        }
-      },
-      "duration":35
-    }
+  "a534":{
+    "hit_frames":[{
+        "min":4,
+        "max":6
+      }],
+    "frames":[{
+        "frame_id":1904,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1904,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1904,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1905,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1906,
+        "boxes":[{
+            "type":"attack",
+            "bottom":72,
+            "height":26,
+            "left":-82,
+            "width":21
+          },{
+            "type":"attack",
+            "bottom":68,
+            "height":28,
+            "left":-62,
+            "width":25
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":1906,
+        "boxes":[{
+            "type":"attack",
+            "bottom":72,
+            "height":26,
+            "left":-82,
+            "width":21
+          },{
+            "type":"attack",
+            "bottom":68,
+            "height":28,
+            "left":-62,
+            "width":25
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":1906,
+        "boxes":[{
+            "type":"attack",
+            "bottom":72,
+            "height":26,
+            "left":-82,
+            "width":21
+          },{
+            "type":"attack",
+            "bottom":68,
+            "height":28,
+            "left":-62,
+            "width":25
+          }],
+        "movement":[0,0]
+      },{
+        "frame_id":1907,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1908,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1909,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1909,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1910,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1910,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1911,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1911,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1912,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1912,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1913,
+        "boxes":[],
+        "movement":[8,0]
+      },{
+        "frame_id":1914,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1914,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1863,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
+      },{
+        "frame_id":1864,
+        "boxes":[],
+        "movement":[0,0]
+      }]
   },
   "b714":{
     "hit_frames":[{
@@ -4733,148 +4754,132 @@
         "movement":[0,0]
       }]
   },
-  "a534":{
-    "hit_frames":[{
-        "min":4,
-        "max":6
-      }],
-    "frames":[{
-        "frame_id":1904,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1904,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1904,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1905,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1906,
-        "boxes":[{
-            "type":"attack",
-            "bottom":72,
-            "height":26,
-            "left":-82,
-            "width":21
-          },{
-            "type":"attack",
-            "bottom":68,
-            "height":28,
-            "left":-62,
-            "width":25
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":1906,
-        "boxes":[{
-            "type":"attack",
-            "bottom":72,
-            "height":26,
-            "left":-82,
-            "width":21
-          },{
-            "type":"attack",
-            "bottom":68,
-            "height":28,
-            "left":-62,
-            "width":25
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":1906,
-        "boxes":[{
-            "type":"attack",
-            "bottom":72,
-            "height":26,
-            "left":-82,
-            "width":21
-          },{
-            "type":"attack",
-            "bottom":68,
-            "height":28,
-            "left":-62,
-            "width":25
-          }],
-        "movement":[0,0]
-      },{
-        "frame_id":1907,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1908,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1909,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1909,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1910,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1910,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1911,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1911,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1912,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1912,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1913,
-        "boxes":[],
-        "movement":[8,0]
-      },{
-        "frame_id":1914,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1914,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1863,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1863,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1864,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1864,
-        "boxes":[],
-        "movement":[0,0]
-      },{
-        "frame_id":1864,
-        "boxes":[],
-        "movement":[0,0]
-      }]
+  "wakeups":{
+    "3e1c":{
+      "exceptions":{
+        "ebd8":{
+          "duration":58
+        }
+      },
+      "duration":58
+    },
+    "1928":{
+      "exceptions":{
+        "f170":{
+          "duration":60
+        }
+      },
+      "duration":60
+    },
+    "39bc":{
+      "exceptions":{
+        "a850":{
+          "duration":68
+        }
+      },
+      "duration":68
+    },
+    "365c":{
+      "exceptions":{
+        "4624":{
+          "duration":58
+        }
+      },
+      "duration":58
+    },
+    "362c":{
+      "exceptions":{
+        "babc":{
+          "duration":36
+        }
+      },
+      "duration":36
+    },
+    "1fb8":{
+      "exceptions":{
+        "4434":{
+          "duration":30
+        }
+      },
+      "duration":30
+    },
+    "389c":{
+      "exceptions":{
+        "899c":{
+          "duration":68
+        }
+      },
+      "duration":68
+    },
+    "39fc":{
+      "exceptions":{
+        "4434":{
+          "duration":53
+        }
+      },
+      "duration":53
+    },
+    "46ec":{
+      "exceptions":{
+        "f944":{
+          "duration":40
+        }
+      },
+      "duration":40
+    },
+    "2098":{
+      "exceptions":{
+        "babc":{
+          "duration":29
+        }
+      },
+      "duration":29
+    },
+    "3a8c":{
+      "exceptions":{
+        "5e54":{
+          "duration":53
+        }
+      },
+      "duration":53
+    },
+    "378c":{
+      "exceptions":{
+        "d8d4":{
+          "duration":66
+        },
+        "b118":{
+          "duration":66
+        },
+        "0af4":{
+          "duration":59
+        },
+        "e968":{
+          "duration":66
+        },
+        "b590":{
+          "duration":66
+        },
+        "fe3c":{
+          "duration":59
+        },
+        "710c":{
+          "duration":65
+        },
+        "0da4":{
+          "duration":59
+        }
+      },
+      "duration":66
+    },
+    "19d8":{
+      "exceptions":{
+        "70e4":{
+          "duration":35
+        }
+      },
+      "duration":35
+    }
   },
   "af7c":{
     "hit_frames":[{
