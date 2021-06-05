@@ -417,7 +417,7 @@ frame_data_meta["remy"].projectiles["85"] = { type = 2 } -- HCharge ExK
 -- TWELVE
 frame_data_meta["twelve"].moves["462c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr LK
 frame_data_meta["twelve"].moves["46fc"] = { hits = {{ type = 2 }} } -- Cr MK
-frame_data_meta["twelve"].moves["480c"] = { hits = {{ type = 2 }} } -- Cr HK
+frame_data_meta["twelve"].moves["480c"] = { hits = {{ type = 2 }, { type = 2 }, { type = 2 }} } -- Cr HK
 
 frame_data_meta["twelve"].moves["e1b4"] = { hits = {{ type = 3 }} } -- UOH
 
