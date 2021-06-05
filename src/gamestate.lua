@@ -506,7 +506,7 @@ function read_player_vars(_player_obj)
       for _i = 1, _frame_count do
         local _frame_index = _i
         local _frame = _player_obj.relevant_animation_frame_data.frames[_frame_index]
-        if _frame.frame_id == _player_obj.animation_frame_id and (_frame.frame_id2 == nil or _frame.frame_id2 == _player_obj.animation_frame_id2) then
+        if _frame.frame_id == _player_obj.animation_frame_id and ((_frame.frame_id2 == nil) or (_frame.frame_id2 == _player_obj.animation_frame_id2)) then
           if _resync_range_begin == -1 then
             _resync_range_begin = _frame_index
           end
@@ -529,7 +529,7 @@ function read_player_vars(_player_obj)
       end
 
       if _resync_target >= 0 then
-        log(_player_obj.prefix, "animation", string.format("resynced %s (%d->%d)", _player_obj.relevant_animation, _player_obj.relevant_animation_frame, (_resync_target - 1)))
+        log(_player_obj.prefix, "animation", string.format("resynced %s (%d->%d)(%d.%d->%d.%d)", _player_obj.relevant_animation, _player_obj.relevant_animation_frame, (_resync_target - 1), _player_obj.animation_frame, _player_obj.animation_frame_id2, _player_obj.relevant_animation_frame_data.frames[_resync_target].frame_id, _player_obj.relevant_animation_frame_data.frames[_resync_target].frame_id2 or -1))
         if _player_obj.debug_animation_frames then
           print(string.format("%d: resynced anim %s from frame %d to %d (%d -> %d)", frame_number, _player_obj.relevant_animation, _player_obj.relevant_animation_frame_data.frames[_player_obj.relevant_animation_frame + 1].frame_id, _frame.frame_id, _player_obj.relevant_animation_frame, (_resync_target - 1)))
         end
