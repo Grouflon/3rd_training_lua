@@ -510,6 +510,10 @@ function button_menu_item(_name, _validate_function)
     if _selected then
       _c = text_selected_color
 
+      if self.last_frame_validated > frame_number then
+        self.last_frame_validated = 0
+      end
+
       if (frame_number - self.last_frame_validated < 5 ) then
         _c = 0xFFFF00FF
       end
