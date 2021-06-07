@@ -59,6 +59,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - [Feature] New 3rd_spectator.lua script for displaying info during replays without messing with input
 - [Feature] Number display for all gauges and bonuses
 - [Feature] Frame advantage display
+- [Feature] Character switch from the training menu
 - [Feature] Added back jump, forward jump, super jump, super forward jump, super back jump counter-attack options
 - [Feature] Added guard jump, guard back jump, guard forward jump counter-attack options
 - [Bugfix] Fixed random parry not behaving properly

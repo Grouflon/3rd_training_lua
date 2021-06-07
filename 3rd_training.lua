@@ -33,12 +33,14 @@ print("")
 
 -- Includes
 require("src/tools")
+require("src/memory_adresses")
 require("src/display")
 require("src/menu_widgets")
 require("src/framedata")
 require("src/gamestate")
 require("src/input_history")
 require("src/frame_advantage")
+require("src/character_select")
 
 recording_slot_count = 8
 
@@ -51,8 +53,8 @@ log_categories_display =
 {
   input =                     { history = true, print = false },
   projectiles =               { history = false, print = false },
-  fight =                     { history = true, print = false },
-  animation =                 { history = false, print = false },
+  fight =                     { history = true, print = true },
+  animation =                 { history = false, print = true },
   parry_training_FORWARD =    { history = false, print = false },
   blocking =                  { history = true, print = false },
   counter_attack =            { history = false, print = false },
@@ -215,6 +217,8 @@ function make_input_empty(_input)
   _input["P1 Weak Kick"] = false
   _input["P1 Medium Kick"] = false
   _input["P1 Strong Kick"] = false
+  _input["P1 Start"] = false
+  _input["P1 Coin"] = false
   _input["P2 Up"] = false
   _input["P2 Down"] = false
   _input["P2 Left"] = false
@@ -225,6 +229,8 @@ function make_input_empty(_input)
   _input["P2 Weak Kick"] = false
   _input["P2 Medium Kick"] = false
   _input["P2 Strong Kick"] = false
+  _input["P2 Start"] = false
+  _input["P2 Coin"] = false
 end
 
 
@@ -1571,6 +1577,12 @@ hits_before_red_parry_item.is_disabled = function()
   return training_settings.blocking_style ~= 3
 end
 
+change_characters_item = button_menu_item("Change Characters", open_character_select_menu)
+change_characters_item.is_disabled = function()
+  -- not implemented for 4rd strike yet
+  return rom_name ~= "sfiii3nr1"
+end
+
 main_menu = make_multitab_menu(
   23, 15, 360, 195, -- screen size 383,223
   {
@@ -1590,6 +1602,7 @@ main_menu = make_multitab_menu(
     {
       name = "Rules",
       entries = {
+        change_characters_item,
         checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
         list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
         life_refill_delay_item,
@@ -2040,10 +2053,9 @@ end
 
 function on_load_state()
   reset_player_objects()
-  read_player_vars(player_objects[1])
-  read_player_vars(player_objects[2])
-
   frame_advantage_reset()
+
+  gamestate_read()
 
   -- reset recording states in a useful way
   if current_recording_state == 3 then
@@ -2060,7 +2072,16 @@ end
 function on_start()
   load_training_data()
   load_frame_data()
+  emu.speedmode("normal")
 end
+
+function hotkey1()
+  if developer_mode then
+    savestate.load(savestate.create("data/sfiii3nr1/savestates/character_select.fs"))
+  end
+end
+
+input.registerhotkey(1, hotkey1)
 
 function before_frame()
 
@@ -2194,6 +2215,8 @@ function before_frame()
   previous_input = _input
 
   joypad.set(_input)
+
+  update_character_select()
 
   update_framedata_recording(player_objects[1], projectiles)
   update_idle_framedata_recording(player_objects[2])
