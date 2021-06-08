@@ -5,7 +5,8 @@ character_select_ids = {
   ibuki = {0,3}, chunli = {1,3}, dudley = {2,3},
   necro = {0,4}, q      = {1,4}, oro    = {2,4},
   urien = {0,5}, remy   = {1,5}, ryu    = {2,5},
-  gouki = {0,6}, yun    = {1,6}
+  gouki = {0,6}, yun    = {1,6},
+  gill  = {3,1}
 }
 
 character_color_inputs = 
@@ -32,6 +33,7 @@ character_select_list = {
   "chunli",
   "dudley",
   "elena",
+  "gill",
   "gouki",
   "hugo",
   "ibuki",
