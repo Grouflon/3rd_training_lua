@@ -1392,7 +1392,15 @@ end
 -- RECORDING POPUPS
 
 function clear_slot()
-  recording_slots[training_settings.current_recording_slot].inputs = {}
+  recording_slots[training_settings.current_recording_slot] = make_recording_slot()
+  save_training_data()
+end
+
+function clear_all_slots()
+  for _i = 1, recording_slot_count do
+    recording_slots[_i] = make_recording_slot()
+  end
+  training_settings.current_recording_slot = 1
   save_training_data()
 end
 
@@ -1556,7 +1564,7 @@ end
 p2_meter_gauge_item.is_disabled = p1_meter_gauge_item.is_disabled
 meter_refill_delay_item.is_disabled = p1_meter_gauge_item.is_disabled
 
-slot_weight_item = integer_menu_item("Weight", nil, "weight", 0, 100, false, 10)
+slot_weight_item = integer_menu_item("Weight", nil, "weight", 0, 100, false, 1)
 counter_attack_delay_item = integer_menu_item("Counter-attack delay", nil, "delay", -40, 40, false, 0)
 counter_attack_random_deviation_item = integer_menu_item("Counter-attack max random deviation", nil, "random_deviation", -600, 600, false, 0, 1)
 
@@ -1627,6 +1635,7 @@ main_menu = make_multitab_menu(
         counter_attack_delay_item,
         counter_attack_random_deviation_item,
         button_menu_item("Clear slot", clear_slot),
+        button_menu_item("Clear all slots", clear_all_slots),
         button_menu_item("Save slot to file", open_save_popup),
         button_menu_item("Load slot from file", open_load_popup),
       }
