@@ -26,7 +26,15 @@ end
 
 function co_select_gill(_input)
   local _player_id = 0
-  if character_select_sequence_state < 3 then
+
+  local _p1_character_select_state = memory.readbyte(adresses.players[1].character_select_state)
+  local _p2_character_select_state = memory.readbyte(adresses.players[2].character_select_state)
+
+  if _p1_character_select_state > 2 and _p2_character_select_state > 2 then
+    return
+  end
+
+  if _p1_character_select_state <= 2 then
     _player_id = 1
   else
     _player_id = 2
@@ -45,7 +53,15 @@ end
 
 function co_select_shingouki(_input)
   local _player_id = 0
-  if character_select_sequence_state < 3 then
+
+  local _p1_character_select_state = memory.readbyte(adresses.players[1].character_select_state)
+  local _p2_character_select_state = memory.readbyte(adresses.players[2].character_select_state)
+
+  if _p1_character_select_state > 2 and _p2_character_select_state > 2 then
+    return
+  end
+
+  if _p1_character_select_state <= 2 then
     _player_id = 1
   else
     _player_id = 2
