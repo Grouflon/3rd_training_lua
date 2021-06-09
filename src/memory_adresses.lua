@@ -26,6 +26,9 @@ adresses = {
         -- - 5 is locked SA
         -- Will always stay at 5 after that and during the match
       character_select_state = 0x0201553D,
+
+      -- [byte] used to overwrite shin gouki id
+      character_select_id = 0x02011387,
     },
     {
       character_select_row = 0x020154D1,
@@ -33,6 +36,7 @@ adresses = {
       character_select_sa = 0x020154D5,
       character_select_color = 0x02015684,
       character_select_state = 0x02015545,
+      character_select_id = 0x02011388
     }
   }
 }

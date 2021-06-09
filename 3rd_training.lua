@@ -12,6 +12,7 @@ print("- Enter training menu by pressing \"Start\" while in game")
 print("- Enter/exit recording mode by double tapping \"Coin\"")
 print("- In recording mode, press \"Coin\" again to start/stop recording")
 print("- In normal mode, press \"Coin\" to start/stop replay")
+print("- Lua Hotkey 1 (alt+1) to return to character select screen")
 print("")
 
 -- Kudos to indirect contributors:
@@ -1585,7 +1586,7 @@ hits_before_red_parry_item.is_disabled = function()
   return training_settings.blocking_style ~= 3
 end
 
-change_characters_item = button_menu_item("Change Characters", open_character_select_menu)
+change_characters_item = button_menu_item("Select Characters", start_character_select_sequence)
 change_characters_item.is_disabled = function()
   -- not implemented for 4rd strike yet
   return rom_name ~= "sfiii3nr1"
@@ -2076,21 +2077,38 @@ function on_load_state()
 
   clear_input_history()
   clear_printed_geometry()
+  emu.speedmode("normal")
 end
 
 function on_start()
   load_training_data()
   load_frame_data()
   emu.speedmode("normal")
+
+  if not developer_mode then
+    start_character_select_sequence()
+  end
 end
 
 function hotkey1()
-  if developer_mode then
-    savestate.load(savestate.create("data/sfiii3nr1/savestates/character_select.fs"))
+  start_character_select_sequence()
+end
+
+function hotkey2()
+  if character_select_sequence_state ~= 0 then
+    select_gill()
+  end
+end
+
+function hotkey3()
+  if character_select_sequence_state ~= 0 then
+    select_shingouki()
   end
 end
 
 input.registerhotkey(1, hotkey1)
+input.registerhotkey(2, hotkey2)
+input.registerhotkey(3, hotkey3)
 
 function before_frame()
 
@@ -2196,6 +2214,9 @@ function before_frame()
     frame_advantage_reset()
   end
 
+  -- character select
+  update_character_select(_input)
+
   -- Log input
   if previous_input then
     function log_input(_player_object, _name, _short_name)
@@ -2224,8 +2245,6 @@ function before_frame()
   previous_input = _input
 
   joypad.set(_input)
-
-  update_character_select()
 
   update_framedata_recording(player_objects[1], projectiles)
   update_idle_framedata_recording(player_objects[2])
@@ -2274,6 +2293,8 @@ function on_gui()
   if P1.input.pressed.start then
     clear_printed_geometry()
   end
+
+  draw_character_select()
 
   if is_in_match then
 
