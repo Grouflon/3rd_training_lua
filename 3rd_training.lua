@@ -1510,6 +1510,7 @@ training_settings = {
   display_input = true,
   display_gauges = false,
   display_p1_input_history = false,
+  display_p1_input_history_dyanamic = false,
   display_p2_input_history = false,
   display_frame_advantage = false,
   display_hitboxes = false,
@@ -1586,6 +1587,9 @@ hits_before_red_parry_item.is_disabled = function()
   return training_settings.blocking_style ~= 3
 end
 
+display_p2_input_history_item = checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history")
+display_p2_input_history_item.is_disabled = function() return training_settings.display_p1_input_history_dynamic end
+
 change_characters_item = button_menu_item("Select Characters", start_character_select_sequence)
 change_characters_item.is_disabled = function()
   -- not implemented for 4rd strike yet
@@ -1647,7 +1651,8 @@ main_menu = make_multitab_menu(
         checkbox_menu_item("Display Controllers", training_settings, "display_input"),
         checkbox_menu_item("Display Gauges Numbers", training_settings, "display_gauges"),
         checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
-        checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history"),
+        checkbox_menu_item("Dynamic P1 Input History", training_settings, "display_p1_input_history_dynamic"),
+        display_p2_input_history_item,
         checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
         integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
@@ -2320,8 +2325,16 @@ function on_gui()
     end
 
     -- input history
-    if training_settings.display_p1_input_history then input_history_draw(input_history[1], 4, 49, false) end
-    if training_settings.display_p2_input_history then input_history_draw(input_history[2], screen_width - 4, 49, true) end
+    if training_settings.display_p1_input_history_dynamic and training_settings.display_p1_input_history then
+      if player.pos_x < 320 then
+        input_history_draw(input_history[1], screen_width - 4, 49, true)
+      else
+        input_history_draw(input_history[1], 4, 49, false)
+      end
+    else
+      if training_settings.display_p1_input_history then input_history_draw(input_history[1], 4, 49, false) end
+      if training_settings.display_p2_input_history then input_history_draw(input_history[2], screen_width - 4, 49, true) end
+    end
 
     -- controllers
     if training_settings.display_input then
