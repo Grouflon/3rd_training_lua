@@ -1519,6 +1519,7 @@ training_settings = {
   music_volume = 10,
   life_refill_delay = 20,
   meter_refill_delay = 20,
+  fast_forward_intro = true,
 
   -- special training
   special_training_current_mode = 1,
@@ -1609,24 +1610,6 @@ main_menu = make_multitab_menu(
       }
     },
     {
-      name = "Rules",
-      entries = {
-        change_characters_item,
-        checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
-        list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
-        life_refill_delay_item,
-        list_menu_item("Stun Mode", training_settings, "stun_mode", stun_mode),
-        p1_stun_reset_value_gauge_item,
-        p2_stun_reset_value_gauge_item,
-        stun_reset_delay_item,
-        list_menu_item("Meter Refill Mode", training_settings, "meter_mode", meter_mode),
-        p1_meter_gauge_item,
-        p2_meter_gauge_item,
-        meter_refill_delay_item,
-        checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
-      }
-    },
-    {
       name = "Recording",
       entries = {
         checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
@@ -1650,7 +1633,26 @@ main_menu = make_multitab_menu(
         checkbox_menu_item("Display P2 Input History", training_settings, "display_p2_input_history"),
         checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
+      }
+    },
+    {
+      name = "Rules",
+      entries = {
+        change_characters_item,
+        checkbox_menu_item("Infinite Time", training_settings, "infinite_time"),
+        list_menu_item("Life Refill Mode", training_settings, "life_mode", life_mode),
+        life_refill_delay_item,
+        list_menu_item("Stun Mode", training_settings, "stun_mode", stun_mode),
+        p1_stun_reset_value_gauge_item,
+        p2_stun_reset_value_gauge_item,
+        stun_reset_delay_item,
+        list_menu_item("Meter Refill Mode", training_settings, "meter_mode", meter_mode),
+        p1_meter_gauge_item,
+        p2_meter_gauge_item,
+        meter_refill_delay_item,
+        checkbox_menu_item("Infinite Super Art Time", training_settings, "infinite_sa_time"),
         integer_menu_item("Music Volume", training_settings, "music_volume", 0, 10, false, 10),
+        checkbox_menu_item("Speed Up Game Intro", training_settings, "fast_forward_intro"),
       }
     },
     {
@@ -1671,7 +1673,7 @@ main_menu = make_multitab_menu(
   end,
   function(_menu)
     -- recording slots special display
-    if _menu.main_menu_selected_index == 3 then
+    if _menu.main_menu_selected_index == 2 then
       local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot].inputs)
       gui.text(_menu.left + 83, _menu.top + 23 + 2 * menu_y_interval, _t, text_disabled_color, text_default_border_color)
     end
@@ -2215,7 +2217,7 @@ function before_frame()
   end
 
   -- character select
-  update_character_select(_input)
+  update_character_select(_input, training_settings.fast_forward_intro)
 
   -- Log input
   if previous_input then

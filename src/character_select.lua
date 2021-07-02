@@ -6,7 +6,7 @@ character_select_coroutine = nil
 -- 2 is selecting p1
 -- 3 is waiting for input release for p2
 -- 4 is selecting p2
-character_select_sequence_state = 0 
+character_select_sequence_state = 0
 
 function co_wait_x_frames(_frame_count)
   local _start_frame = frame_number
@@ -78,7 +78,7 @@ function co_select_shingouki(_input)
   memory.writebyte(adresses.players[_player_id].character_select_id, 0x0F)
 end
 
-function update_character_select(_input)
+function update_character_select(_input, _do_fast_forward)
 
   if not character_select_sequence_state == 0 then
     return
@@ -119,10 +119,10 @@ function update_character_select(_input)
   end
 
   if not is_in_match then
-    if _p1_character_select_state > 4 and _p2_character_select_state > 4 then 
+    if _do_fast_forward and _p1_character_select_state > 4 and _p2_character_select_state > 4 then
       emu.speedmode("turbo")
     end
-  else
+  elseif character_select_sequence_state ~= 0 then
     emu.speedmode("normal")
     character_select_sequence_state = 0
   end
