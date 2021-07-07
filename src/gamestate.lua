@@ -669,6 +669,7 @@ function read_player_vars(_player_obj)
         and _player_obj.movement_type ~= 5 -- movement type 5 is ryu's reversal DP on landing
       ) then
       _player_obj.is_wakingup = true
+      _player_obj.is_past_wakeup_frame = false
       _player_obj.wakeup_time = 0
       _player_obj.wakeup_animation = _player_obj.animation
       if debug_wakeup then
@@ -680,11 +681,16 @@ function read_player_vars(_player_obj)
     _player_obj.is_fast_wakingup = _player_obj.is_fast_wakingup or false
     if _player_obj.is_wakingup and _previous_fast_wakeup_flag == 1 and _player_obj.fast_wakeup_flag == 0 then
       _player_obj.is_fast_wakingup = true
+      _player_obj.is_past_wakeup_frame = true
       _player_obj.wakeup_time = 0
       _player_obj.wakeup_animation = _player_obj.animation
       if debug_wakeup then
         print(string.format("%d - %s fast wakeup started", frame_number, _player_obj.prefix))
       end
+    end
+
+    if _player_obj.previous_can_fast_wakeup ~= 0 and _player_obj.can_fast_wakeup == 0 then
+      _player_obj.is_past_wakeup_frame = true
     end
 
     if _player_obj.is_wakingup then
@@ -697,6 +703,7 @@ function read_player_vars(_player_obj)
       end
       _player_obj.is_wakingup = false
       _player_obj.is_fast_wakingup = false
+      _player_obj.is_past_wakeup_frame = false
     end
 
     _player_obj.has_just_started_wake_up = not _player_obj.previous_is_wakingup and _player_obj.is_wakingup

@@ -579,8 +579,9 @@ end
   -- pose
 if is_in_match and not is_menu_open and not is_playing_input_sequence(_player_obj) then
   local _on_ground = is_state_on_ground(_player_obj.standing_state, _player_obj)
+  local _is_waking_up = _player_obj.is_wakingup and _player_obj.is_past_wakeup_frame
 
-  if _pose == 2 and _on_ground then -- crouch
+  if _pose == 2 and (_on_ground or _is_waking_up) then -- crouch
     _input[_player_obj.prefix..' Down'] = true
   elseif _pose == 3 and _on_ground then -- jump
     _input[_player_obj.prefix..' Up'] = true
