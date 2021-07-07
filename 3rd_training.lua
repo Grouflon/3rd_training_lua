@@ -2345,7 +2345,7 @@ function on_gui()
 
     -- input history
     if training_settings.display_p1_input_history_dynamic and training_settings.display_p1_input_history then
-      if player.pos_x < 320 then
+      if player_objects[1].pos_x < 320 then
         input_history_draw(input_history[1], screen_width - 4, 49, true)
       else
         input_history_draw(input_history[1], 4, 49, false)
