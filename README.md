@@ -56,6 +56,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 ## Changelog
 ### v0.10 (???)
 - [Feature] Charge special training (contribution of @ProfessorAnon)
+- [Feature] Dynamic input display (switch sides to avoid overlapping action) (contribution of @ProfessorAnon)
 - [Feature] New 3rd_spectator.lua script for displaying info during replays without messing with input
 - [Feature] Number display for all gauges and bonuses
 - [Feature] Frame advantage display
