@@ -1307,9 +1307,9 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
   if _defender.counter.sequence then
     if _defender.counter.air_recovery then
       local _frames_before_landing = predict_frames_before_landing(_defender)
-      if _frames_before_landing >= 0 then
+      if _frames_before_landing > 0 then
         _defender.counter.attack_frame = frame_number + _frames_before_landing + 2
-      else
+      elseif _frames_before_landing == 0 then
         _defender.counter.attack_frame = frame_number
       end
     end
