@@ -610,7 +610,7 @@ function make_multitab_menu(_left, _top, _right, _bottom, _content, _on_toggle_e
 end
 
 function multitab_menu_update(_menu, _input)
-  
+
   if _input.down then
     repeat
       if _menu.is_main_menu_selected then
@@ -655,7 +655,7 @@ function multitab_menu_update(_menu, _input)
       if _menu.main_menu_selected_index == 0 then
         _menu.main_menu_selected_index = #_menu.content
       end
-    else
+    elseif _current_entry ~= nil then
       if _current_entry.left ~= nil then
         _current_entry:left()
         if _menu.on_toggle_entry ~= nil then
@@ -671,7 +671,7 @@ function multitab_menu_update(_menu, _input)
       if _menu.main_menu_selected_index > #_menu.content then
         _menu.main_menu_selected_index = 1
       end
-    else
+    elseif _current_entry ~= nil then
       if _current_entry.right ~= nil then
         _current_entry:right()
         if _menu.on_toggle_entry ~= nil then
@@ -683,30 +683,36 @@ function multitab_menu_update(_menu, _input)
 
   if _input.validate then
     if is_main_menu_selected then
-    elseif _current_entry.validate then
-      _current_entry:validate()
-      if _menu.on_toggle_entry ~= nil then
-        _menu.on_toggle_entry(_menu)
+    elseif _current_entry ~= nil then
+      if _current_entry.validate then
+        _current_entry:validate()
+        if _menu.on_toggle_entry ~= nil then
+          _menu.on_toggle_entry(_menu)
+        end
       end
     end
   end
 
   if _input.reset then
     if is_main_menu_selected then
-    elseif _current_entry.reset then
-      _current_entry:reset()
-      if _menu.on_toggle_entry ~= nil then
-        _menu.on_toggle_entry(_menu)
+    elseif _current_entry ~= nil then
+      if _current_entry.reset then
+        _current_entry:reset()
+        if _menu.on_toggle_entry ~= nil then
+          _menu.on_toggle_entry(_menu)
+        end
       end
     end
   end
 
   if _input.cancel then
     if is_main_menu_selected then
-    elseif _current_entry.cancel then
-      _current_entry:cancel()
-      if _menu.on_toggle_entry ~= nil then
-        _menu.on_toggle_entry(_menu)
+    elseif _current_entry ~= nil then
+      if _current_entry.cancel then
+        _current_entry:cancel()
+        if _menu.on_toggle_entry ~= nil then
+          _menu.on_toggle_entry(_menu)
+        end
       end
     end
   end
@@ -864,7 +870,7 @@ function menu_draw(_menu)
   local _menu_x = _menu.left + 10
   local _menu_y = _menu.top + 9
   local _draw_index = 0
-  
+
   for i = 1, #_menu.content do
     if _menu.content[i].is_disabled == nil or not _menu.content[i].is_disabled() then
       _menu.content[i]:draw(_menu_x, _menu_y + menu_y_interval * _draw_index, _menu.selected_index == i)
