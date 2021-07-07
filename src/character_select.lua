@@ -122,7 +122,7 @@ function update_character_select(_input, _do_fast_forward)
     if _do_fast_forward and _p1_character_select_state > 4 and _p2_character_select_state > 4 then
       emu.speedmode("turbo")
     end
-  elseif character_select_sequence_state ~= 0 then
+  elseif has_match_just_started then
     emu.speedmode("normal")
     character_select_sequence_state = 0
   end
