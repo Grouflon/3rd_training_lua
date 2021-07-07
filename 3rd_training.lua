@@ -518,7 +518,9 @@ function backup_recordings()
   -- Init base table
   if training_settings.recordings == nil then
     training_settings.recordings = {}
-    for _key, _value in ipairs(characters) do
+  end
+  for _key, _value in ipairs(characters) do
+    if training_settings.recordings[_value] == nil then
       training_settings.recordings[_value] = {}
       for _i = 1, #recording_slots do
         table.insert(training_settings.recordings[_value], make_recording_slot())
@@ -807,7 +809,7 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     end
   elseif not _dummy.blocking.wait_for_block_string then
     if (
-        _dummy.has_just_parried or 
+        _dummy.has_just_parried or
         ((_dummy.blocking.expected_attack_hit_id == _dummy.blocking.last_attack_hit_id or not _dummy.blocking.listening) and _dummy.is_idle and _dummy.idle_time > 20)
        ) then
       _dummy.blocking.wait_for_block_string = true
@@ -1513,7 +1515,8 @@ training_settings = {
   display_p2_input_history = false,
   display_frame_advantage = false,
   display_hitboxes = false,
-  auto_crop_recording = true,
+  auto_crop_recording_start = true,
+  auto_crop_recording_end = true,
   current_recording_slot = 1,
   replay_mode = 1,
   music_volume = 10,
@@ -1612,7 +1615,8 @@ main_menu = make_multitab_menu(
     {
       name = "Recording",
       entries = {
-        checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording"),
+        checkbox_menu_item("Auto Crop First Frames", training_settings, "auto_crop_recording_start"),
+        checkbox_menu_item("Auto Crop Last Frames", training_settings, "auto_crop_recording_end"),
         list_menu_item("Replay Mode", training_settings, "replay_mode", slot_replay_mode),
         list_menu_item("Slot", training_settings, "current_recording_slot", recording_slots_names),
         slot_weight_item,
@@ -1675,7 +1679,7 @@ main_menu = make_multitab_menu(
     -- recording slots special display
     if _menu.main_menu_selected_index == 2 then
       local _t = string.format("%d frames", #recording_slots[training_settings.current_recording_slot].inputs)
-      gui.text(_menu.left + 83, _menu.top + 23 + 2 * menu_y_interval, _t, text_disabled_color, text_default_border_color)
+      gui.text(_menu.left + 83, _menu.top + 23 + 3 * menu_y_interval, _t, text_disabled_color, text_default_border_color)
     end
   end
 )
@@ -1701,6 +1705,7 @@ end
 swap_characters = false
 -- 1: Default Mode, 2: Wait for recording, 3: Recording, 4: Replaying
 current_recording_state = 1
+current_recording_last_idle_frame = -1
 last_coin_input_frame = -1
 override_replay_slot = -1
 recording_states =
@@ -1795,27 +1800,31 @@ function set_recording_state(_input, _state)
   elseif current_recording_state == 2 then
     swap_characters = false
   elseif current_recording_state == 3 then
-
-    if training_settings.auto_crop_recording then
-      local _first_input = 1
-      local _last_input = 1
-      for _i, _value in ipairs(recording_slots[training_settings.current_recording_slot].inputs) do
-        if #_value > 0 then
-          _last_input = _i
-        elseif _first_input == _i then
-          _first_input = _first_input + 1
-        end
+    local _first_input = 1
+    local _last_input = 1
+    for _i, _value in ipairs(recording_slots[training_settings.current_recording_slot].inputs) do
+      if #_value > 0 then
+        _last_input = _i
+      elseif _first_input == _i then
+        _first_input = _first_input + 1
       end
-
-      -- cropping end of animation is actually not a good idea if we want to repeat sequences
-      _last_input = #recording_slots[training_settings.current_recording_slot].inputs
-
-      local _cropped_sequence = {}
-      for _i = _first_input, _last_input do
-        table.insert(_cropped_sequence, recording_slots[training_settings.current_recording_slot].inputs[_i])
-      end
-      recording_slots[training_settings.current_recording_slot].inputs = _cropped_sequence
     end
+
+    _last_input = math.max(current_recording_last_idle_frame, _last_input)
+
+    if not training_settings.auto_crop_recording_start then
+      _first_input = 1
+    end
+
+    if not training_settings.auto_crop_recording_end or _last_input ~= current_recording_last_idle_frame then
+      _last_input = #recording_slots[training_settings.current_recording_slot].inputs
+    end
+
+    local _cropped_sequence = {}
+    for _i = _first_input, _last_input do
+      table.insert(_cropped_sequence, recording_slots[training_settings.current_recording_slot].inputs[_i])
+    end
+    recording_slots[training_settings.current_recording_slot].inputs = _cropped_sequence
 
     save_training_data()
 
@@ -1832,6 +1841,7 @@ function set_recording_state(_input, _state)
     swap_characters = true
     make_input_empty(_input)
   elseif current_recording_state == 3 then
+    current_recording_last_idle_frame = -1
     swap_characters = true
     make_input_empty(_input)
     recording_slots[training_settings.current_recording_slot].inputs = {}
@@ -1915,6 +1925,11 @@ function update_recording(_input)
       end
 
       table.insert(recording_slots[training_settings.current_recording_slot].inputs, _frame)
+
+      if player.idle_time == 1 then
+        current_recording_last_idle_frame = #recording_slots[training_settings.current_recording_slot].inputs - 1
+      end
+
     elseif current_recording_state == 4 then
       if dummy.pending_input_sequence == nil then
         set_recording_state(_input, 1)
@@ -2093,6 +2108,7 @@ function on_start()
 end
 
 function hotkey1()
+  set_recording_state({}, 1)
   start_character_select_sequence()
 end
 
@@ -2150,7 +2166,7 @@ function before_frame()
     p2_stun_reset_value_gauge_item.gauge_max = player_objects[2].stun_max
   end
 
-  local _write_game_vars_settings = 
+  local _write_game_vars_settings =
   {
     freeze = is_menu_open,
     infinite_time = training_settings.infinite_time,
@@ -2524,7 +2540,7 @@ function on_gui()
         _charge_text_color = _miss_color
         _charge_outline_color = 0x840000FF
       end
-      
+
       _charge_time_text = string.format("%d", _charge_object.max_charge - _charge_object.charge_time)
       _overcharge_time_text = string.format("[%d]", _charge_object.overcharge)
       _last_overcharge_time_text = string.format("[%d]", _charge_object.last_overcharge)
@@ -2545,9 +2561,9 @@ function on_gui()
       if training_settings.special_training_charge_overcharge_on and _charge_object.overcharge == 0 and _charge_object.last_overcharge > 0 and _charge_object.last_overcharge < 42 then
         gui.text(_reset_gauge_right + 16, _y + 7, _last_overcharge_time_text, _success_color, text_default_border_color)
       end
-    
 
-      gui.text(_reset_gauge_right + 4, _y + 7, _charge_time_text, _charge_text_color, text_default_border_color)  
+
+      gui.text(_reset_gauge_right + 4, _y + 7, _charge_time_text, _charge_text_color, text_default_border_color)
       gui.text(_reset_gauge_right + 4, _y + 13, _reset_time_text, text_default_color, text_default_border_color)
 
       return 8 + 5 + (_gauge_height * 2)

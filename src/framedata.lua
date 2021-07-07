@@ -4,7 +4,7 @@ frame_data_file_ext = "_framedata.json"
 
 characters =
 {
-  "",
+  "gill",
   "alex",
   "ryu",
   "yun",
