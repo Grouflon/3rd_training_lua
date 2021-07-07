@@ -62,6 +62,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - [Feature] Character switch from the training menu
 - [Feature] Added back jump, forward jump, super jump, super forward jump, super back jump counter-attack options
 - [Feature] Added guard jump, guard back jump, guard forward jump counter-attack options
+- [Feature] Added auto-crop last frames option
 - [Bugfix] Fixed random parry not behaving properly
 - [Bugfix] Fixed self-cancellable LP/LK not correctly blocked on various characters
 
