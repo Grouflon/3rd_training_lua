@@ -1,11 +1,9 @@
 move_advantage = {}
 
 -- known bugs:
--- - throws startup and hit frame are sometimes wrong
--- - jumping after a blocked move increase advantage by 1
+-- - throws startup and hit frame are often wrong (but not always oO)
 
 function frame_advantage_update(_attacker, _defender)
-  local _debug = false
 
   function has_just_attacked(_player_obj)
     return _player_obj.has_just_attacked or (_player_obj.recovery_time == 0 and _player_obj.freeze_frames == 0 and _player_obj.input_capacity == 0 and _player_obj.previous_input_capacity ~= 0) or (_player_obj.movement_type == 4 and _player_obj.last_movement_type_change_frame == 0)
@@ -31,7 +29,7 @@ function frame_advantage_update(_attacker, _defender)
       opponent_end_frame = nil,
     }
 
-    if _debug then print(string.format("%d - start", frame_number)) end
+    log(_attacker.prefix, "frame_advantage", string.format("armed"))
   end
 
   if move_advantage.armed then
@@ -42,7 +40,7 @@ function frame_advantage_update(_attacker, _defender)
           move_advantage.hitbox_start_frame = frame_number
           move_advantage.end_frame = nil
 
-          if _debug then print(string.format("%d - hitbox", frame_number)) end
+          log(_attacker.prefix, "frame_advantage", string.format("hitbox"))
           break
         end
       end
@@ -50,7 +48,7 @@ function frame_advantage_update(_attacker, _defender)
         if _projectile.emitter_id == _attacker.id and _projectile.has_activated then
           move_advantage.hitbox_start_frame = frame_number + 1
           move_advantage.end_frame = nil
-          if _debug then print(string.format("%d(+1) - hitbox", frame_number)) end
+          log(_attacker.prefix, "frame_advantage", string.format("proj hitbox(+1)"))
           break
         end
       end
@@ -68,26 +66,27 @@ function frame_advantage_update(_attacker, _defender)
 
       -- all hit advantages are detected 1 frame too late
       if _defender.has_just_been_hit then
-        move_advantage.end_frame_offset = -1
-        if _debug then print(string.format("%d - end offset %d", frame_number, move_advantage.end_frame_offset)) end
+        move_advantage.end_frame_offset = move_advantage.end_frame_offset - 1
+        log(_defender.prefix, "frame_advantage", string.format("end offset %d", move_advantage.end_frame_offset))
       end
 
-      if _debug then print(string.format("%d - hit", frame_number)) end
+      log(_defender.prefix, "frame_advantage", string.format("hit"))
     end
 
     if move_advantage.hit_frame ~= nil then
       if move_advantage.hitbox_start_frame ~= nil and frame_number > move_advantage.hit_frame then
         if move_advantage.end_frame == nil and has_ended_attack(_attacker) then
-          if _debug then print(string.format("%d - attacker_end", frame_number)) end
+          log(_attacker.prefix, "frame_advantage", string.format("end bf:%d js:%d", _attacker.busy_flag, to_bit(_attacker.is_in_jump_startup)))
           move_advantage.end_frame = frame_number
+          -- jump startups are detected 1 frame too early
           if _attacker.is_in_jump_startup then
-            move_advantage.end_frame_offset = 0
-        if _debug then print(string.format("%d - end offset %d", frame_number, move_advantage.end_frame_offset)) end
+            move_advantage.end_frame_offset = move_advantage.end_frame_offset + 1
+            log(_defender.prefix, "frame_advantage", string.format("end offset %d", move_advantage.end_frame_offset))
           end
         end
 
         if move_advantage.opponent_end_frame == nil and frame_number > move_advantage.hit_frame and has_ended_recovery(_defender) then
-          if _debug then print(string.format("%d - defender_end", frame_number)) end
+          log(_defender.prefix, "frame_advantage", string.format("end"))
           move_advantage.opponent_end_frame = frame_number
         end 
       end
@@ -95,8 +94,7 @@ function frame_advantage_update(_attacker, _defender)
 
     if (move_advantage.end_frame ~= nil and move_advantage.opponent_end_frame ~= nil) or (has_ended_attack(_attacker) and has_ended_recovery(_defender)) then
       move_advantage.armed = false
-      if _debug then print(string.format("%d - unarm", frame_number)) end
-      if _debug then print("") end
+      log(_defender.prefix, "frame_advantage", string.format("unarmed"))
     end
   end
 end

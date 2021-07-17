@@ -52,14 +52,15 @@ debug_wakeup = false
 log_enabled = developer_mode or log_enabled
 log_categories_display =
 {
-  input =                     { history = true, print = false },
+  input =                     { history = false, print = false },
   projectiles =               { history = false, print = false },
-  fight =                     { history = true, print = true },
-  animation =                 { history = false, print = true },
+  fight =                     { history = false, print = false },
+  animation =                 { history = false, print = false },
   parry_training_FORWARD =    { history = false, print = false },
-  blocking =                  { history = true, print = false },
+  blocking =                  { history = false, print = false },
   counter_attack =            { history = false, print = false },
-  block_string =              { history = false, print = true },
+  block_string =              { history = false, print = false },
+  frame_advantage =           { history = true, print = true },
 } or log_categories_display
 
 saved_recordings_path = "saved/recordings/"
