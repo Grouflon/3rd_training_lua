@@ -1,12 +1,9 @@
 move_advantage = {}
 
--- known bugs:
--- - throws startup and hit frame are often wrong (but not always oO)
-
 function frame_advantage_update(_attacker, _defender)
 
   function has_just_attacked(_player_obj)
-    return _player_obj.has_just_attacked or (_player_obj.recovery_time == 0 and _player_obj.freeze_frames == 0 and _player_obj.input_capacity == 0 and _player_obj.previous_input_capacity ~= 0) or (_player_obj.movement_type == 4 and _player_obj.last_movement_type_change_frame == 0)
+    return _player_obj.has_just_attacked or _player_obj.has_just_thrown or (_player_obj.recovery_time == 0 and _player_obj.freeze_frames == 0 and _player_obj.input_capacity == 0 and _player_obj.previous_input_capacity ~= 0) or (_player_obj.movement_type == 4 and _player_obj.last_movement_type_change_frame == 0)
   end
 
   function has_ended_attack(_player_obj)
@@ -17,6 +14,13 @@ function frame_advantage_update(_attacker, _defender)
     return (_player_obj.is_idle or has_just_attacked(_player_obj) or _player_obj.is_in_jump_startup)
   end
 
+  -- reset end frame if attack occurs again
+  if move_advantage.armed and has_just_attacked(_attacker) then
+    move_advantage.end_frame = nil
+    move_advantage.end_frame_offset = 0
+  end
+
+  -- arm the move observation at first player attack
   if not move_advantage.armed and has_just_attacked(_attacker) then
     move_advantage = {
       armed = true,
@@ -29,11 +33,14 @@ function frame_advantage_update(_attacker, _defender)
       opponent_end_frame = nil,
     }
 
+    if _attacker.is_throwing then
+      move_advantage.start_frame = move_advantage.start_frame - 1
+    end
+
     log(_attacker.prefix, "frame_advantage", string.format("armed"))
   end
 
   if move_advantage.armed then
-
     if move_advantage.hitbox_start_frame == nil then
       for _, _box in ipairs(_attacker.boxes) do
         if _box.type == "attack" or _box.type == "throw" then
