@@ -328,6 +328,10 @@ function read_player_vars(_player_obj)
   _player_obj.defense_bonus = memory.readword(_player_obj.base + 0x440)
 
   -- THROW
+  local _previous_is_throwing = _player_obj.is_throwing or false
+  _player_obj.is_throwing = bit.rshift(_player_obj.movement_type2, 4) == 9
+  _player_obj.has_just_thrown = not _previous_is_throwing and _player_obj.is_throwing
+
   _player_obj.is_being_thrown = memory.readbyte(_player_obj.base + 0x3CF) ~= 0
   _player_obj.throw_countdown = _player_obj.throw_countdown or 0
   _player_obj.previous_throw_countdown = _player_obj.throw_countdown
