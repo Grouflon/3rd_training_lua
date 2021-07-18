@@ -2126,6 +2126,8 @@ function on_load_state()
 
   gamestate_read()
 
+  restore_recordings()
+
   -- reset recording states in a useful way
   if current_recording_state == 3 then
     set_recording_state({}, 2)
