@@ -489,8 +489,10 @@ end
 slot_replay_mode = {
   "normal",
   "random",
+  "ordered",
   "repeat",
   "repeat random",
+  "repeat ordered",
 }
 
 -- save/load
@@ -1228,8 +1230,10 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
   function handle_recording()
     if button_gesture[_button] == "recording" and dummy.id == 2 then
       local _slot_index = training_settings.current_recording_slot
-      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 5 then
         _slot_index = find_random_recording_slot()
+      elseif training_settings.replay_mode == 3 or training_settings.replay_mode == 6 then
+        _slot_index = go_to_next_ordered_slot()
       end
       if _slot_index < 0 then
         return
@@ -1344,7 +1348,7 @@ function update_counter_attack(_input, _attacker, _defender, _stick, _button)
     end
   elseif button_gesture[_button] == "recording" and _defender.counter.recording_slot > 0 then
     if _defender.counter.attack_frame <= (frame_number + 1) then
-      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 3 or training_settings.replay_mode == 5 or training_settings.replay_mode == 6 then
         override_replay_slot = _defender.counter.recording_slot
       end
       if _debug then
@@ -1726,6 +1730,7 @@ end
 swap_characters = false
 -- 1: Default Mode, 2: Wait for recording, 3: Recording, 4: Replaying
 current_recording_state = 1
+last_ordered_recording_slot = 0
 current_recording_last_idle_frame = -1
 last_coin_input_frame = -1
 override_replay_slot = -1
@@ -1766,7 +1771,7 @@ function stick_input_to_sequence_input(_player_obj, _input)
 end
 
 function can_play_recording()
-  if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+  if training_settings.replay_mode == 2 or training_settings.replay_mode == 3 or training_settings.replay_mode == 5 or training_settings.replay_mode == 6 then
     for _i, _value in ipairs(recording_slots) do
       if #_value.inputs > 0 then
         return true
@@ -1809,6 +1814,20 @@ function find_random_recording_slot()
     return _recorded_slots[_random_slot]
   end
   return -1
+end
+
+function go_to_next_ordered_slot()
+  local _slot = -1
+  for _i = 1, recording_slot_count do
+    local _slot_index = ((last_ordered_recording_slot - 1 + _i) % recording_slot_count) + 1
+    --print(_slot_index)
+    if recording_slots[_slot_index].inputs ~= nil and #recording_slots[_slot_index].inputs > 0 then
+      _slot = _slot_index            
+      last_ordered_recording_slot = _slot
+      break
+    end
+  end
+  return _slot
 end
 
 function set_recording_state(_input, _state)
@@ -1871,8 +1890,10 @@ function set_recording_state(_input, _state)
     if override_replay_slot > 0 then
       _replay_slot = override_replay_slot
     else
-      if training_settings.replay_mode == 2 or training_settings.replay_mode == 4 then
+      if training_settings.replay_mode == 2 or training_settings.replay_mode == 5 then
         _replay_slot = find_random_recording_slot()
+      elseif training_settings.replay_mode == 3 or training_settings.replay_mode == 6 then
+        _replay_slot = go_to_next_ordered_slot()
       else
         _replay_slot = training_settings.current_recording_slot
       end
@@ -1954,7 +1975,7 @@ function update_recording(_input)
     elseif current_recording_state == 4 then
       if dummy.pending_input_sequence == nil then
         set_recording_state(_input, 1)
-        if can_play_recording() and (training_settings.replay_mode == 3 or training_settings.replay_mode == 4) then
+        if can_play_recording() and (training_settings.replay_mode == 4 or training_settings.replay_mode == 5 or training_settings.replay_mode == 6) then
           set_recording_state(_input, 4)
         end
       end
@@ -2108,7 +2129,7 @@ function on_load_state()
   -- reset recording states in a useful way
   if current_recording_state == 3 then
     set_recording_state({}, 2)
-  elseif current_recording_state == 4 and (training_settings.replay_mode == 3 or training_settings.replay_mode == 4) then
+  elseif current_recording_state == 4 and (training_settings.replay_mode == 4 or training_settings.replay_mode == 5 or training_settings.replay_mode == 6) then
     set_recording_state({}, 1)
     set_recording_state({}, 4)
   end
@@ -2644,7 +2665,7 @@ function on_gui()
     elseif current_recording_state == 4 and dummy.pending_input_sequence and dummy.pending_input_sequence.sequence then
       local _text = ""
       local _x = 0
-      if training_settings.replay_mode == 1 or training_settings.replay_mode == 3 then
+      if training_settings.replay_mode == 1 or training_settings.replay_mode == 4 then
         _x = 308
         _text = string.format("Playing (%d/%d)", dummy.pending_input_sequence.current_frame, #dummy.pending_input_sequence.sequence)
       else
