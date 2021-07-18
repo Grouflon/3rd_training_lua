@@ -68,6 +68,7 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - [Feature] Gill and Shin Gouki can be selected from the character select screen
 - [Feature] Added back jump, forward jump, super jump, super forward jump, super back jump counter-attack options
 - [Feature] Added auto-crop last frames option
+- [Feature] Added guard jump, guard back jump, guard forward jump counter-attack options
 - [Feature] Added "ordered" and "repeat ordered" replay modes
 - [Feature] Blocking system is now working in 4rd Strike (thanks to @speedmccool25 frame data recording)
 - [Bugfix] Fixed random parry not behaving properly

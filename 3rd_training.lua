@@ -281,10 +281,9 @@ stick_gesture = {
   "back super jump",
   "back dash",
   "forward dash",
-  -- disabled for now until we make them work properly
-  --"guard jump",
-  --"guard back jump",
-  --"guard forward jump",
+  "guard jump",
+  "guard back jump",
+  "guard forward jump",
   "Shun Goku Satsu", -- Gouki hidden SA1
   "Kongou Kokuretsu Zan", -- Gouki hidden SA2
 }
@@ -335,16 +334,15 @@ function make_input_sequence(_stick, _button)
   elseif  _stick == "back super jump" then
     _sequence = { { "down" }, { "back", "up" }, { "back", "up" } }
     _offset = 2
-
   elseif  _stick == "guard jump" then
-    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "up" }, { "up" }, { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
-    _offset = 11
+    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "up" }, { "up" }, { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
+    _offset = 13
   elseif  _stick == "guard forward jump" then
-    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "forward", "up" },{ "forward", "up" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
-    _offset = 11
+    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "forward", "up" },{ "forward", "up" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
+    _offset = 13
   elseif  _stick == "guard back jump" then
-    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "back", "up" },{ "back", "up" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
-    _offset = 11
+    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "back", "up" },{ "back", "up" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
+    _offset = 13
   elseif  _stick == "QCF"     then _sequence = { { "down" }, {"down", "forward"}, {"forward"} }
   elseif  _stick == "QCB"     then _sequence = { { "down" }, {"down", "back"}, {"back"} }
   elseif  _stick == "HCF"     then _sequence = { { "back" }, {"down", "back"}, {"down"}, {"down", "forward"}, {"forward"} }
