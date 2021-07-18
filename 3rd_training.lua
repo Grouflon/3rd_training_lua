@@ -281,9 +281,9 @@ stick_gesture = {
   "back super jump",
   "back dash",
   "forward dash",
-  "guard jump",
-  "guard back jump",
-  "guard forward jump",
+  "guard jump (See Readme)",
+  --"guard back jump",
+  --"guard forward jump",
   "Shun Goku Satsu", -- Gouki hidden SA1
   "Kongou Kokuretsu Zan", -- Gouki hidden SA2
 }

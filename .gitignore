@@ -1,3 +1,6 @@
 saved/*.*
 saved/recordings/*.*
+!saved/recordings/A_Guard_Jump_Back.json
+!saved/recordings/A_Guard_Jump_Forward.json
+!saved/recordings/A_Guard_Jump_Neutral.json
 *.sublime-*
