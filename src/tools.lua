@@ -1,4 +1,4 @@
-assert_enabled = false
+assert_enabled = developer_mode
 function t_assert(_condition, _msg)
   _msg = _msg or "Assertion failed"
   if assert_enabled and not _condition then

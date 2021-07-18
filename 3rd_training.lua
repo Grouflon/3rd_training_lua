@@ -977,10 +977,14 @@ function update_blocking(_input, _player, _dummy, _mode, _style, _red_parry_hit_
     if _frame_data then
       local _hit_frame = _frame_data.hit_frames[_dummy.blocking.expected_attack_hit_id]
       local _last_hit_frame = 0
-      if type(_hit_frame) == "number" then
-        _last_hit_frame = _hit_frame
+      if _hit_frame ~= nil then
+        if type(_hit_frame) == "number" then
+          _last_hit_frame = _hit_frame
+        else
+          _last_hit_frame = _hit_frame.max
+        end
       else
-        _last_hit_frame = _hit_frame.max
+        t_assert(false, string.format("unknown hit id, what is happening ? (anim:%s, hit:%d)", _player.relevant_animation, _dummy.blocking.expected_attack_hit_id))
       end
       local _frame = frame_number - _player.current_animation_start_frame - _player.current_animation_freeze_frames
       _hit_expired = _frame > _last_hit_frame
