@@ -799,21 +799,29 @@ end
 function menu_update(_menu, _input)
 
   if _input.up then
-    repeat
+    if _menu.content[_menu.selected_index].is_in_edition then
+      _menu.content[_menu.selected_index]:up()
+    else
+      repeat
       _menu.selected_index = _menu.selected_index - 1
       if _menu.selected_index == 0 then
         _menu.selected_index = #_menu.content
       end
-    until _menu.content[_menu.selected_index].is_disabled == nil or not _menu.content[_menu.selected_index].is_disabled()
+      until _menu.content[_menu.selected_index].is_disabled == nil or not _menu.content[_menu.selected_index].is_disabled()
+    end
   end
 
   if _input.down then
-    repeat
-      _menu.selected_index = _menu.selected_index + 1
-      if _menu.selected_index == #_menu.content + 1 then
-        _menu.selected_index = 1
-      end
-    until _menu.content[_menu.selected_index].is_disabled == nil or not _menu.content[_menu.selected_index].is_disabled()
+    if _menu.content[_menu.selected_index].is_in_edition then
+      _menu.content[_menu.selected_index]:down()
+    else
+      repeat
+        _menu.selected_index = _menu.selected_index + 1
+        if _menu.selected_index == #_menu.content + 1 then
+          _menu.selected_index = 1
+        end
+      until _menu.content[_menu.selected_index].is_disabled == nil or not _menu.content[_menu.selected_index].is_disabled()
+    end
   end
 
   _current_entry = _menu.content[_menu.selected_index]
