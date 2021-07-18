@@ -335,13 +335,87 @@ function make_input_sequence(_stick, _button)
     _sequence = { { "down" }, { "back", "up" }, { "back", "up" } }
     _offset = 2
   elseif  _stick == "guard jump" then
-    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "up" }, { "up" }, { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
+    _sequence = {
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "up" }, { "up" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" }
+    }
     _offset = 13
   elseif  _stick == "guard forward jump" then
-    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "forward", "up" },{ "forward", "up" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
+    _sequence = {
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "forward", "up" },
+      { "forward", "up" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" }
+    }
     _offset = 13
   elseif  _stick == "guard back jump" then
-    _sequence = { { "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "back", "up" },{ "back", "up" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" },{ "down", "back" } }
+    _sequence = {
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "back", "up" },
+      { "back", "up" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" },
+      { "down", "back" }
+    }
     _offset = 13
   elseif  _stick == "QCF"     then _sequence = { { "down" }, {"down", "forward"}, {"forward"} }
   elseif  _stick == "QCB"     then _sequence = { { "down" }, {"down", "back"}, {"back"} }
