@@ -2145,8 +2145,10 @@ function hotkey3()
 end
 
 input.registerhotkey(1, hotkey1)
-input.registerhotkey(2, hotkey2)
-input.registerhotkey(3, hotkey3)
+if rom_name == "sfiii3nr1" then
+  input.registerhotkey(2, hotkey2)
+  input.registerhotkey(3, hotkey3)
+end
 
 function before_frame()
 

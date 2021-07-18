@@ -134,7 +134,9 @@ function draw_character_select()
 
   if _p1_character_select_state <= 2 or _p2_character_select_state <= 2 then
     gui.text(10, 10, "Alt+1 -> Return To Character Select Screen", text_default_color, text_default_border_color)
-    gui.text(10, 20, "Alt+2 -> Gill", text_default_color, text_default_border_color)
-    gui.text(10, 30, "Alt+3 -> Shin Gouki", text_default_color, text_default_border_color)
+    if rom_name == "sfiii3nr1" then
+      gui.text(10, 20, "Alt+2 -> Gill", text_default_color, text_default_border_color)
+      gui.text(10, 30, "Alt+3 -> Shin Gouki", text_default_color, text_default_border_color)
+    end
   end
 end
