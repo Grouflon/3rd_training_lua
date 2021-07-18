@@ -284,6 +284,7 @@ stick_gesture = {
   "guard jump",
   "guard back jump",
   "guard forward jump",
+  -- disabled for now until we make them work properly
   "Shun Goku Satsu", -- Gouki hidden SA1
   "Kongou Kokuretsu Zan", -- Gouki hidden SA2
 }
