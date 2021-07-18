@@ -60,10 +60,15 @@ A: Install prerequires from [here](https://github.com/TASVideos/BizHawk-Prereqs/
 - [Feature] New 3rd_spectator.lua script for displaying info during replays without messing with input
 - [Feature] Number display for all gauges and bonuses
 - [Feature] Frame advantage display
-- [Feature] Character switch from the training menu
+- [Feature] Character switch is now a lot easier:
+  - Initial loading puts you right in the character select screen
+  - You can go back to the character select screen by hitting alt-1 or from the entry in the training menu
+  - Both characters and SA can be selected directly from P1 controller
+  - Game intro animation is sped up by default, but this can be disabled in the options
+- [Feature] Gill and Shin Gouki can be selected from the character select screen
 - [Feature] Added back jump, forward jump, super jump, super forward jump, super back jump counter-attack options
-- [Feature] Added guard jump, guard back jump, guard forward jump counter-attack options
 - [Feature] Added auto-crop last frames option
+- [Feature] Blocking system is now working in 4rd Strike (thanks to @speedmccool25 frame data recording)
 - [Bugfix] Fixed random parry not behaving properly
 - [Bugfix] Fixed self-cancellable LP/LK not correctly blocked on various characters
 
