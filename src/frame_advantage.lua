@@ -7,7 +7,7 @@ function frame_advantage_update(_attacker, _defender)
   end
 
   function has_ended_attack(_player_obj)
-    return (_player_obj.busy_flag == 0  or _player_obj.is_in_jump_startup)
+    return (_player_obj.busy_flag == 0 or _player_obj.is_in_jump_startup or _player_obj.is_idle)
   end
 
   function has_ended_recovery(_player_obj)
@@ -17,7 +17,6 @@ function frame_advantage_update(_attacker, _defender)
   -- reset end frame if attack occurs again
   if move_advantage.armed and has_just_attacked(_attacker) then
     move_advantage.end_frame = nil
-    move_advantage.end_frame_offset = 0
   end
 
   -- arm the move observation at first player attack
@@ -29,7 +28,6 @@ function frame_advantage_update(_attacker, _defender)
       hitbox_start_frame = nil,
       hit_frame = nil,
       end_frame = nil,
-      end_frame_offset = 0,
       opponent_end_frame = nil,
     }
 
@@ -71,25 +69,15 @@ function frame_advantage_update(_attacker, _defender)
         move_advantage.end_frame = nil
       end
 
-      -- all hit advantages are detected 1 frame too late
-      if _defender.has_just_been_hit then
-        move_advantage.end_frame_offset = move_advantage.end_frame_offset - 1
-        log(_defender.prefix, "frame_advantage", string.format("end offset %d", move_advantage.end_frame_offset))
-      end
-
       log(_defender.prefix, "frame_advantage", string.format("hit"))
     end
 
     if move_advantage.hit_frame ~= nil then
       if move_advantage.hitbox_start_frame ~= nil and frame_number > move_advantage.hit_frame then
         if move_advantage.end_frame == nil and has_ended_attack(_attacker) then
-          log(_attacker.prefix, "frame_advantage", string.format("end bf:%d js:%d", _attacker.busy_flag, to_bit(_attacker.is_in_jump_startup)))
           move_advantage.end_frame = frame_number
-          -- jump startups are detected 1 frame too early
-          if _attacker.is_in_jump_startup then
-            move_advantage.end_frame_offset = move_advantage.end_frame_offset + 1
-            log(_defender.prefix, "frame_advantage", string.format("end offset %d", move_advantage.end_frame_offset))
-          end
+
+          log(_attacker.prefix, "frame_advantage", string.format("end bf:%d js:%d", _attacker.busy_flag, to_bit(_attacker.is_in_jump_startup)))
         end
 
         if move_advantage.opponent_end_frame == nil and frame_number > move_advantage.hit_frame and has_ended_recovery(_defender) then
@@ -147,7 +135,7 @@ function frame_advantage_display()
   end
 
   if move_advantage.hit_frame ~= nil and move_advantage.end_frame ~= nil and move_advantage.opponent_end_frame ~= nil then
-    local _advantage = move_advantage.opponent_end_frame - (move_advantage.end_frame + move_advantage.end_frame_offset)
+    local _advantage = move_advantage.opponent_end_frame - (move_advantage.end_frame)
 
     local _sign = ""
     if _advantage > 0 then _sign = "+" end

@@ -32,6 +32,19 @@ print("")
 -- https://github.com/Jesuszilla/mame-rr-scripts/blob/master/framedata.lua
 -- https://imgur.com/gallery/0Tsl7di
 
+-- Stuff
+-- As far of selective stages, this one is Elena's Stage, write this: 0x020154F5,0x08
+-- It would be also nice to show "alt+1 reset char select" on the top left corner in the character select screen
+-- optional speed up
+
+--[[
+would it be possible to add a "first, second, third" action when getting hit?  So for example i divekick on opponent, first time they throw, second time they standing hk, third time they do another thing.
+This isn't really possible with weighting but it can be extremely important for figuring out options after hitting specific choices your opponent makes at awkward timings.  So like block 1 = recording 1, block 2 = recording 2, block 3 = recording 3.
+it'd need its own menu for setup that would be used just like the "recording" reaction option, but with 1-5 layers.  Possibly adding "random recording" as an option for the replay instead of a specific one as well
+So like you do your first choice and want opponent to throw, but second time you want them to either throw, or do option 2 or 3  etc etc
+And also having throw as an option there as well so you have one less option to record if you don't want a button action
+]]--
+
 -- Includes
 require("src/tools")
 require("src/memory_adresses")
@@ -2322,6 +2335,12 @@ function on_gui()
   draw_character_select()
 
   if is_in_match then
+
+    --[[
+    -- Code to test frame advantage correctness by measuring the frame count between both players jump
+    if (player_objects[1].last_jump_startup_frame ~= nil and player_objects[2].last_jump_startup_frame ~= nil) then
+      gui.text(5, 5, string.format("jump difference: %d", player_objects[2].last_jump_startup_frame - player_objects[1].last_jump_startup_frame), text_default_color, text_default_border_color)
+    end]]
 
     display_draw_printed_geometry()
 

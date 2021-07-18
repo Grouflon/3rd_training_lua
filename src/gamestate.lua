@@ -279,8 +279,9 @@ function read_player_vars(_player_obj)
   end
 
   local _previous_action = _player_obj.action or 0x00
+  local _previous_movement_type2 = _player_obj.movement_type2 or 0x00
+  local _previous_posture = _player_obj.posture or 0x00
 
-  _player_obj.is_attacking_ext = memory.readbyte(_player_obj.base + 0x429) > 0
   _player_obj.previous_input_capacity = _player_obj.input_capacity or 0
   _player_obj.input_capacity = memory.readword(_player_obj.base + 0x46C)
   _player_obj.action = memory.readdword(_player_obj.base + 0xAC)
@@ -290,7 +291,18 @@ function read_player_vars(_player_obj)
   _player_obj.movement_type = memory.readbyte(_player_obj.base + 0x0AD)
   _player_obj.movement_type2 = memory.readbyte(_player_obj.base + 0x0AF) -- seems that we can know which basic movement the player is doing from there
   _player_obj.total_received_projectiles_count = memory.readword(_player_obj.base + 0x430) -- on block or hit
-  _player_obj.posture = memory.readbyte(_player_obj.base + 0x20E)
+
+-- postures
+--  0x00 -- standing neutral
+--  0x08 -- going backwards
+--  0x06 -- going forward
+--  0x20 -- crouching
+--  0x16 -- neutral jump
+--  0x14 -- flying forward
+--  0x18 -- flying backwards
+--  0x1A -- high jump
+--  0x26 -- knocked down
+  _player_obj.posture = memory.readbyte(_player_obj.base + 0x20E)  
 
   _player_obj.busy_flag = memory.readword(_player_obj.base + 0x3D1)
 
@@ -349,7 +361,10 @@ function read_player_vars(_player_obj)
 
   -- ATTACKING
   local _previous_is_attacking = _player_obj.is_attacking or false
-  _player_obj.is_attacking = memory.readbyte(_player_obj.base + 0x428) > 0
+  _player_obj.is_attacking_byte = memory.readbyte(_player_obj.base + 0x428)
+  _player_obj.is_attacking = _player_obj.is_attacking_byte > 0
+  _player_obj.is_attacking_ext_byte = memory.readbyte(_player_obj.base + 0x429)
+  _player_obj.is_attacking_ext = _player_obj.is_attacking_ext_byte > 0
   _player_obj.has_just_attacked =  _player_obj.is_attacking and not _previous_is_attacking
   if _debug_state_variables and _player_obj.has_just_attacked then print(string.format("%d - %s attacked", frame_number, _player_obj.prefix)) end
 
@@ -360,12 +375,17 @@ function read_player_vars(_player_obj)
   if _debug_state_variables and _player_obj.has_just_acted then print(string.format("%d - %s acted (%d > %d)", frame_number, _player_obj.prefix, _previous_action_count, _player_obj.action_count)) end
 
   -- LANDING
+  local _previous_is_in_jump_startup = _player_obj.is_in_jump_startup or false
   _player_obj.is_in_jump_startup = _player_obj.movement_type2 == 0x0C and _player_obj.movement_type == 0x00 and not _player_obj.is_blocking
   _player_obj.previous_standing_state = _player_obj.standing_state or 0
   _player_obj.standing_state = memory.readbyte(_player_obj.base + 0x297)
   _player_obj.has_just_landed = is_state_on_ground(_player_obj.standing_state, _player_obj) and not is_state_on_ground(_player_obj.previous_standing_state, _player_obj)
   if _debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
   if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
+
+  if not _previous_is_in_jump_startup and _player_obj.is_in_jump_startup then
+    _player_obj.last_jump_startup_frame = frame_number
+  end
 
   -- AIR RECOVERY STATE
   local _debug_air_recovery = false
@@ -398,7 +418,9 @@ function read_player_vars(_player_obj)
     not _player_obj.is_wakingup and
     not _player_obj.is_fast_wakingup and
     not _player_obj.is_being_thrown and
+    not _player_obj.is_in_jump_startup and
     _player_obj.movement_type ~= 5 and -- leap
+    bit.band(_player_obj.busy_flag, 0xFF) == 0 and
     _player_obj.recovery_time == _player_obj.previous_recovery_time and
     _player_obj.remaining_freeze_frames == 0 and
     _player_obj.input_capacity > 0
@@ -410,8 +432,8 @@ function read_player_vars(_player_obj)
     _player_obj.idle_time = 0
   end
 
-  if not _previous_is_idle and _player_obj.is_idle then
-    log(_player_obj.prefix, "blocking", string.format("idle"))
+  if _previous_is_idle ~= _player_obj.is_idle then
+    log(_player_obj.prefix, "fight", string.format("idle %d", to_bit(_player_obj.is_idle)))
   end
 
   -- ANIMATION
@@ -701,7 +723,7 @@ function read_player_vars(_player_obj)
       _player_obj.wakeup_time = _player_obj.wakeup_time + 1
     end
 
-    if _player_obj.is_wakingup and _player_obj.previous_standing_state == 0x00 and (_player_obj.standing_state ~= 0x00 or _player_obj.is_attacking) then
+    if _player_obj.is_wakingup and _previous_posture == 0x26 and _player_obj.posture ~= 0x26 then
       if debug_wakeup then
         print(string.format("%d - %s wake up: %d, %s, %d", frame_number, _player_obj.prefix, to_bit(_player_obj.is_fast_wakingup), _player_obj.wakeup_animation, _player_obj.wakeup_time))
       end
