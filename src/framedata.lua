@@ -525,7 +525,6 @@ function update_wakeupdata_recording(_player_obj, _dummy_obj)
     local _wakeup_time = _dummy_obj.wakeup_time
     local _wakeup = frame_data[_dummy_obj.char_str].wakeups[_wakeup_animation]
     local _duration = find_wake_up(_dummy_obj.char_str, _dummy_obj.wakeup_animation, _dummy_obj.wakeup_other_last_act_animation)
-    print(_dummy_obj.wakeup_other_last_act_animation)
     if _duration == nil then
       print(string.format("Unknown wakeup animation: %s", _wakeup_animation))
     elseif _duration ~= _wakeup_time then

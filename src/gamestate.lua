@@ -387,68 +387,6 @@ function read_player_vars(_player_obj)
   _player_obj.has_just_acted = _player_obj.action_count > _previous_action_count
   if _debug_state_variables and _player_obj.has_just_acted then print(string.format("%d - %s acted (%d > %d)", frame_number, _player_obj.prefix, _previous_action_count, _player_obj.action_count)) end
 
-  -- LANDING
-  local _previous_is_in_jump_startup = _player_obj.is_in_jump_startup or false
-  _player_obj.is_in_jump_startup = _player_obj.movement_type2 == 0x0C and _player_obj.movement_type == 0x00 and not _player_obj.is_blocking
-  _player_obj.previous_standing_state = _player_obj.standing_state or 0
-  _player_obj.standing_state = memory.readbyte(_player_obj.base + 0x297)
-  _player_obj.has_just_landed = is_state_on_ground(_player_obj.standing_state, _player_obj) and not is_state_on_ground(_player_obj.previous_standing_state, _player_obj)
-  if _debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
-  if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
-
-  if not _previous_is_in_jump_startup and _player_obj.is_in_jump_startup then
-    _player_obj.last_jump_startup_frame = frame_number
-  end
-
-  -- AIR RECOVERY STATE
-  local _debug_air_recovery = false
-  local _previous_is_in_air_recovery = _player_obj.is_in_air_recovery or false
-  local _r1 = memory.readbyte(_player_obj.base + 0x12F)
-  local _r2 = memory.readbyte(_player_obj.base + 0x3C7)
-  _player_obj.is_in_air_recovery = _player_obj.standing_state == 0 and _r1 == 0 and _r2 == 0x06 and _player_obj.pos_y ~= 0
-  _player_obj.has_just_entered_air_recovery = not _previous_is_in_air_recovery and _player_obj.is_in_air_recovery
-
-  if not _previous_is_in_air_recovery and _player_obj.is_in_air_recovery then
-    log(_player_obj.prefix, "fight", string.format("air recovery 1"))
-    if _debug_air_recovery then
-      print(string.format("%s entered air recovery", _player_obj.prefix))
-    end
-  end
-  if _previous_is_in_air_recovery and not _player_obj.is_in_air_recovery then
-    log(_player_obj.prefix, "fight", string.format("air recovery 0"))
-    if _debug_air_recovery then
-      print(string.format("%s exited air recovery", _player_obj.prefix))
-    end
-  end
-
-  -- IS IDLE
-  local _previous_is_idle = _player_obj.is_idle or false
-  _player_obj.idle_time = _player_obj.idle_time or 0
-  _player_obj.is_idle = (
-    not _player_obj.is_attacking and
-    not _player_obj.is_attacking_ext and
-    not _player_obj.is_blocking and
-    not _player_obj.is_wakingup and
-    not _player_obj.is_fast_wakingup and
-    not _player_obj.is_being_thrown and
-    not _player_obj.is_in_jump_startup and
-    _player_obj.movement_type ~= 5 and -- leap
-    bit.band(_player_obj.busy_flag, 0xFF) == 0 and
-    _player_obj.recovery_time == _player_obj.previous_recovery_time and
-    _player_obj.remaining_freeze_frames == 0 and
-    _player_obj.input_capacity > 0
-  )
-
-  if _player_obj.is_idle then
-    _player_obj.idle_time = _player_obj.idle_time + 1
-  else
-    _player_obj.idle_time = 0
-  end
-
-  if _previous_is_idle ~= _player_obj.is_idle then
-    log(_player_obj.prefix, "fight", string.format("idle %d", to_bit(_player_obj.is_idle)))
-  end
-
   -- ANIMATION
   local _self_cancel = false
   local _previous_animation = _player_obj.animation or ""
@@ -687,6 +625,86 @@ function read_player_vars(_player_obj)
   _player_obj.has_just_been_blocked = _blocked_count > _previous_blocked_count
   if _debug_state_variables and _player_obj.has_just_been_blocked then print(string.format("%d - %s blocked (%d > %d)", frame_number, _player_obj.prefix, _previous_blocked_count, _blocked_count)) end
 
+  -- LANDING
+  local _previous_is_in_jump_startup = _player_obj.is_in_jump_startup or false
+  _player_obj.is_in_jump_startup = _player_obj.movement_type2 == 0x0C and _player_obj.movement_type == 0x00 and not _player_obj.is_blocking
+  _player_obj.previous_standing_state = _player_obj.standing_state or 0
+  _player_obj.standing_state = memory.readbyte(_player_obj.base + 0x297)
+  _player_obj.has_just_landed = is_state_on_ground(_player_obj.standing_state, _player_obj) and not is_state_on_ground(_player_obj.previous_standing_state, _player_obj)
+  if _debug_state_variables and _player_obj.has_just_landed then print(string.format("%d - %s landed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
+  if _player_obj.debug_standing_state and _player_obj.previous_standing_state ~= _player_obj.standing_state then print(string.format("%d - %s standing state changed (%d > %d)", frame_number, _player_obj.prefix, _player_obj.previous_standing_state, _player_obj.standing_state)) end
+
+  -- AIR RECOVERY STATE
+  local _debug_air_recovery = false
+  local _previous_is_in_air_recovery = _player_obj.is_in_air_recovery or false
+  local _r1 = memory.readbyte(_player_obj.base + 0x12F)
+  local _r2 = memory.readbyte(_player_obj.base + 0x3C7)
+  _player_obj.is_in_air_recovery = _player_obj.standing_state == 0 and _r1 == 0 and _r2 == 0x06 and _player_obj.pos_y ~= 0
+  _player_obj.has_just_entered_air_recovery = not _previous_is_in_air_recovery and _player_obj.is_in_air_recovery
+
+  if not _previous_is_in_air_recovery and _player_obj.is_in_air_recovery then
+    log(_player_obj.prefix, "fight", string.format("air recovery 1"))
+    if _debug_air_recovery then
+      print(string.format("%s entered air recovery", _player_obj.prefix))
+    end
+  end
+  if _previous_is_in_air_recovery and not _player_obj.is_in_air_recovery then
+    log(_player_obj.prefix, "fight", string.format("air recovery 0"))
+    if _debug_air_recovery then
+      print(string.format("%s exited air recovery", _player_obj.prefix))
+    end
+  end
+
+
+
+  -- IS IDLE
+  local _previous_is_idle = _player_obj.is_idle or false
+  _player_obj.idle_time = _player_obj.idle_time or 0
+  _player_obj.is_idle = (
+    not _player_obj.is_attacking and
+    not _player_obj.is_attacking_ext and
+    not _player_obj.is_blocking and
+    not _player_obj.is_wakingup and
+    not _player_obj.is_fast_wakingup and
+    not _player_obj.is_being_thrown and
+    not _player_obj.is_in_jump_startup and
+    bit.band(_player_obj.busy_flag, 0xFF) == 0 and
+    _player_obj.recovery_time == _player_obj.previous_recovery_time and
+    _player_obj.remaining_freeze_frames == 0 and
+    _player_obj.input_capacity > 0
+  )
+
+  --[[
+  if _player_obj.id == 1 then
+    print(string.format(
+      "%d: %d, %d, %d, %d, %d, %d, %d, %04x, %d, %d, %04x",
+      to_bit(_player_obj.is_idle),
+      to_bit(_player_obj.is_attacking),
+      to_bit(_player_obj.is_attacking_ext),
+      to_bit(_player_obj.is_blocking),
+      to_bit(_player_obj.is_wakingup),
+      to_bit(_player_obj.is_fast_wakingup),
+      to_bit(_player_obj.is_being_thrown),
+      to_bit(_player_obj.is_in_jump_startup),
+      _player_obj.busy_flag,
+      _player_obj.recovery_time,
+      _player_obj.remaining_freeze_frames,
+      _player_obj.input_capacity
+    ))
+  end
+  ]]
+
+  if _player_obj.is_idle then
+    _player_obj.idle_time = _player_obj.idle_time + 1
+  else
+    _player_obj.idle_time = 0
+  end
+
+  if _previous_is_idle ~= _player_obj.is_idle then
+    log(_player_obj.prefix, "fight", string.format("idle %d", to_bit(_player_obj.is_idle)))
+  end
+
+
   if is_in_match then
 
     -- WAKE UP
@@ -758,6 +776,15 @@ function read_player_vars(_player_obj)
     if _player_obj.has_just_woke_up then
       log(_player_obj.prefix, "fight", string.format("wakeup 0"))
     end
+  end
+
+  if not _previous_is_in_jump_startup and _player_obj.is_in_jump_startup then
+    _player_obj.last_jump_startup_duration = 0
+    _player_obj.last_jump_startup_frame = frame_number
+  end
+
+  if _player_obj.is_in_jump_startup then
+    _player_obj.last_jump_startup_duration = _player_obj.last_jump_startup_duration + 1
   end
 
   -- TIMED SA

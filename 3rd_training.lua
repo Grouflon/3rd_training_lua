@@ -2432,8 +2432,9 @@ function on_gui()
     --[[
     -- Code to test frame advantage correctness by measuring the frame count between both players jump
     if (player_objects[1].last_jump_startup_frame ~= nil and player_objects[2].last_jump_startup_frame ~= nil) then
-      gui.text(5, 5, string.format("jump difference: %d", player_objects[2].last_jump_startup_frame - player_objects[1].last_jump_startup_frame), text_default_color, text_default_border_color)
-    end]]
+      gui.text(5, 5, string.format("jump difference: %d (startups: %d/%d)", player_objects[2].last_jump_startup_frame - player_objects[1].last_jump_startup_frame, player_objects[1].last_jump_startup_duration, player_objects[2].last_jump_startup_duration), text_default_color, text_default_border_color)
+    end
+    ]]
 
     display_draw_printed_geometry()
 
