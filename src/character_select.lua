@@ -84,6 +84,9 @@ function update_character_select(_input, _do_fast_forward)
     return
   end
 
+  -- Infinite select time
+  --memory.writebyte(adresses.global.character_select_timer, 0x30)
+
   if (character_select_coroutine ~= nil) then
     make_input_empty(_input)
     local _status = coroutine.status(character_select_coroutine)
@@ -100,6 +103,9 @@ function update_character_select(_input, _do_fast_forward)
 
   local _p1_character_select_state = memory.readbyte(adresses.players[1].character_select_state)
   local _p2_character_select_state = memory.readbyte(adresses.players[2].character_select_state)
+
+  --print(string.format("%d, %d, %d", character_select_sequence_state, _p1_character_select_state, _p2_character_select_state))
+
   if _p1_character_select_state > 4 and not is_in_match then
     if character_select_sequence_state == 2 then
       character_select_sequence_state = 3
@@ -118,14 +124,20 @@ function update_character_select(_input, _do_fast_forward)
     character_select_sequence_state = character_select_sequence_state + 1
   end
 
-  if not is_in_match then
-    if _do_fast_forward and _p1_character_select_state > 4 and _p2_character_select_state > 4 then
-      emu.speedmode("turbo")
-    end
-  elseif has_match_just_started then
+  if has_match_just_started then
     emu.speedmode("normal")
     character_select_sequence_state = 0
+  elseif not is_in_match then
+    if _do_fast_forward and _p1_character_select_state > 4 and _p2_character_select_state > 4 then
+      emu.speedmode("turbo")
+    elseif character_select_sequence_state == 0 and (_p1_character_select_state < 5 or _p2_character_select_state < 5) then
+      emu.speedmode("normal")
+      character_select_sequence_state = 1
+    end
+  else
+    character_select_sequence_state = 0
   end
+
 end
 
 function draw_character_select()
