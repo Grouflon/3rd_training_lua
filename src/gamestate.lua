@@ -133,6 +133,19 @@ function gamestate_read()
     update_flip_input(player_objects[1], player_objects[2])
     update_flip_input(player_objects[2], player_objects[1])
   end
+
+  function update_player_relationships(_self, _other)
+    -- Can't do this inside read_player_vars cause we need both players to have read their stuff
+    if _self.has_just_started_wake_up or _self.has_just_started_fast_wake_up then
+      _self.wakeup_other_last_act_animation = _other.last_act_animation
+      _self.remaining_wakeup_time = find_wake_up(_self.char_str, _self.wakeup_animation, _self.wakeup_other_last_act_animation) or 0
+    end
+    if _self.remaining_wakeup_time ~= nil then
+      _self.remaining_wakeup_time = math.max(_self.remaining_wakeup_time - 1, 0)
+    end
+  end
+  update_player_relationships(player_objects[1], player_objects[2])
+  update_player_relationships(player_objects[2], player_objects[1])
 end
 
 function read_game_vars()

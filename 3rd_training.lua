@@ -2316,15 +2316,6 @@ function before_frame()
   -- frame advantage
   frame_advantage_update(player, dummy)
 
-  -- Can't do this inside read_player_vars cause we need both players to have read their stuff
-  if dummy.has_just_started_wake_up or dummy.has_just_started_fast_wake_up then
-    dummy.wakeup_other_last_act_animation = player.last_act_animation
-    dummy.remaining_wakeup_time = find_wake_up(dummy.char_str, dummy.wakeup_animation, dummy.wakeup_other_last_act_animation) or 0
-  end
-  if dummy.remaining_wakeup_time ~= nil then
-    dummy.remaining_wakeup_time = math.max(dummy.remaining_wakeup_time - 1, 0)
-  end
-
   -- pose
   update_pose(_input, dummy, training_settings.pose)
 
@@ -2389,7 +2380,7 @@ function before_frame()
   update_framedata_recording(player_objects[1], projectiles)
   update_idle_framedata_recording(player_objects[2])
   update_projectiles_recording(projectiles)
-  update_wakeupdata_recording(player_objects[2])
+  update_wakeupdata_recording(player, dummy)
 
   local _debug_position_prediction = false
   if _debug_position_prediction and player.pos_y > 0 then
