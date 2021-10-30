@@ -537,7 +537,8 @@ players = {
 special_training_mode = {
   "none",
   "parry",
-  "charge"
+  "charge",
+  "Kyaku"
 }
 
 function make_recording_slot()
@@ -2715,6 +2716,78 @@ function on_gui()
     for _i, _charge in ipairs(_charge_array) do
       if _charge.enabled then
         _y_offset = _y_offset + _group_y_margin + draw_charge_gauge_group(_x, _y + _y_offset, _charge.object)
+      end
+    end
+  end
+
+  if is_in_match and special_training_mode[training_settings.special_training_current_mode] == "Kyaku" then
+
+    local _player = P1
+    local _x = 235 --96
+    local _y = 40
+    local _flip_gauge = false
+    local _gauge_x_scale = 4
+
+    if training_settings.special_training_follow_character then
+      local _px = _player.pos_x - screen_x + emu.screenwidth()/2
+      local _py = emu.screenheight() - (_player.pos_y - screen_y) - ground_offset
+      local _half_width = 23 * _gauge_x_scale * 0.5
+      _x = _px - _half_width
+      _x = math.max(_x, 4)
+      _x = math.min(_x, emu.screenwidth() - (_half_width * 2.0 + 14))
+      _y = _py - 100
+    end
+
+    local _x_offset = 0
+    local _y_offset = 0
+    local _group_y_margin = 6
+
+    function draw_legs_gauge_group(_x, _y, _legs_object)
+      local _gauge_height = 4
+      local _gauge_background_color = 0xD6E7EF77
+      local _gauge_valid_fill_color = 0x08CF00FF
+      local _gauge_cooldown_fill_color = 0xFF7939FF
+      local _success_color = 0x10FB00FF
+      local _miss_color = 0xE70000FF
+
+
+      gui.text(_x -8, _y, "LK", text_default_color, text_default_border_color)
+      for _i=1,_legs_object.l_legs_count,1 do
+        gui.image(_x + _x_offset, _y, img_LK_button_small)
+        _x_offset = _x_offset + 8
+      end
+      _x_offset = 0
+      gui.text(_x -8, _y+8, "MK", text_default_color, text_default_border_color)
+      for _i=1,_legs_object.m_legs_count,1 do
+        gui.image(_x + _x_offset, _y+8, img_MK_button_small)
+        _x_offset = _x_offset + 8
+      end
+      _x_offset = 0
+      gui.text(_x -8, _y+16, "HK", text_default_color, text_default_border_color)
+      for _i=1,_legs_object.h_legs_count,1 do
+        gui.image(_x + _x_offset, _y+16, img_HK_button_small)
+        _x_offset = _x_offset + 8
+      end
+      _x_offset = 0
+      gui.text(_x, _y+24, "Reset", text_default_color, text_default_border_color)
+      if _legs_object.active ~= 0xFF then
+        draw_gauge(_x, _y + 32, 99, _gauge_height + 1, _legs_object.reset_time / 99, _gauge_valid_fill_color, _gauge_background_color, nil, true)
+      end
+      
+      return 8 + 5 + (_gauge_height * 2)
+    end
+
+    local _legs_array = {
+      {
+        object = _player.legs_1,
+        enabled = true
+      }
+    }
+
+    for _i, _legs in ipairs(_legs_array) do
+
+      if _legs.enabled then
+        _y_offset = _y_offset + _group_y_margin + draw_legs_gauge_group(_x, _y + _y_offset, _legs.object)
       end
     end
   end

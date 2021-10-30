@@ -862,6 +862,28 @@ function read_player_vars(_player_obj)
   read_parry_state(_player_obj.parry_air, _player_obj.parry_air_validity_time_addr, _player_obj.parry_air_cooldown_time_addr)
   read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
 
+-- LEGS STATE
+  -- global game consts
+  _player_obj.legs_1 = _player_obj.legs_1 or { name = "Legs1", enabled = false }
+
+
+
+  function read_legs_state(_legs_object)
+
+    
+    _legs_object.enabled = true
+    _legs_object.l_legs_count = memory.readbyte(0x02025A03)
+    _legs_object.m_legs_count = memory.readbyte(0x02025A05)
+    _legs_object.h_legs_count = memory.readbyte(0x02025A07)
+    
+    _legs_object.reset_time = memory.readbyte(0x020259f3)
+    _legs_object.active = memory.readbyte(0x02025A2D) 
+    
+  end
+
+ 
+  read_legs_state(_player_obj.legs_1)
+
 -- CHARGE STATE
   -- global game consts
   _player_obj.charge_1 = _player_obj.charge_1 or { name = "Charge1", max_charge = 43, max_reset = 43, enabled = false }
