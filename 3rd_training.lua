@@ -48,6 +48,7 @@ And also having throw as an option there as well so you have one less option to 
 -- Includes
 require("src/tools")
 require("src/memory_adresses")
+require("src/draw")
 require("src/display")
 require("src/menu_widgets")
 require("src/framedata")
@@ -1898,7 +1899,7 @@ function go_to_next_ordered_slot()
     local _slot_index = ((last_ordered_recording_slot - 1 + _i) % recording_slot_count) + 1
     --print(_slot_index)
     if recording_slots[_slot_index].inputs ~= nil and #recording_slots[_slot_index].inputs > 0 then
-      _slot = _slot_index            
+      _slot = _slot_index
       last_ordered_recording_slot = _slot
       break
     end
@@ -2263,7 +2264,7 @@ function before_frame()
   counter_attack_delay_item.object = recording_slots[training_settings.current_recording_slot]
   counter_attack_random_deviation_item.object = recording_slots[training_settings.current_recording_slot]
 
-  display_update()
+  draw_read()
 
   -- gamestate
   local _previous_dummy_char_str = player_objects[2].char_str or ""

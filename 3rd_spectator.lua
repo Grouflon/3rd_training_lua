@@ -70,7 +70,7 @@ end
 
 function before_frame()
 
-  display_update()
+  draw_read()
   gamestate_read()
 
   if developer_mode then
