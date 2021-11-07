@@ -235,7 +235,7 @@ function record_framedata(_player_obj, _projectiles)
         for _id, _obj in pairs(_projectiles) do
           if _obj.emitter_animation == current_recording_animation.id then
             local _dx, _dy = _player_obj.pos_x - _obj.pos_x, _player_obj.pos_y - _obj.pos_y
-            if _player_obj.flip_x then _dx = _dx * -1 end
+            if _player_obj.flip_x ~= 0 then _dx = _dx * -1 end
             for __, _box in ipairs(_obj.boxes) do
               if (_box.type == "attack") or (_box.type == "throw") then
                 local _temp_box = copytable(_box)
