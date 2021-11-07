@@ -419,7 +419,11 @@ function update_idle_framedata_recording(_player_obj)
 end
 
 function find_wake_up(_char_str, _wakeup_animation, _last_act_animation)
-  local _wakeup = frame_data[_char_str].wakeups[_wakeup_animation]
+  local _frame_data = frame_data[_char_str]
+  if _frame_data == nil then
+    return nil
+  end
+  local _wakeup = _frame_data.wakeups[_wakeup_animation]
   if _wakeup == nil then
     return nil
   end
