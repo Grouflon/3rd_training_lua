@@ -8,35 +8,45 @@ print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
 print("")
 print("Command List:")
-print("- Lua Hotkey 1 (alt+1) to toggle controller display")
-print("- Lua Hotkey 2 (alt+2) to toggle input history")
-print("- Lua Hotkey 3 (alt+3) to toggle hitboxes")
-print("- Lua Hotkey 4 (alt+4) to toggle gauges numbers")
+print("- Lua Hotkey 1 (alt+1) to open the settings menu")
+print("- Lua Hotkey 2 (alt+2) to go up the settings list")
+print("- Lua Hotkey 3 (alt+3) to go down the settings list")
+print("- Lua Hotkey 4 (alt+4) to toggle the selected setting")
 print("")
-print("* settings are saved between script sessions")
+print("* settings are saved and kept between sessions")
 print("")
 
 require("src/tools")
+require("src/draw")
 require("src/display")
 require("src/framedata")
 require("src/gamestate")
 require("src/input_history")
+require("src/menu_widgets")
 
 developer_mode = false
 
 -- settings
-settings_version = 1
+settings_version = 2
 spectator_settings_file = "spectator_settings.json"
 spectator_settings =
 {
   version = settings_version,
 
   -- 0 is nothing, 1 is both players, 2 is P1 only, 3 is P2 only
-  display_controllers = 0,
-  display_input_history = 0,
-  display_hitboxes = 0,
-  display_gauges = 0,
+  display_controllers = 1,
+  display_input_history = 1,
+  display_hitboxes = 1,
+  display_gauges = 1,
+  display_distances = false,
 }
+
+hotkey1_pressed = false
+hotkey2_pressed = false
+hotkey3_pressed = false
+hotkey4_pressed = false
+
+is_menu_open = false
 
 function save_spectator_settings()
   if not write_object_to_json_file(spectator_settings, saved_path..spectator_settings_file) then
@@ -61,6 +71,26 @@ function load_spectator_settings()
 end
 -- !settings
 
+display_mode = {
+  "none",
+  "P1+P2",
+  "P1",
+  "P2",
+}
+
+-- menu
+settings_menu = make_menu(71, 40, 312, 105, -- screen size 383,223
+{
+  list_menu_item("Display Controllers", spectator_settings, "display_controllers", display_mode),
+  list_menu_item("Display Input History", spectator_settings, "display_input_history", display_mode),
+  list_menu_item("Display Hitboxes", spectator_settings, "display_hitboxes", display_mode),
+  list_menu_item("Display Gauges", spectator_settings, "display_gauges", display_mode),
+  checkbox_menu_item("Display Distances", spectator_settings, "display_distances")
+},
+save_spectator_settings,
+false)
+-- !menu
+
 function on_start()
   load_spectator_settings()
 end
@@ -74,7 +104,7 @@ function before_frame()
   gamestate_read()
 
   if developer_mode then
-    local _write_game_vars_settings = 
+    local _write_game_vars_settings =
     {
       infinite_time = true,
     }
@@ -82,43 +112,61 @@ function before_frame()
   end
 
   local _input = joypad.get()
-
-  if is_in_match then
-    input_history_update(input_history[1], "P1", _input)
-    input_history_update(input_history[2], "P2", _input)
-  else
-    clear_input_history()
-  end
+  input_history_update(input_history[1], "P1", _input)
+  input_history_update(input_history[2], "P2", _input)
 
 end
 
 function on_gui()
 
+  if hotkey1_pressed then
+    is_menu_open = not is_menu_open
+
+    if is_menu_open then
+      menu_stack_push(settings_menu)
+    else
+      menu_stack_clear()
+    end
+  end
+
+  local _input =
+  {
+    down = hotkey3_pressed,
+    up = hotkey2_pressed,
+    left = false,
+    right = hotkey4_pressed,
+    validate = false,
+    reset = false,
+    cancel = false,
+  }
+  menu_stack_update(_input)
+  menu_stack_draw()
+
+  -- input history
+  if spectator_settings.display_input_history == 2 or spectator_settings.display_input_history == 3 then
+    input_history_draw(input_history[1], 4, 49, false)
+  end
+
+  if spectator_settings.display_input_history == 2 or spectator_settings.display_input_history == 4 then
+    input_history_draw(input_history[2], screen_width - 4, 49, true)
+  end
+
+  -- controllers
+  local _i = joypad.get()
+  if spectator_settings.display_controllers == 2 or spectator_settings.display_controllers == 3 then
+    local _p1 = make_input_history_entry("P1", _i)
+    draw_controller_big(_p1, 44, 34)
+  end
+
+  if spectator_settings.display_controllers == 2 or spectator_settings.display_controllers == 4 then
+    local _p2 = make_input_history_entry("P2", _i)
+    draw_controller_big(_p2, 310, 34)
+  end
+
   if is_in_match then
 
-    -- input history
-    if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 2 then
-      input_history_draw(input_history[1], 4, 49, false)
-    end
-
-    if spectator_settings.display_input_history == 1 or spectator_settings.display_input_history == 3 then
-      input_history_draw(input_history[2], screen_width - 4, 49, true)
-    end
-
-    -- controllers
-    local _i = joypad.get()
-    if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 2 then
-      local _p1 = make_input_history_entry("P1", _i)
-      draw_controller_big(_p1, 44, 34)
-    end
-
-    if spectator_settings.display_controllers == 1 or spectator_settings.display_controllers == 3 then
-      local _p2 = make_input_history_entry("P2", _i)
-      draw_controller_big(_p2, 310, 34)
-    end
-
     -- hitboxes
-    if spectator_settings.display_hitboxes == 1 or spectator_settings.display_hitboxes == 2 then
+    if spectator_settings.display_hitboxes == 2 or spectator_settings.display_hitboxes == 3 then
       draw_hitboxes(player_objects[1].pos_x, player_objects[1].pos_y, player_objects[1].flip_x, player_objects[1].boxes)
 
       -- projectiles
@@ -129,7 +177,7 @@ function on_gui()
       end
     end
 
-    if spectator_settings.display_hitboxes == 1 or spectator_settings.display_hitboxes == 3 then
+    if spectator_settings.display_hitboxes == 2 or spectator_settings.display_hitboxes == 4 then
       draw_hitboxes(player_objects[2].pos_x, player_objects[2].pos_y, player_objects[2].flip_x, player_objects[2].boxes)
 
       -- projectiles
@@ -141,23 +189,32 @@ function on_gui()
     end
 
     -- gauges
-    if spectator_settings.display_gauges == 1 or spectator_settings.display_gauges == 2 then
+    if spectator_settings.display_gauges == 2 or spectator_settings.display_gauges == 3 then
       display_draw_life(player_objects[1])
       display_draw_meter(player_objects[1])
       display_draw_stun_gauge(player_objects[1])
       display_draw_bonuses(player_objects[1])
     end
 
-    if spectator_settings.display_gauges == 1 or spectator_settings.display_gauges == 3 then
+    if spectator_settings.display_gauges == 2 or spectator_settings.display_gauges == 4 then
       display_draw_life(player_objects[2])
       display_draw_meter(player_objects[2])
       display_draw_stun_gauge(player_objects[2])
       display_draw_bonuses(player_objects[2])
     end
 
+    if spectator_settings.display_distances then
+      display_draw_distances(player_objects[1], player_objects[2])
+    end
+
   end
 
   gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
+
+  hotkey1_pressed = false
+  hotkey2_pressed = false
+  hotkey3_pressed = false
+  hotkey4_pressed = false
 end
 
 emu.registerstart(on_start)
@@ -167,24 +224,19 @@ savestate.registerload(on_load_state)
 
 
 function hotkey1()
-  spectator_settings.display_controllers = (spectator_settings.display_controllers + 1) % 4
-  save_spectator_settings()
+  hotkey1_pressed = true
 end
 function hotkey2()
-  spectator_settings.display_input_history = (spectator_settings.display_input_history + 1) % 4
-  save_spectator_settings()
+  hotkey2_pressed = true
 end
 function hotkey3()
-  spectator_settings.display_hitboxes = (spectator_settings.display_hitboxes + 1) % 4
-  save_spectator_settings()
+  hotkey3_pressed = true
 end
 function hotkey4()
-  spectator_settings.display_gauges = (spectator_settings.display_gauges + 1) % 4
-  save_spectator_settings()
+  hotkey4_pressed = true
 end
 
-
-input.registerhotkey(1, hotkey1) 
-input.registerhotkey(2, hotkey2) 
-input.registerhotkey(3, hotkey3) 
-input.registerhotkey(4, hotkey4) 
+input.registerhotkey(1, hotkey1)
+input.registerhotkey(2, hotkey2)
+input.registerhotkey(3, hotkey3)
+input.registerhotkey(4, hotkey4)

@@ -160,3 +160,32 @@ function display_draw_bonuses(_player_object)
 end
 
 
+function display_draw_distances(_p1_object, _p2_object)
+  local _line_color = 0xFFFF63FF
+  local _screen_limit_margin_y = screen_height - 20
+  local _display_height = 40
+  local _vertical_line_margin = 4
+
+  local _p1_screen_x, _p1_screen_y = game_to_screen_space(_p1_object.pos_x, _p1_object.pos_y)
+  local _p2_screen_x, _p2_screen_y = game_to_screen_space(_p2_object.pos_x, _p2_object.pos_y)
+  _p1_screen_y = math.min(_p1_screen_y, _screen_limit_margin_y)
+  _p2_screen_y = math.min(_p2_screen_y, _screen_limit_margin_y)
+  local _p1_center_x, _p1_center_y =  game_to_screen_space(_p1_object.pos_x, _p1_object.pos_y + _display_height)
+  local _p2_center_x, _p2_center_y = game_to_screen_space(_p2_object.pos_x, _p2_object.pos_y + _display_height)
+  _p1_center_y = math.min(_p1_center_y, _screen_limit_margin_y)
+  _p2_center_y = math.min(_p2_center_y, _screen_limit_margin_y)
+  local _center_x = (_p1_screen_x + _p2_screen_x) * 0.5
+  local _distance_str = string.format("%d:%d", math.abs(_p1_object.pos_x - _p2_object.pos_x), math.abs(_p1_object.pos_y - _p2_object.pos_y))
+  local _half_distance_str_width = get_text_width(_distance_str) * 0.5
+  local _line_y = math.max(_p1_center_y, _p2_center_y)
+
+  draw_point(_p1_screen_x, _p1_screen_y, _line_color)
+  draw_point(_p2_screen_x, _p2_screen_y, _line_color)
+  draw_horizontal_line(math.min(_p1_screen_x, _p2_screen_x), _center_x - _half_distance_str_width - 3, _line_y, _line_color, 1)
+  draw_horizontal_line(_center_x + _half_distance_str_width + 3, math.max(_p1_screen_x, _p2_screen_x), _line_y, _line_color, 1)
+  draw_vertical_line(_p1_center_x, math.min(_p1_screen_y, _line_y) - _vertical_line_margin, math.max(_p1_screen_y, _line_y) + _vertical_line_margin, _line_color, 1)
+  draw_vertical_line(_p2_center_x, math.min(_p2_screen_y, _line_y) - _vertical_line_margin, math.max(_p2_screen_y, _line_y) + _vertical_line_margin, _line_color, 1)
+  gui.text(_center_x - _half_distance_str_width, _line_y - 3, _distance_str, text_default_color, text_default_border_color)
+  gui.text(_p1_screen_x + 3, _p1_screen_y + 2, string.format("%d:%d", _p1_object.pos_x, _p1_object.pos_y), text_default_color, text_default_border_color)
+  gui.text(_p2_screen_x + 3, _p2_screen_y + 2, string.format("%d:%d", _p2_object.pos_x, _p2_object.pos_y), text_default_color, text_default_border_color)
+end
