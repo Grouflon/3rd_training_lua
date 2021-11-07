@@ -1613,6 +1613,7 @@ training_settings = {
   display_p2_input_history = false,
   display_frame_advantage = false,
   display_hitboxes = false,
+  display_distances = false,
   auto_crop_recording_start = true,
   auto_crop_recording_end = true,
   current_recording_slot = 1,
@@ -1739,6 +1740,7 @@ main_menu = make_multitab_menu(
         display_p2_input_history_item,
         checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
+        checkbox_menu_item("Display Distances", training_settings, "display_distances"),
       }
     },
     {
@@ -2456,6 +2458,11 @@ function on_gui()
     -- hitboxes
     if training_settings.display_hitboxes then
       display_draw_hitboxes()
+    end
+
+    -- distances
+    if training_settings.display_distances then
+      display_draw_distances(player_objects[1], player_objects[2])
     end
 
     -- input history
