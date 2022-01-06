@@ -2733,7 +2733,6 @@ function on_gui()
     local _player = P1
     local _x = 235 --96
     local _y = 40
-    local _flip_gauge = false
     local _gauge_x_scale = 4
 
     if training_settings.special_training_follow_character then
@@ -2754,9 +2753,6 @@ function on_gui()
       local _gauge_height = 4
       local _gauge_background_color = 0xD6E7EF77
       local _gauge_valid_fill_color = 0x08CF00FF
-      local _gauge_cooldown_fill_color = 0xFF7939FF
-      local _success_color = 0x10FB00FF
-      local _miss_color = 0xE70000FF
 
 
       gui.text(_x -8, _y, "LK", text_default_color, text_default_border_color)
