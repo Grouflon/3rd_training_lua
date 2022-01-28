@@ -56,18 +56,30 @@ end
 
 
 function display_draw_life(_player_object)
-  local _x = 0
-  local _y = 20
+  local _x1 = 0
+  local _y1 = 20
 
-  local _t = string.format("%d/160", _player_object.life)
+  local _x2 = 0
+  local _y2 = 8
+
+  local _max_player_life = 160
+
+  local _t1 = string.format("%d/%d", _player_object.life, _max_player_life)
+  local _t2 = string.format("%d", _max_player_life - _player_object.life)
 
   if _player_object.id == 1 then
-    _x = 13
+    _x1 = 13
+    _x2 = 13
   elseif _player_object.id == 2 then
-    _x = screen_width - 11 - get_text_width(_t)
+    _x1 = screen_width - 11 - get_text_width(_t1)
+    _x2 = screen_width - 11 - get_text_width(_t2)
   end
 
-  gui.text(_x, _y, _t, 0xFFFB63FF)
+  gui.text(_x1, _y1, _t1, 0xFFFB63FF)
+
+  if _player_object.life < _max_player_life then
+    gui.text(_x2, _y2, _t2, 0xE70000FF)
+  end
 end
 
 
