@@ -54,6 +54,7 @@ require("src/menu_widgets")
 require("src/framedata")
 require("src/gamestate")
 require("src/input_history")
+require("src/attack_data")
 require("src/frame_advantage")
 require("src/character_select")
 
@@ -1611,6 +1612,7 @@ training_settings = {
   display_p1_input_history = false,
   display_p1_input_history_dyanamic = false,
   display_p2_input_history = false,
+  display_attack_data = false,
   display_frame_advantage = false,
   display_hitboxes = false,
   display_distances = false,
@@ -1738,6 +1740,7 @@ main_menu = make_multitab_menu(
         checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
         checkbox_menu_item("Dynamic P1 Input History", training_settings, "display_p1_input_history_dynamic"),
         display_p2_input_history_item,
+        checkbox_menu_item("Display Attack Data", training_settings, "display_attack_data"),
         checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
         checkbox_menu_item("Display Distances", training_settings, "display_distances"),
@@ -2201,6 +2204,7 @@ end
 
 function on_load_state()
   reset_player_objects()
+  attack_data_reset()
   frame_advantage_reset()
 
   gamestate_read()
@@ -2316,6 +2320,9 @@ function before_frame()
     dummy = player_objects[1]
   end
 
+  -- attack data
+  attack_data_update(player, dummy)
+
   -- frame advantage
   frame_advantage_update(player, dummy)
 
@@ -2345,6 +2352,7 @@ function before_frame()
     input_history_update(input_history[2], "P2", _input)
   else
     clear_input_history()
+    attack_data_reset()
     frame_advantage_reset()
   end
 
@@ -2484,6 +2492,11 @@ function on_gui()
       local _p2 = make_input_history_entry("P2", _i)
       draw_controller_big(_p1, 44, 34)
       draw_controller_big(_p2, 310, 34)
+    end
+
+    -- attack data
+    if training_settings.display_attack_data then
+      attack_data_display()
     end
 
     -- move advantage
