@@ -354,6 +354,15 @@ function read_player_vars(_player_obj)
     _player_obj.combo = memory.readbyte(0x0206961D)
   end
 
+  -- NEXT HIT
+  if _player_obj.id == 1 then
+    _player_obj.damage_of_next_hit = memory.readbyte(0x020691A7)
+    _player_obj.stun_of_next_hit = memory.readbyte(0x02069437)
+  else
+    _player_obj.damage_of_next_hit = memory.readbyte(0x02068D0F)
+    _player_obj.stun_of_next_hit = memory.readbyte(0x02068F9F)
+  end
+
   -- BONUSES
   _player_obj.damage_bonus = memory.readword(_player_obj.base + 0x43A)
   _player_obj.stun_bonus = memory.readword(_player_obj.base + 0x43E)
