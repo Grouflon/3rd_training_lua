@@ -597,6 +597,10 @@ function load_training_data()
     end
   end
 
+  if _training_settings.display_distances and type(_training_settings.display_distances) ~= "number" then
+    _training_settings.display_distances = 1
+  end
+
   for _key, _value in pairs(_training_settings) do
     training_settings[_key] = _value
   end
@@ -1613,7 +1617,10 @@ training_settings = {
   display_p2_input_history = false,
   display_frame_advantage = false,
   display_hitboxes = false,
-  display_distances = false,
+  display_distances = 1,
+  mid_distance_height = 70,
+  p1_distances_reference_point = 1,
+  p2_distances_reference_point = 2,
   auto_crop_recording_start = true,
   auto_crop_recording_end = true,
   current_recording_slot = 1,
@@ -1698,6 +1705,20 @@ change_characters_item.is_disabled = function()
   return rom_name ~= "sfiii3nr1"
 end
 
+p1_distances_reference_point_item = list_menu_item("P1 distance reference point", training_settings, "p1_distances_reference_point", distance_display_reference_point)
+p1_distances_reference_point_item.is_disabled = function()
+  return training_settings.display_distances ~= 3
+end
+
+p2_distances_reference_point_item = list_menu_item("P2 distance reference point", training_settings, "p2_distances_reference_point", distance_display_reference_point)
+p2_distances_reference_point_item.is_disabled = function()
+  return training_settings.display_distances ~= 3
+end
+mid_distance_height_item = integer_menu_item("Mid Distance Height", training_settings, "mid_distance_height", 0, 200, false, 10)
+mid_distance_height_item.is_disabled = function()
+  return training_settings.display_distances ~= 3
+end
+
 main_menu = make_multitab_menu(
   23, 15, 360, 195, -- screen size 383,223
   {
@@ -1740,7 +1761,10 @@ main_menu = make_multitab_menu(
         display_p2_input_history_item,
         checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
-        checkbox_menu_item("Display Distances", training_settings, "display_distances"),
+        list_menu_item("Display Distances", training_settings, "display_distances", distance_display_mode),
+        mid_distance_height_item,
+        p1_distances_reference_point_item,
+        p2_distances_reference_point_item,
       }
     },
     {
@@ -2461,8 +2485,8 @@ function on_gui()
     end
 
     -- distances
-    if training_settings.display_distances then
-      display_draw_distances(player_objects[1], player_objects[2])
+    if training_settings.display_distances ~= 1 then
+      display_draw_distances(player_objects[1], player_objects[2], training_settings.display_distances, training_settings.mid_distance_height, training_settings.p1_distances_reference_point, training_settings.p2_distances_reference_point)
     end
 
     -- input history

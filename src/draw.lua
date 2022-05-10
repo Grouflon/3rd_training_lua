@@ -75,10 +75,14 @@ function draw_read()
 end
 
 -- # Tools
+function game_to_screen_space_x(_x)
+  return _x - screen_x + emu.screenwidth()/2
+end
+function game_to_screen_space_y(_y)
+  return emu.screenheight() - (_y - screen_y) - ground_offset
+end
 function game_to_screen_space(_x, _y)
-  local _px = _x - screen_x + emu.screenwidth()/2
-  local _py = emu.screenheight() - (_y - screen_y) - ground_offset
-  return _px, _py
+  return game_to_screen_space_x(_x), game_to_screen_space_y(_y)
 end
 
 
