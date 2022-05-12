@@ -189,123 +189,99 @@ function draw_horizontal_text_segment(_p1_x, _p2_x, _y, _text, _line_color, _edg
   end
 end  
 
-function display_draw_distances(_p1_object, _p2_object, _mode, _mid_distance_height, _p1_reference_point, _p2_reference_point)
-  if _mode == 1 then
-    return
-  end
+function display_draw_distances(_p1_object, _p2_object, _mid_distance_height, _p1_reference_point, _p2_reference_point)
 
-  local _line_color = 0xFFFF63FF
-  local _screen_limit_margin_y = screen_height - 20
-  local _display_height = 40
-  local _vertical_line_margin = 4
+  function _find_closest_box_at_height(_player_obj, _height, _box_types)
 
-  local _p1_screen_x, _p1_screen_y = game_to_screen_space(_p1_object.pos_x, _p1_object.pos_y)
-  local _p2_screen_x, _p2_screen_y = game_to_screen_space(_p2_object.pos_x, _p2_object.pos_y)
+    local _px = _player_obj.pos_x
+    local _py = _player_obj.pos_y
 
-  if _mode == 2 then
-    _p1_screen_y = math.min(_p1_screen_y, _screen_limit_margin_y)
-    _p2_screen_y = math.min(_p2_screen_y, _screen_limit_margin_y)
-    local _p1_center_x, _p1_center_y =  game_to_screen_space(_p1_object.pos_x, _p1_object.pos_y + _display_height)
-    local _p2_center_x, _p2_center_y = game_to_screen_space(_p2_object.pos_x, _p2_object.pos_y + _display_height)
-    _p1_center_y = math.min(_p1_center_y, _screen_limit_margin_y)
-    _p2_center_y = math.min(_p2_center_y, _screen_limit_margin_y)
-    local _line_y = math.max(_p1_center_y, _p2_center_y)
-    local _distance_str = string.format("%d:%d", math.abs(_p1_object.pos_x - _p2_object.pos_x), math.abs(_p1_object.pos_y - _p2_object.pos_y))
+    local _left, _right = _px, _px
 
-    draw_horizontal_text_segment(_p1_screen_x, _p2_screen_x, _line_y, _distance_str, _line_color, 0)
+    if _box_types == nil then
+      return false, _left, _right
+    end
 
-    draw_vertical_line(_p1_center_x, math.min(_p1_screen_y, _line_y) - _vertical_line_margin, math.max(_p1_screen_y, _line_y) + _vertical_line_margin, _line_color, 1)
-    draw_vertical_line(_p2_center_x, math.min(_p2_screen_y, _line_y) - _vertical_line_margin, math.max(_p2_screen_y, _line_y) + _vertical_line_margin, _line_color, 1)
-  elseif _mode == 3 then    
+    local _has_boxes = false
+    for __, _box in ipairs(_player_obj.boxes) do
 
-    function _find_closest_box_at_height(_player_obj, _height, _box_types)
+      if _box_types[_box.type] then
+        local _l, _r
+        if _player_obj.flip_x == 0 then
+          _l = _px + _box.left
+        else
+          _l = _px - _box.left - _box.width
+        end
+        local _r = _l + _box.width
+        local _b = _py + _box.bottom
+        local _t = _b + _box.height
 
-      local _px = _player_obj.pos_x
-      local _py = _player_obj.pos_y
-
-      local _left, _right = _px, _px
-
-      if _box_types == nil then
-        return false, _left, _right
-      end
-
-      local _has_boxes = false
-      for __, _box in ipairs(_player_obj.boxes) do
-
-        if _box_types[_box.type] then
-          local _l, _r
-          if _player_obj.flip_x == 0 then
-            _l = _px + _box.left
-          else
-            _l = _px - _box.left - _box.width
-          end
-          local _r = _l + _box.width
-          local _b = _py + _box.bottom
-          local _t = _b + _box.height
-
-          if _height >= _b and _height <= _t then
-            _has_boxes = true
-            _left = math.min(_left, _l)
-            _right = math.max(_right, _r)
-          end
+        if _height >= _b and _height <= _t then
+          _has_boxes = true
+          _left = math.min(_left, _l)
+          _right = math.max(_right, _r)
         end
       end
-
-      return _has_boxes, _left, _right
     end
 
-    function _get_screen_line_between_boxes(_box1_l, _box1_r, _box2_l, _box2_r)
-      if not (
-        (_box1_l >= _box2_r) or
-        (_box1_r <= _box2_l)
-      ) then
-        return false
-      end
-
-      if _box1_l < _box2_l then
-        return true, game_to_screen_space_x(_box1_r), game_to_screen_space_x(_box2_l)
-      else
-        return true, game_to_screen_space_x(_box2_r), game_to_screen_space_x(_box1_l)
-      end
-    end
-
-    function _display_distance(_p1_object, _p2_object, _height, _box_types, _p1_reference_point, _p2_reference_point, _color)
-      local _y = math.min(_p1_object.pos_y + _height, _p2_object.pos_y + _height)
-      local _p1_l, _p1_r, _p2_l, _p2_r
-      local _p1_result, _p2_result = false, false
-      if _p1_reference_point == 2 then
-        _p1_result, _p1_l, _p1_r = _find_closest_box_at_height(_p1_object, _y, _box_types)
-      end
-      if not _p1_result then
-        _p1_l, _p1_r = _p1_object.pos_x, _p1_object.pos_x
-      end
-      if _p2_reference_point == 2 then
-        _p2_result, _p2_l, _p2_r = _find_closest_box_at_height(_p2_object, _y, _box_types)
-      end 
-      if not _p2_result then
-        _p2_l, _p2_r = _p2_object.pos_x, _p2_object.pos_x
-      end
-
-      local _line_result, _screen_l, _screen_r = _get_screen_line_between_boxes(_p1_l, _p1_r, _p2_l, _p2_r)
-
-      if _line_result then
-        local _screen_y = game_to_screen_space_y(_y)
-        local _str = string.format("%d", math.abs(_screen_r - _screen_l))
-        draw_horizontal_text_segment(_screen_l, _screen_r, _screen_y, _str, _color)
-      end
-    end
-
-    -- throw
-    _display_distance(_p1_object, _p2_object, 2, { throwable = true }, _p1_reference_point, _p2_reference_point, 0x08CF00FF)
-
-    -- low and mid
-    local _hurtbox_types = {}
-    _hurtbox_types["vulnerability"] = true
-    _hurtbox_types["ext. vulnerability"] = true
-    _display_distance(_p1_object, _p2_object, 10, _hurtbox_types, _p1_reference_point, _p2_reference_point, 0x1051F7FF)
-    _display_distance(_p1_object, _p2_object, _mid_distance_height, _hurtbox_types, _p1_reference_point, _p2_reference_point, 0x1051F7FF)
+    return _has_boxes, _left, _right
   end
 
+  function _get_screen_line_between_boxes(_box1_l, _box1_r, _box2_l, _box2_r)
+    if not (
+      (_box1_l >= _box2_r) or
+      (_box1_r <= _box2_l)
+    ) then
+      return false
+    end
+
+    if _box1_l < _box2_l then
+      return true, game_to_screen_space_x(_box1_r), game_to_screen_space_x(_box2_l)
+    else
+      return true, game_to_screen_space_x(_box2_r), game_to_screen_space_x(_box1_l)
+    end
+  end
+
+  function _display_distance(_p1_object, _p2_object, _height, _box_types, _p1_reference_point, _p2_reference_point, _color)
+    local _y = math.min(_p1_object.pos_y + _height, _p2_object.pos_y + _height)
+    local _p1_l, _p1_r, _p2_l, _p2_r
+    local _p1_result, _p2_result = false, false
+    if _p1_reference_point == 2 then
+      _p1_result, _p1_l, _p1_r = _find_closest_box_at_height(_p1_object, _y, _box_types)
+    end
+    if not _p1_result then
+      _p1_l, _p1_r = _p1_object.pos_x, _p1_object.pos_x
+    end
+    if _p2_reference_point == 2 then
+      _p2_result, _p2_l, _p2_r = _find_closest_box_at_height(_p2_object, _y, _box_types)
+    end 
+    if not _p2_result then
+      _p2_l, _p2_r = _p2_object.pos_x, _p2_object.pos_x
+    end
+
+    local _line_result, _screen_l, _screen_r = _get_screen_line_between_boxes(_p1_l, _p1_r, _p2_l, _p2_r)
+
+    if _line_result then
+      local _screen_y = game_to_screen_space_y(_y)
+      local _str = string.format("%d", math.abs(_screen_r - _screen_l))
+      draw_horizontal_text_segment(_screen_l, _screen_r, _screen_y, _str, _color)
+    end
+  end
+
+  -- throw
+  _display_distance(_p1_object, _p2_object, 2, { throwable = true }, _p1_reference_point, _p2_reference_point, 0x08CF00FF)
+
+  -- low and mid
+  local _hurtbox_types = {}
+  _hurtbox_types["vulnerability"] = true
+  _hurtbox_types["ext. vulnerability"] = true
+  _display_distance(_p1_object, _p2_object, 10, _hurtbox_types, _p1_reference_point, _p2_reference_point, 0x00E7FFFF)
+  _display_distance(_p1_object, _p2_object, _mid_distance_height, _hurtbox_types, _p1_reference_point, _p2_reference_point, 0x00E7FFFF)
+
+  -- player positions
+  local _line_color = 0xFFFF63FF
+  local _p1_screen_x, _p1_screen_y = game_to_screen_space(_p1_object.pos_x, _p1_object.pos_y)
+  local _p2_screen_x, _p2_screen_y = game_to_screen_space(_p2_object.pos_x, _p2_object.pos_y)
   draw_point(_p1_screen_x, _p1_screen_y, _line_color)
   draw_point(_p2_screen_x, _p2_screen_y, _line_color)
   gui.text(_p1_screen_x + 3, _p1_screen_y + 2, string.format("%d:%d", _p1_object.pos_x, _p1_object.pos_y), text_default_color, text_default_border_color)
