@@ -39,6 +39,11 @@ function frame_advantage_update(_attacker, _defender)
   end
 
   if move_advantage.armed then
+
+    if _attacker.superfreeze_decount > 0 then
+      move_advantage.start_frame = move_advantage.start_frame + 1
+    end
+
     if move_advantage.hitbox_start_frame == nil then
       for _, _box in ipairs(_attacker.boxes) do
         if _box.type == "attack" or _box.type == "throw" then
