@@ -115,6 +115,7 @@ Thank you for your support in this matter and please enjoy!
 - [Feature] Blocking system is now working in 4rd Strike (thanks to @speedmccool25 frame data recording)
 - [Bugfix] Fixed random parry not behaving properly
 - [Bugfix] Fixed self-cancellable LP/LK not correctly blocked on various characters
+- [FrameData][Q] added missing back mp + SA2
 
 ### v0.9 (04/04/2021)
 - [Feature] Projectiles are now blocked/parried
