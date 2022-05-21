@@ -374,8 +374,9 @@ function read_player_vars(_player_obj)
 
   -- ATTACKING
   local _previous_is_attacking = _player_obj.is_attacking or false
+  _player_obj.character_state_byte = memory.readbyte(_player_obj.base + 0x27) -- used to detext hugos claps and throws, which do not set the is_attacking_byte
   _player_obj.is_attacking_byte = memory.readbyte(_player_obj.base + 0x428)
-  _player_obj.is_attacking = _player_obj.is_attacking_byte > 0
+  _player_obj.is_attacking = _player_obj.is_attacking_byte > 0 or _player_obj.character_state_byte == 0x04
   _player_obj.is_attacking_ext_byte = memory.readbyte(_player_obj.base + 0x429)
   _player_obj.is_attacking_ext = _player_obj.is_attacking_ext_byte > 0
   _player_obj.has_just_attacked =  _player_obj.is_attacking and not _previous_is_attacking

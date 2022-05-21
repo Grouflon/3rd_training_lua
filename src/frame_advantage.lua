@@ -26,6 +26,7 @@ function frame_advantage_update(_attacker, _defender)
       player_id = _attacker.id,
       start_frame = frame_number,
       hitbox_start_frame = nil,
+      hitbox_end_frame = nil,
       hit_frame = nil,
       end_frame = nil,
       opponent_end_frame = nil,
@@ -44,23 +45,37 @@ function frame_advantage_update(_attacker, _defender)
       move_advantage.start_frame = move_advantage.start_frame + 1
     end
 
-    if move_advantage.hitbox_start_frame == nil then
-      for _, _box in ipairs(_attacker.boxes) do
-        if _box.type == "attack" or _box.type == "throw" then
-          move_advantage.hitbox_start_frame = frame_number
-          move_advantage.end_frame = nil
-
-          log(_attacker.prefix, "frame_advantage", string.format("hitbox"))
-          break
-        end
+    local _has_hitbox = false
+    local _is_projectile = #projectiles > 0
+    for _, _box in ipairs(_attacker.boxes) do
+      if _box.type == "attack" or _box.type == "throw" then
+        _has_hitbox = true
+        break
       end
-      for _, _projectile in pairs(projectiles) do
-        if _projectile.emitter_id == _attacker.id and _projectile.has_activated then
+    end
+    for _, _projectile in pairs(projectiles) do
+      if _projectile.emitter_id == _attacker.id and _projectile.has_activated then
+        _has_hitbox = true
+        break
+      end
+    end
+
+    if move_advantage.hitbox_start_frame == nil then
+      -- Hitbox start
+      if _has_hitbox then
+        if _is_projectile then
           move_advantage.hitbox_start_frame = frame_number + 1
-          move_advantage.end_frame = nil
           log(_attacker.prefix, "frame_advantage", string.format("proj hitbox(+1)"))
-          break
+        else
+          move_advantage.hitbox_start_frame = frame_number
+          log(_attacker.prefix, "frame_advantage", string.format("hitbox"))
         end
+        move_advantage.end_frame = nil
+      end
+    elseif move_advantage.hitbox_end_frame == nil then
+      -- Hitbox end (does not make a lot of sense for projectiles I guess)
+      if not _is_projectile and not _has_hitbox then
+        move_advantage.hitbox_end_frame = frame_number
       end
     end
 
@@ -93,6 +108,9 @@ function frame_advantage_update(_attacker, _defender)
     end
 
     if (move_advantage.end_frame ~= nil and move_advantage.opponent_end_frame ~= nil) or (has_ended_attack(_attacker) and has_ended_recovery(_defender)) then
+      if move_advantage.end_frame == nil then
+          move_advantage.end_frame = frame_number
+      end
       move_advantage.armed = false
       log(_defender.prefix, "frame_advantage", string.format("unarmed"))
     end
@@ -109,34 +127,29 @@ function frame_advantage_display()
     return
   end
 
-  local _text_width1 = get_text_width("startup: ")
-  local _text_width2 = get_text_width("hit frame: ")
-  local _text_width3 = get_text_width("advantage: ")
-
-  local _x1 = 0
-  local _x2 = 0
-  local _x3 = 0
   local _y = 49
-  if move_advantage.player_id == 1 then
-    _x1 = 51
-    _x2 = _x1
-    _x3 = _x1
-  elseif move_advantage.player_id == 2 then
-    local _base = screen_width - 65
-    _x1 = _base - _text_width1
-    _x2 = _base - _text_width2
-    _x3 = _base - _text_width3
+  function display_line(_text, _value, _color)
+    _color = _color or text_default_color
+    local _text_width = get_text_width(_text)
+    local _x = 0
+    if move_advantage.player_id == 1 then
+      _x = 51
+    elseif move_advantage.player_id == 2 then
+      _x = screen_width - 65 - _text_width
+    end
+
+    gui.text(_x, _y, string.format(_text))
+    gui.text(_x + _text_width, _y, string.format("%d", _value), _color, text_default_border_color)
+    _y = _y + 10
   end
 
   local _startup = move_advantage.hitbox_start_frame - move_advantage.start_frame
 
-  gui.text(_x1, _y, string.format("startup: "))
-  gui.text(_x1 + _text_width1, _y, string.format("%d", _startup))
+  display_line("startup: ", string.format("%d", _startup))
 
   if move_advantage.hit_frame ~= nil then
     local _hit_frame = move_advantage.hit_frame - move_advantage.start_frame + 1
-    gui.text(_x2, _y + 10, string.format("hit frame: "))
-    gui.text(_x2 + _text_width2, _y + 10, string.format("%d", _hit_frame))  
+    display_line("hit frame: ", string.format("%d", _hit_frame))
   end
 
   if move_advantage.hit_frame ~= nil and move_advantage.end_frame ~= nil and move_advantage.opponent_end_frame ~= nil then
@@ -152,8 +165,12 @@ function frame_advantage_display()
       _color = 0x10FB00FF
     end
 
-    gui.text(_x3, _y + 20, "advantage: ")
-    gui.text(_x3 + _text_width3, _y + 20, string.format("%s%d", _sign, _advantage), _color, text_default_border_color)
+    display_line("advantage: ", string.format("%s%d", _sign, _advantage), _color)
+  else
+    if move_advantage.hitbox_start_frame ~= nil and move_advantage.hitbox_end_frame ~= nil then
+      display_line("active: ", string.format("%d", move_advantage.hitbox_end_frame - move_advantage.hitbox_start_frame))
+    end
+    display_line("duration: ", string.format("%d", move_advantage.end_frame - move_advantage.start_frame))
   end
 end
 
