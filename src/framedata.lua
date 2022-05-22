@@ -523,8 +523,8 @@ function update_wakeupdata_recording(_player_obj, _dummy_obj)
   --  Gouki demon flip P
   --  Twelve forward, neutral and back throw
 
-  -- Always report missing data
-  if _dummy_obj.has_just_woke_up then
+  -- Report missing data
+  if developer_mode and _dummy_obj.has_just_woke_up then
     local _wakeup_animation = _dummy_obj.wakeup_animation
     local _wakeup_time = _dummy_obj.wakeup_time
     local _wakeup = frame_data[_dummy_obj.char_str].wakeups[_wakeup_animation]
