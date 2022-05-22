@@ -1758,7 +1758,7 @@ main_menu = make_multitab_menu(
         checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
         checkbox_menu_item("Dynamic P1 Input History", training_settings, "display_p1_input_history_dynamic"),
         display_p2_input_history_item,
-        checkbox_menu_item("Display Attack Data", training_settings, "display_attack_data"),
+        checkbox_menu_item("Display Damage Data", training_settings, "display_attack_data"),
         checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
         checkbox_menu_item("Display Distances", training_settings, "display_distances"),
@@ -2516,7 +2516,8 @@ function on_gui()
     end
 
     -- attack data
-    if training_settings.display_attack_data then
+    -- do not show if special training not following character is on, otherwise it will overlap
+    if training_settings.display_attack_data and (training_settings.special_training_current_mode == 1 or training_settings.special_training_follow_character) then
       attack_data_display()
     end
 

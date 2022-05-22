@@ -100,6 +100,7 @@ Thank you for your support in this matter and please enjoy!
 - [Feature] Charge special training (contribution of @ProfessorAnon)
 - [Feature] Hyakuretsu Kyaku special training (contribution of @ProfessorAnon)
 - [Feature] Dynamic input display (switch sides to avoid overlapping action) (contribution of @ProfessorAnon)
+- [Feature] Damage data display (contribution of @sammygutierrez)
 - [Feature] New 3rd_spectator.lua script for displaying info during replays without messing with input
 - [Feature] Number display for all gauges and bonuses
 - [Feature] Frame advantage display
