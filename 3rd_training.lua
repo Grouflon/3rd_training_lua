@@ -1758,7 +1758,7 @@ main_menu = make_multitab_menu(
         checkbox_menu_item("Display P1 Input History", training_settings, "display_p1_input_history"),
         checkbox_menu_item("Dynamic P1 Input History", training_settings, "display_p1_input_history_dynamic"),
         display_p2_input_history_item,
-        checkbox_menu_item("Display Damage Data", training_settings, "display_attack_data"),
+        checkbox_menu_item("Display Damage Info", training_settings, "display_attack_data"),
         checkbox_menu_item("Display Frame Advantage", training_settings, "display_frame_advantage"),
         checkbox_menu_item("Display Hitboxes", training_settings, "display_hitboxes"),
         checkbox_menu_item("Display Distances", training_settings, "display_distances"),
