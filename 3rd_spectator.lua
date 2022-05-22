@@ -17,6 +17,7 @@ print("* settings are saved and kept between sessions")
 print("")
 
 require("src/tools")
+require("src/memory_adresses")
 require("src/draw")
 require("src/display")
 require("src/framedata")
@@ -204,7 +205,7 @@ function on_gui()
     end
 
     if spectator_settings.display_distances then
-      display_draw_distances(player_objects[1], player_objects[2])
+      display_draw_distances(player_objects[1], player_objects[2], 70, 2, 2)
     end
 
   end
