@@ -272,6 +272,8 @@ function read_player_vars(_player_obj)
 
   _player_obj.char_str = characters[_player_obj.char_id + 1]
 
+  local _player_adresses = adresses.players[_player_obj.id]
+
   local _previous_remaining_freeze_frames = _player_obj.remaining_freeze_frames or 0
   _player_obj.remaining_freeze_frames = memory.readbyte(_player_obj.base + 0x45)
   _player_obj.freeze_type = 0
@@ -862,6 +864,16 @@ function read_player_vars(_player_obj)
   read_parry_state(_player_obj.parry_down, _player_obj.parry_down_validity_time_addr, _player_obj.parry_down_cooldown_time_addr)
   read_parry_state(_player_obj.parry_air, _player_obj.parry_air_validity_time_addr, _player_obj.parry_air_cooldown_time_addr)
   read_parry_state(_player_obj.parry_antiair, _player_obj.parry_antiair_validity_time_addr, _player_obj.parry_antiair_cooldown_time_addr)
+
+-- LEGS STATE
+  -- global game consts
+  _player_obj.legs_state = {}
+
+  _player_obj.legs_state.enabled = _player_obj.char_id == 16 -- chunli
+  _player_obj.legs_state.l_legs_count = memory.readbyte(_player_adresses.kyaku_l_count)
+  _player_obj.legs_state.m_legs_count = memory.readbyte(_player_adresses.kyaku_m_count)
+  _player_obj.legs_state.h_legs_count = memory.readbyte(_player_adresses.kyaku_h_count)
+  _player_obj.legs_state.reset_time = memory.readbyte(_player_adresses.kyaku_reset_time)
 
 -- CHARGE STATE
   -- global game consts
