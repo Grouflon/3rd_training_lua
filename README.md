@@ -96,7 +96,7 @@ Thank you for your support in this matter and please enjoy!
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
 ## Changelog
-### v0.10 (???)
+### v0.10 (29/05/2022)
 - [Feature] Charge special training (contribution of @ProfessorAnon)
 - [Feature] Hyakuretsu Kyaku special training (contribution of @ProfessorAnon)
 - [Feature] Dynamic input display (switch sides to avoid overlapping action) (contribution of @ProfessorAnon)
