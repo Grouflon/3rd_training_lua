@@ -3,6 +3,10 @@ attack_data = {}
 function attack_data_update(_attacker, _defender)
   attack_data.player_id = _attacker.id
 
+  if _attacker.combo == nil then
+    _attacker.combo = 0
+  end
+
   if _attacker.combo == 0 then
     attack_data.last_hit_combo = 0
   end
