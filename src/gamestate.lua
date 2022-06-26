@@ -350,6 +350,7 @@ function read_player_vars(_player_obj)
   _player_obj.life = memory.readbyte(_player_obj.base + 0x9F)
 
   -- COMBO
+    _player_obj.previous_combo = _player_obj.combo or 0
   if _player_obj.id == 1 then
     _player_obj.combo = memory.readbyte(0x020696C5)
   else
