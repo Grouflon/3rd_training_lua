@@ -17,6 +17,7 @@ require("src/memory_adresses")
 require("src/framedata")
 require("src/gamestate")
 
+-- DATABASE
 moves =
 {
   {
@@ -25,9 +26,19 @@ moves =
     command = "5LP"
   },
   {
+    name = "Medium Kick",
+    hits = { '48d0', '48d0' },
+    command = "5MK"
+  },
+  {
     name = "Crouching Light Punch",
     hits = { "4e00" },
     command = "2LP"
+  },
+  {
+    name = "Crouching Light Kick",
+    hits = { "5060" },
+    command = "2LK"
   },
   {
     name = "Air Heavy Kick",
@@ -50,6 +61,11 @@ moves =
     command = "214PP"
   },
   {
+    name = "EX Lariat",
+    hits = { '0044' },
+    command = "236KK"
+  },
+  {
     name = "Hammer Mountain",
     hits = { '1294', '15cc', '15cc', '15cc', '15cc' },
     command = "236236P"
@@ -69,9 +85,14 @@ moves =
     hits = { '0ab4' },
     command = "63214MP"
   },
+  {
+    name = "Body Slam",
+    hits = { '5540' },
+    command = "j2HP"
+  },
 }
 
-combos = {
+combo_definitions = {
   {
     hits = {'3fe0', '3fe0', '3fe0'}
   },
@@ -106,23 +127,55 @@ function generate_move_lookup_table(_moves)
 end
 animation_to_move = generate_move_lookup_table(moves)
 
+function find_move_from_animation(_hit)
+  local _move_id = animation_to_move[_hit]
+  if _move_id == nil then
+    return nil
+  end
+  return moves[_move_id]
+end
+
+-- WATCH
 function reset_combo_watch(_combo_watch)
   _combo_watch.is_started = false
   _combo_watch.hits = {}
 end
 
-function build_combo_steps(_combo)
+function update_combo_watch(_combo_watch, _attacker, _defender)
+  if _combo_watch.is_started then
+    local _combo_dropped = (_defender.has_just_been_hit and not _defender.is_being_thrown and _attacker.previous_combo >= _attacker.combo)
+    _combo_dropped = _combo_dropped or _attacker.previous_combo > _attacker.combo
+
+    if _combo_dropped or _defender.is_idle or _defender.is_wakingup or _defender.is_in_air_recovery then
+      --print(string.format("%d, %d, %d, %d", to_bit(_combo_dropped), to_bit(_defender.is_idle), to_bit(_defender.is_wakingup), to_bit(_defender.is_in_air_recovery)))
+      _combo_watch.is_started = false
+      print(_combo_watch.hits)
+    end
+  end
+
+  if _defender.has_just_been_hit then
+    if not _combo_watch.is_started then
+      reset_combo_watch(_combo_watch)
+      _combo_watch.is_started = true
+    end
+    table.insert(_combo_watch.hits, _attacker.animation)
+  end
+end
+
+
+-- STEPS
+function build_combo_steps(_combo_definition)
   local _combo_steps = {
     steps = {},
     hit_to_step = {},
   }
 
   local _hit_id = 1
-  while _hit_id <= #_combo.hits do
-    local _hit = _combo.hits[_hit_id]
-    table.insert(_combo_steps.steps, _hit)
+  while _hit_id <= #_combo_definition.hits do
+    local _animation = _combo_definition.hits[_hit_id]
+    table.insert(_combo_steps.steps, _animation)
 
-    local _move = find_move_from_hit(_hit)
+    local _move = find_move_from_animation(_animation)
     if _move ~= nil then
       for _i = 1, #_move.hits do
         table.insert(_combo_steps.hit_to_step, #_combo_steps.steps)
@@ -134,27 +187,67 @@ function build_combo_steps(_combo)
     end
   end
 
-  --print(_combo)
+  --print(_combo_definition)
   --print(_combo_steps)
 
   return _combo_steps
 end
 
-function find_move_from_hit(_hit)
-  local _move_id = animation_to_move[_hit]
-  if _move_id == nil then
-    return nil
+function draw_combo_steps(_x, _y, _combo_steps, _progress)
+  _progress = _progress or 0
+  local _previous_step = 0
+  for _i = 1, #_combo_steps.hit_to_step do
+    local _step_id = _combo_steps.hit_to_step[_i]
+    if _step_id ~= _previous_step then
+      _previous_step = _step_id
+      local _step = _combo_steps.steps[_step_id]
+      local _s = _step
+      local _move = find_move_from_animation(_step)
+      if _move ~= nil then
+        _s = string.format("%s - %s", _move.name, _move.command)
+      end
+      local _color = 0xFFFFFFFF
+      if _i <= _progress then
+        _color = 0xFF0000FF
+      end
+
+      gui.text(_x, _y, _s, _color)
+      _y = _y + 9
+    end
   end
-  return moves[_move_id]
 end
+
+-- RECORDING
+function reset_combo_recording(_recording)
+  _recording.on = false
+  _recording.savestate = nil
+  _recording.watch = {}
+  reset_combo_watch(_recording.watch)
+end
+
+function start_combo_recording(_recording)
+  reset_combo_recording(_recording)
+
+  _recording.on = true
+  _recording.savestate = savestate.create("saved/temp.fs")
+  savestate.save(_recording.savestate)
+end
+
+function stop_combo_recording(_recording)
+  _recording.on = false
+end
+
+-- EMU
+
+combo_recording = {}
+reset_combo_recording(combo_recording)
 
 combo_watch = {}
 reset_combo_watch(combo_watch)
 
 target_combo_id = 1
-combo_steps = build_combo_steps(combos[target_combo_id])
+combo_steps = build_combo_steps(combo_definitions[target_combo_id])
 
--- EMU
 
 function on_start()
   savestate.load(savestate.create("data/"..rom_name.."/savestates/trials.fs"))
@@ -214,74 +307,63 @@ function before_frame()
   -- COMBO CHECK
   if hotkey1_pressed then
     target_combo_id = target_combo_id - 1
-    target_combo_id = (((target_combo_id - 1) + #combos) % #combos) + 1
-    combo_steps = build_combo_steps(combos[target_combo_id])
+    target_combo_id = (((target_combo_id - 1) + #combo_definitions) % #combo_definitions) + 1
+    combo_steps = build_combo_steps(combo_definitions[target_combo_id])
     reset_combo_watch(combo_watch)
   elseif hotkey2_pressed then
     target_combo_id = target_combo_id + 1
-    target_combo_id = (((target_combo_id - 1) + #combos) % #combos) + 1
-    combo_steps = build_combo_steps(combos[target_combo_id])
+    target_combo_id = (((target_combo_id - 1) + #combo_definitions) % #combo_definitions) + 1
+    combo_steps = build_combo_steps(combo_definitions[target_combo_id])
     reset_combo_watch(combo_watch)
   end
 
-  local _attacker = player_objects[1]
-  local _defender = player_objects[2]
+  -- WATCH
+  if combo_recording.on then
+    update_combo_watch(combo_recording.watch, player_objects[1], player_objects[2])
+  else
+    update_combo_watch(combo_watch, player_objects[1], player_objects[2])
+  end
 
-  if combo_watch.is_started then
-    local _combo_dropped = (_defender.has_just_been_hit and not _defender.is_being_thrown and _attacker.previous_combo >= _attacker.combo)
-    _combo_dropped = _combo_dropped or _attacker.previous_combo > _attacker.combo
-    _combo_dropped = _combo_dropped or (_attacker.has_just_ended_recovery and _attacker.combo == 0)
-
-    if _combo_dropped or _defender.is_idle or _defender.is_wakingup or _defender.is_in_air_recovery then
-      --print(string.format("%d, %d, %d, %d", to_bit(_combo_dropped), to_bit(_defender.is_idle), to_bit(_defender.is_wakingup), to_bit(_defender.is_in_air_recovery)))
-      combo_watch.is_started = false
-      print(combo_watch.hits)
+  -- RECORDING
+  if P1.input.pressed["coin"] then
+    if not combo_recording.on then
+      start_combo_recording(combo_recording)
+    else
+      stop_combo_recording(combo_recording)
+      reset_combo_watch(combo_watch)
     end
   end
 
-  if _defender.has_just_been_hit then
-    if not combo_watch.is_started then
-      reset_combo_watch(combo_watch)
-      combo_watch.is_started = true
-    end
-    table.insert(combo_watch.hits, _attacker.animation)
+  if hotkey3_pressed and combo_recording.savestate ~= nil then
+    savestate.load(combo_recording.savestate)
   end
 end
 
 function on_gui()
 
-  local _x = 50
-  local _y = 35
-  local _combo = combos[target_combo_id]
+  --local _combo = combo_definitions[target_combo_id]
+  local _combo = combo_recording.watch
 
   local _max_hit = 0
-  for _i = 1, #combo_watch.hits do
-    if combo_watch.hits[_i] == _combo.hits[_i] then
-      _max_hit = _max_hit + 1
-    else
-      break
+  if not combo_recording.on then
+    for _i = 1, #combo_watch.hits do
+      if combo_watch.hits[_i] == _combo.hits[_i] then
+        _max_hit = _max_hit + 1
+      else
+        break
+      end
     end
   end
 
-  local _previous_step = 0
-  for _i = 1, #combo_steps.hit_to_step do
-    local _step_id = combo_steps.hit_to_step[_i]
-    if _step_id ~= _previous_step then
-      _previous_step = _step_id
-      local _step = combo_steps.steps[_step_id]
-      local _s = _step
-      local _move = find_move_from_hit(_step)
-      if _move ~= nil then
-        _s = string.format("%s - %s", _move.name, _move.command)
-      end
-      local _color = 0xFFFFFFFF
-      if _i <= _max_hit then
-        _color = 0xFF0000FF
-      end
+  local _x = 50
+  local _y = 35
+  --draw_combo_steps(_x, _y, combo_steps, _max_hit)
+  local _steps = build_combo_steps(_combo)
+  draw_combo_steps(_x, _y, _steps, _max_hit)
 
-      gui.text(_x, _y, _s, _color)
-      _y = _y + 9
-    end
+  -- RECORDING
+  if combo_recording.on then
+      gui.text(5, 5, "Recording Combo")
   end
 
   gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
