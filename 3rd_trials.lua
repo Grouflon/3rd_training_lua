@@ -13,7 +13,6 @@ print("- Lua Hotkey 2 (alt+2) Go down the combo list")
 print("")
 
 require("src/tools")
-require("src/constants")
 require("src/memory_adresses")
 require("src/framedata")
 require("src/gamestate")
@@ -217,17 +216,22 @@ function before_frame()
     target_combo_id = target_combo_id - 1
     target_combo_id = (((target_combo_id - 1) + #combos) % #combos) + 1
     combo_steps = build_combo_steps(combos[target_combo_id])
+    reset_combo_watch(combo_watch)
   elseif hotkey2_pressed then
     target_combo_id = target_combo_id + 1
     target_combo_id = (((target_combo_id - 1) + #combos) % #combos) + 1
     combo_steps = build_combo_steps(combos[target_combo_id])
+    reset_combo_watch(combo_watch)
   end
 
   local _attacker = player_objects[1]
   local _defender = player_objects[2]
 
   if combo_watch.is_started then
-    local _combo_dropped = (_defender.has_just_been_hit and not _defender.is_being_thrown and _attacker.previous_combo >= _attacker.combo) or _attacker.previous_combo > _attacker.combo
+    local _combo_dropped = (_defender.has_just_been_hit and not _defender.is_being_thrown and _attacker.previous_combo >= _attacker.combo)
+    _combo_dropped = _combo_dropped or _attacker.previous_combo > _attacker.combo
+    _combo_dropped = _combo_dropped or (_attacker.has_just_ended_recovery and _attacker.combo == 0)
+
     if _combo_dropped or _defender.is_idle or _defender.is_wakingup or _defender.is_in_air_recovery then
       --print(string.format("%d, %d, %d, %d", to_bit(_combo_dropped), to_bit(_defender.is_idle), to_bit(_defender.is_wakingup), to_bit(_defender.is_in_air_recovery)))
       combo_watch.is_started = false
