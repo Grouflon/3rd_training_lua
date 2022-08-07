@@ -1,0 +1,83 @@
+/*
+  HUGO
+*/
+[
+  /*
+    NORMALS
+  */
+  {
+    "name" : "Close Light Punch",
+    "hits" : [ "a1e0" ],
+    "command" : "5LP",
+    "type" : 0,
+  },
+  {
+    "name" : "Light Punch",
+    "hits" : [ "a270" ],
+    "command" : "5LP",
+    "type" : 0,
+  },
+  {
+    "name" : "Medium Punch",
+    "hits" : [ "a320" ],
+    "command" : "5MP",
+    "type" : 0,
+  },
+  {
+    "name" : "Heavy Punch",
+    "hits" : [ "a560" ],
+    "command" : "5HP",
+    "type" : 0,
+  },
+  {
+    "name" : "Close Heavy Punch",
+    "hits" : [ "a470" ],
+    "command" : "5HP",
+    "type" : 0,
+  },
+  {
+    "name" : "Heavy Punch (Target)",
+    "hits" : [ "c188" ],
+    "command" : "5HP",
+    "type" : 0,
+  },
+  /*
+    COMMAND NORMALS
+  */
+  /*
+    SPECIALS
+  */
+  {
+    "name" : "Light Shoryuken",
+    "hits" : [ "0884" ],
+    "command" : "623LP",
+    "type" : 2,
+  },
+  {
+    "name" : "Medium Shoryuken",
+    "hits" : [ "0984", "0984" ],
+    "command" : "623MP",
+    "type" : 2,
+  },
+  {
+    "name" : "Heavy Shoryuken",
+    "hits" : [ "0a24", "0a24", "0a24" ],
+    "command" : "623HP",
+    "type" : 2,
+  },
+  {
+    "name" : "Ex Shoryuken",
+    "hits" : [ "0b64", "0b64", "0b64", "0b64" ],
+    "command" : "623PP",
+    "type" : 2,
+  },
+  /*
+    SUPER ARTS
+  */
+  {
+    "name" : "SA3",
+    "hits" : [ "1834", "1834", "1834", "1834", "1834", "1d24", "1d24", "1d24", "1d24" ],
+    "command" : "236236K",
+    "type" : 3,
+  },
+]

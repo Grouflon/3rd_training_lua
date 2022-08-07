@@ -1,0 +1,155 @@
+/*
+  HUGO
+*/
+[
+  /*
+    NORMALS
+  */
+  {
+    "name" : "Light Punch",
+    "hits" : [ "3fe0" ],
+    "command" : "5LP",
+    "type" : 0,
+  },
+  {
+    "name" : "Medium Punch",
+    "hits" : [ "40b0" ],
+    "command" : "5MP",
+    "type" : 0,
+  },
+  {
+    "name" : "Heavy Punch",
+    "hits" : [ "4200" ],
+    "command" : "5HP",
+    "type" : 0,
+  },
+  {
+    "name" : "Light Kick",
+    "hits" : [ "4820" ],
+    "command" : "5LK",
+    "type" : 0,
+  },
+  {
+    "name" : "Medium Kick",
+    "hits" : [ "48d0", "48d0" ],
+    "command" : "5MK",
+    "type" : 0,
+  },
+  {
+    "name" : "Heavy Kick",
+    "hits" : [ "4c10" ],
+    "command" : "5HK",
+    "type" : 0,
+  },
+  {
+    "name" : "Crouching Light Punch",
+    "hits" : [ "4e00" ],
+    "command" : "2LP",
+    "type" : 0,
+  },
+  {
+    "name" : "Crouching Medium Punch",
+    "hits" : [ "4ec0" ],
+    "command" : "2MP",
+    "type" : 0,
+  },
+  {
+    "name" : "Crouching Heavy Punch",
+    "hits" : [ "4f60" ],
+    "command" : "2HP",
+    "type" : 0,
+  },
+  {
+    "name" : "Crouching Light Kick",
+    "hits" : [ "5060" ],
+    "command" : "2LK",
+    "type" : 0,
+  },
+  {
+    "name" : "Crouching Medium Kick",
+    "hits" : [ "5110" ],
+    "command" : "2MK",
+    "type" : 0,
+  },
+  {
+    "name" : "Crouching Heavy Kick",
+    "hits" : [ "51d0" ],
+    "command" : "2HK",
+    "type" : 0,
+  },
+  {
+    "name" : "Air Heavy Kick",
+    "hits" : [ "5790" ],
+    "command" : "5HK",
+    "type" : 0,
+  },
+  /*
+    COMMAND NORMALS
+  */
+  {
+    "name" : "Forward Heavy Punch",
+    "hits" : [ "4420" ],
+    "command" : "6HP",
+    "type" : 1,
+  },
+  {
+    "name" : "Body Slam",
+    "hits" : [ "5540" ],
+    "command" : "j2HP",
+    "type" : 1,
+  },
+  /*
+    SPECIALS
+  */
+  {
+    "name" : "Light Clap",
+    "hits" : [ "efcc" ],
+    "command" : "214LP",
+    "type" : 2,
+  },
+  {
+    "name" : "Heavy Clap",
+    "hits" : [ "f3ac" ],
+    "command" : "214HP",
+    "type" : 2,
+  },
+  {
+    "name" : "EX Clap",
+    "hits" : [ "f59c", "f59c", "f59c" ],
+    "command" : "214PP",
+    "type" : 2,
+  },
+  {
+    "name" : "EX Lariat",
+    "hits" : [ "0044" ],
+    "command" : "236KK",
+    "type" : 2,
+  },
+  {
+    "name" : "Light Ultra Throw",
+    "hits" : [ "06b4" ],
+    "command" : "63214LP",
+    "type" : 2,
+  },
+  {
+    "name" : "Light Back Breaker",
+    "hits" : [ "096c" ],
+    "command" : "63214LP",
+    "type" : 2,
+  },
+  {
+    "name" : "Medium Back Breaker",
+    "hits" : [ "0ab4" ],
+    "command" : "63214MP",
+    "type" : 2,
+  },
+  /*
+    SUPER ARTS
+  */
+  {
+    "name" : "Hammer Mountain",
+    "hits" : [ "1294", "15cc", "15cc", "15cc", "15cc" ],
+    "command" : "236236P",
+    "type" : 3,
+  },
+]

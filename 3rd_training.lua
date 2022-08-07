@@ -35,8 +35,6 @@ print("")
 
 -- Stuff
 -- As far of selective stages, this one is Elena's Stage, write this: 0x020154F5,0x08
--- It would be also nice to show "alt+1 reset char select" on the top left corner in the character select screen
--- optional speed up
 
 --[[
 would it be possible to add a "first, second, third" action when getting hit?  So for example i divekick on opponent, first time they throw, second time they standing hk, third time they do another thing.
@@ -54,6 +52,7 @@ require("src/display")
 require("src/menu_widgets")
 require("src/framedata")
 require("src/gamestate")
+require("src/recording")
 require("src/input_history")
 require("src/attack_data")
 require("src/frame_advantage")
@@ -64,7 +63,6 @@ recording_slot_count = 8
 -- debug options
 developer_mode = false -- Unlock frame data recording options. Touch at your own risk since you may use those options to fuck up some already recorded frame data
 assert_enabled = developer_mode or assert_enabled
-debug_wakeup = false
 log_enabled = developer_mode or log_enabled
 log_categories_display =
 {
@@ -98,118 +96,6 @@ function queue_input_sequence(_player_obj, _sequence, _offset)
   _seq.current_frame = 1 - _offset
 
   _player_obj.pending_input_sequence = _seq
-end
-
-function process_pending_input_sequence(_player_obj, _input)
-  if _player_obj.pending_input_sequence == nil then
-    return
-  end
-  if is_menu_open then
-    return
-  end
-  if not is_in_match then
-    return
-  end
-
-  -- Cancel all input
-  _input[_player_obj.prefix.." Up"] = false
-  _input[_player_obj.prefix.." Down"] = false
-  _input[_player_obj.prefix.." Left"] = false
-  _input[_player_obj.prefix.." Right"] = false
-  _input[_player_obj.prefix.." Weak Punch"] = false
-  _input[_player_obj.prefix.." Medium Punch"] = false
-  _input[_player_obj.prefix.." Strong Punch"] = false
-  _input[_player_obj.prefix.." Weak Kick"] = false
-  _input[_player_obj.prefix.." Medium Kick"] = false
-  _input[_player_obj.prefix.." Strong Kick"] = false
-
-  -- Charge moves memory locations
-  -- P1
-  -- 0x020259D8 H/Urien V/Oro V/Chun H/Q V/Remy
-  -- 0x020259F4 (+1C) V/Urien H/Q H/Remy
-  -- 0x02025A10 (+38) H/Oro H/Remy
-  -- 0x02025A2C (+54) V/Urien V/Alex
-  -- 0x02025A48 (+70) H/Alex
-
-  -- P2
-  -- 0x02025FF8
-  -- 0x02026014
-  -- 0x02026030
-  -- 0x0202604C
-  -- 0x02026068
-  local _gauges_base = 0
-  if _player_obj.id == 1 then
-    _gauges_base = 0x020259D8
-  elseif _player_obj.id == 2 then
-    _gauges_base = 0x02025FF8
-  end
-  local _gauges_offsets = { 0x0, 0x1C, 0x38, 0x54, 0x70 }
-
-  if _player_obj.pending_input_sequence.current_frame >= 1 then
-    local _s = ""
-    local _current_frame_input = _player_obj.pending_input_sequence.sequence[_player_obj.pending_input_sequence.current_frame]
-    for i = 1, #_current_frame_input do
-      local _input_name = _player_obj.prefix.." "
-      if _current_frame_input[i] == "forward" then
-        if _player_obj.flip_input then _input_name = _input_name.."Right" else _input_name = _input_name.."Left" end
-      elseif _current_frame_input[i] == "back" then
-        if _player_obj.flip_input then _input_name = _input_name.."Left" else _input_name = _input_name.."Right" end
-      elseif _current_frame_input[i] == "up" then
-        _input_name = _input_name.."Up"
-      elseif _current_frame_input[i] == "down" then
-        _input_name = _input_name.."Down"
-      elseif _current_frame_input[i] == "LP" then
-        _input_name = _input_name.."Weak Punch"
-      elseif _current_frame_input[i] == "MP" then
-        _input_name = _input_name.."Medium Punch"
-      elseif _current_frame_input[i] == "HP" then
-        _input_name = _input_name.."Strong Punch"
-      elseif _current_frame_input[i] == "LK" then
-        _input_name = _input_name.."Weak Kick"
-      elseif _current_frame_input[i] == "MK" then
-        _input_name = _input_name.."Medium Kick"
-      elseif _current_frame_input[i] == "HK" then
-        _input_name = _input_name.."Strong Kick"
-      elseif _current_frame_input[i] == "h_charge" then
-        if _player_obj.char_str == "urien" then
-          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-        elseif _player_obj.char_str == "oro" then
-          memory.writeword(_gauges_base + _gauges_offsets[3], 0xFFFF)
-        elseif _player_obj.char_str == "chunli" then
-        elseif _player_obj.char_str == "q" then
-          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-          memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
-        elseif _player_obj.char_str == "remy" then
-          memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
-          memory.writeword(_gauges_base + _gauges_offsets[3], 0xFFFF)
-        elseif _player_obj.char_str == "alex" then
-          memory.writeword(_gauges_base + _gauges_offsets[5], 0xFFFF)
-        end
-      elseif _current_frame_input[i] == "v_charge" then
-        if _player_obj.char_str == "urien" then
-          memory.writeword(_gauges_base + _gauges_offsets[2], 0xFFFF)
-          memory.writeword(_gauges_base + _gauges_offsets[4], 0xFFFF)
-        elseif _player_obj.char_str == "oro" then
-          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-        elseif _player_obj.char_str == "chunli" then
-          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-        elseif _player_obj.char_str == "q" then
-        elseif _player_obj.char_str == "remy" then
-          memory.writeword(_gauges_base + _gauges_offsets[1], 0xFFFF)
-        elseif _player_obj.char_str == "alex" then
-          memory.writeword(_gauges_base + _gauges_offsets[4], 0xFFFF)
-        end
-      end
-      _input[_input_name] = true
-      _s = _s.._input_name
-    end
-  end
-  --print(_s)
-
-  _player_obj.pending_input_sequence.current_frame = _player_obj.pending_input_sequence.current_frame + 1
-  if _player_obj.pending_input_sequence.current_frame > #_player_obj.pending_input_sequence.sequence then
-    _player_obj.pending_input_sequence = nil
-  end
 end
 
 function clear_input_sequence(_player_obj)
@@ -664,26 +550,25 @@ end
 -- POSE
 
 function update_pose(_input, _player_obj, _pose)
+  if current_recording_state == 4 then -- Replaying
+    return
+  end
 
-if current_recording_state == 4 then -- Replaying
-  return
-end
+    -- pose
+  if is_in_match and not is_menu_open and not is_playing_input_sequence(_player_obj) then
+    local _on_ground = is_state_on_ground(_player_obj.standing_state, _player_obj)
+    local _is_waking_up = _player_obj.is_wakingup and _player_obj.is_past_wakeup_frame
 
-  -- pose
-if is_in_match and not is_menu_open and not is_playing_input_sequence(_player_obj) then
-  local _on_ground = is_state_on_ground(_player_obj.standing_state, _player_obj)
-  local _is_waking_up = _player_obj.is_wakingup and _player_obj.is_past_wakeup_frame
-
-  if _pose == 2 and (_on_ground or _is_waking_up) then -- crouch
-    _input[_player_obj.prefix..' Down'] = true
-  elseif _pose == 3 and _on_ground then -- jump
-    _input[_player_obj.prefix..' Up'] = true
-  elseif _pose == 4 then -- high jump
-    if _on_ground and not is_playing_input_sequence(_player_obj) then
-      queue_input_sequence(_player_obj, {{"down"}, {"up"}})
+    if _pose == 2 and (_on_ground or _is_waking_up) then -- crouch
+      _input[_player_obj.prefix..' Down'] = true
+    elseif _pose == 3 and _on_ground then -- jump
+      _input[_player_obj.prefix..' Up'] = true
+    elseif _pose == 4 then -- high jump
+      if _on_ground and not is_playing_input_sequence(_player_obj) then
+        queue_input_sequence(_player_obj, {{"down"}, {"up"}})
+      end
     end
   end
-end
 end
 
 -- BLOCKING
@@ -1519,6 +1404,7 @@ function open_load_popup()
 
   load_file_index = 1
 
+  -- TODO: test to replace with the function list_directory_content we just created
   local _cmd = "dir /b "..string.gsub(saved_recordings_path, "/", "\\")
   local _f = io.popen(_cmd)
   if _f == nil then
@@ -1846,34 +1732,6 @@ recording_states =
   "playing",
 }
 
-function stick_input_to_sequence_input(_player_obj, _input)
-  if _input == "Up" then return "up" end
-  if _input == "Down" then return "down" end
-  if _input == "Weak Punch" then return "LP" end
-  if _input == "Medium Punch" then return "MP" end
-  if _input == "Strong Punch" then return "HP" end
-  if _input == "Weak Kick" then return "LK" end
-  if _input == "Medium Kick" then return "MK" end
-  if _input == "Strong Kick" then return "HK" end
-
-  if _input == "Left" then
-    if _player_obj.flip_input then
-      return "back"
-    else
-      return "forward"
-    end
-  end
-
-  if _input == "Right" then
-    if _player_obj.flip_input then
-      return "forward"
-    else
-      return "back"
-    end
-  end
-  return ""
-end
-
 function can_play_recording()
   if training_settings.replay_mode == 2 or training_settings.replay_mode == 3 or training_settings.replay_mode == 5 or training_settings.replay_mode == 6 then
     for _i, _value in ipairs(recording_slots) do
@@ -2054,26 +1912,12 @@ function update_recording(_input)
     if current_recording_state == 1 then
     elseif current_recording_state == 2 then
     elseif current_recording_state == 3 then
-      local _frame = {}
-
-      for _key, _value in pairs(_input) do
-        local _prefix = _key:sub(1, #player.prefix)
-        if (_prefix == player.prefix) then
-          local _input_name = _key:sub(1 + #player.prefix + 1)
-          if (_input_name ~= "Coin" and _input_name ~= "Start") then
-            if (_value) then
-              local _sequence_input_name = stick_input_to_sequence_input(player, _input_name)
-              --print(_input_name.." ".._sequence_input_name)
-              table.insert(_frame, _sequence_input_name)
-            end
-          end
-        end
-      end
-
-      table.insert(recording_slots[training_settings.current_recording_slot].inputs, _frame)
+      
+      local _recorded_inputs = recording_slots[training_settings.current_recording_slot].inputs
+      record_frame_input(player, _input, _recorded_inputs)
 
       if player.idle_time == 1 then
-        current_recording_last_idle_frame = #recording_slots[training_settings.current_recording_slot].inputs - 1
+        current_recording_last_idle_frame = #_recorded_inputs - 1
       end
 
     elseif current_recording_state == 4 then
@@ -2366,8 +2210,18 @@ function before_frame()
   -- recording
   update_recording(_input)
 
-  process_pending_input_sequence(player_objects[1], _input)
-  process_pending_input_sequence(player_objects[2], _input)
+  if not is_menu_open and is_in_match then
+    for _i = 1,2 do
+      local _player_object = player_objects[_i]
+      local _sequence = _player_object.pending_input_sequence
+      if _sequence ~= nil then
+        process_input_sequence(_player_object, _sequence, _input)
+        if _sequence.current_frame > #_sequence.sequence then
+          clear_input_sequence(_player_object)
+        end
+      end
+    end
+  end
 
   if is_in_match then
     input_history_update(input_history[1], "P1", _input)

@@ -6,203 +6,148 @@ print("  Trials script for "..game_name.."")
 print("  Last tested Fightcade version: "..fc_version.."")
 print("  project url: https://github.com/Grouflon/3rd_training_lua")
 print("-----------------------------")
-print("This is a proof of concept which has only a handful of Hugo combos")
-print("Command List:")
-print("- Lua Hotkey 1 (alt+1) Go up the combo list")
-print("- Lua Hotkey 2 (alt+2) Go down the combo list")
+print("WIP")
+--print("This is a proof of concept which has only a handful of Hugo trials")
+--print("Command List:")
+print("- Lua Hotkey 1 (alt+1) Go up the trial list")
+print("- Lua Hotkey 2 (alt+2) Go down the trial list")
+print("- Lua Hotkey 3 (alt+3) Play the current trial demo")
+print("- Lua Hotkey 4 (alt+4) Save the current trial to the saved/trials folder")
 print("")
+print("You can use the coin button to record your own trials. If you want to add your trial to the base list, you have to save it to the temp folder, and then copy it to data/{rom}/trials/base/{character}")
+
+print("")
+
+assert_enabled = true
+developer_mode = false
 
 require("src/tools")
 require("src/memory_adresses")
 require("src/framedata")
 require("src/gamestate")
+require("src/moves")
+require("src/recording")
+require("src/draw")
+require("src/display")
+require("src/menu_widgets")
 
--- DATABASE
-moves =
-{
-  {
-    name = "Light Punch",
-    hits = { "3fe0" },
-    command = "5LP"
-  },
-  {
-    name = "Medium Kick",
-    hits = { '48d0', '48d0' },
-    command = "5MK"
-  },
-  {
-    name = "Crouching Light Punch",
-    hits = { "4e00" },
-    command = "2LP"
-  },
-  {
-    name = "Crouching Light Kick",
-    hits = { "5060" },
-    command = "2LK"
-  },
-  {
-    name = "Air Heavy Kick",
-    hits = { "5790" },
-    command = "5HK"
-  },
-  {
-    name = "Light Clap",
-    hits = { "efcc" },
-    command = "214LP"
-  },
-  {
-    name = "Heavy Clap",
-    hits = { "f3ac" },
-    command = "214HP"
-  },
-  {
-    name = "EX Clap",
-    hits = { 'f59c', 'f59c', 'f59c' },
-    command = "214PP"
-  },
-  {
-    name = "EX Lariat",
-    hits = { '0044' },
-    command = "236KK"
-  },
-  {
-    name = "Hammer Mountain",
-    hits = { '1294', '15cc', '15cc', '15cc', '15cc' },
-    command = "236236P"
-  },
-  {
-    name = "Light Ultra Throw",
-    hits = { '06b4' },
-    command = "63214LP"
-  },
-  {
-    name = "Light Back Breaker",
-    hits = { '096c' },
-    command = "63214LP"
-  },
-  {
-    name = "Medium Back Breaker",
-    hits = { '0ab4' },
-    command = "63214MP"
-  },
-  {
-    name = "Body Slam",
-    hits = { '5540' },
-    command = "j2HP"
-  },
-}
+-- TRIALS
+function load_trials_list()
+  local _trials = {}
+  local _base_path = "data/sfiii3nr1/trials/base"
+  for _i, _char_str in ipairs(characters) do
+    local _char_path = string.format("%s/%s", _base_path, _char_str)
 
-combo_definitions = {
-  {
-    hits = {'3fe0', '3fe0', '3fe0'}
-  },
-  {
-    hits = {'f3ac', 'efcc', '1294', '15cc', '15cc', '15cc', '15cc'}
-  },
-  {
-    hits = {'4e00', '4e00', '1294', '15cc', '15cc', '15cc', '15cc'}
-  },
-  {
-    hits = {'3fe0', '4e00', '1294', '15cc', '15cc', '15cc', '15cc'}
-  },
-  {
-    hits = {'06b4', 'efcc', '096c'}
-  },
-  {
-    hits = {'f59c', 'f59c', 'f59c', '0ab4'}
-  },
-  {
-    hits = {'5790', '1294', '15cc', '15cc', '15cc', '15cc'}
-  },
-}
-
-function generate_move_lookup_table(_moves)
-  local _lookup_table = {}
-  for _i, _move in ipairs(_moves) do
-    for __, _hit in ipairs(_move.hits) do
-      _lookup_table[_hit] = _i
+    --print (_char_path)
+    local _trials_list = list_directory_content(_char_path)
+    for __, _path in ipairs(_trials_list) do
+      table.insert(_trials, string.format("%s/%s", _char_path, _path))
+      if developer_mode then
+        print(_path)
+      end
     end
   end
-  return _lookup_table
+  return _trials
 end
-animation_to_move = generate_move_lookup_table(moves)
 
-function find_move_from_animation(_hit)
-  local _move_id = animation_to_move[_hit]
-  if _move_id == nil then
-    return nil
+function load_trial_definition(_path)
+  local _savestate_path = string.format("%s/savestate.fs", _path)
+  if not do_file_exists(_savestate_path) then
+    print(string.format("Can't open trial: missing savestate \"%s\"", _savestate_path))
   end
-  return moves[_move_id]
+
+  local _data_path = string.format("%s/data.json", _path)
+  if not do_file_exists(_data_path) then
+    print(string.format("Can't open trial: missing savestate \"%s\"", _data_path))
+  end
+
+  local _trial_definition = {}
+  _trial_definition.data = read_object_from_json_file(_data_path)
+  _trial_definition.savestate = savestate.create(_savestate_path)
+
+  if developer_mode then
+    print(string.format("Loaded trial \"%s\"", _path))
+  end
+
+  return _trial_definition
 end
 
 -- WATCH
-function reset_combo_watch(_combo_watch)
-  _combo_watch.is_started = false
-  _combo_watch.hits = {}
+function init_trial_watch(_trial_watch)
+  local _object = _trial_watch or {}
+
+  _object.is_started = false
+  _object.hits = {}
+
+  return _object
 end
 
-function update_combo_watch(_combo_watch, _attacker, _defender)
-  if _combo_watch.is_started then
-    local _combo_dropped = (_defender.has_just_been_hit and not _defender.is_being_thrown and _attacker.previous_combo >= _attacker.combo)
-    _combo_dropped = _combo_dropped or _attacker.previous_combo > _attacker.combo
+function update_trial_watch(_trial_watch, _attacker, _defender)
+  t_assert(_trial_watch ~= nil)
+  t_assert(_attacker ~= nil)
+  t_assert(_defender ~= nil)
+  if _trial_watch.is_started then
+    local _trial_dropped = (_defender.has_just_been_hit and not _defender.is_being_thrown and _attacker.previous_combo >= _attacker.combo)
+    _trial_dropped = _trial_dropped or _attacker.previous_combo > _attacker.combo
 
-    if _combo_dropped or _defender.is_idle or _defender.is_wakingup or _defender.is_in_air_recovery then
-      --print(string.format("%d, %d, %d, %d", to_bit(_combo_dropped), to_bit(_defender.is_idle), to_bit(_defender.is_wakingup), to_bit(_defender.is_in_air_recovery)))
-      _combo_watch.is_started = false
-      print(_combo_watch.hits)
+    if _trial_dropped or _defender.is_idle or _defender.is_wakingup or _defender.is_in_air_recovery then
+      --print(string.format("%d, %d, %d, %d", to_bit(_trial_dropped), to_bit(_defender.is_idle), to_bit(_defender.is_wakingup), to_bit(_defender.is_in_air_recovery)))
+      _trial_watch.is_started = false
+      print(_trial_watch.hits)
     end
   end
 
   if _defender.has_just_been_hit then
-    if not _combo_watch.is_started then
-      reset_combo_watch(_combo_watch)
-      _combo_watch.is_started = true
+    if not _trial_watch.is_started then
+      init_trial_watch(_trial_watch)
+      _trial_watch.is_started = true
     end
-    table.insert(_combo_watch.hits, _attacker.animation)
+    table.insert(_trial_watch.hits, _attacker.animation)
   end
 end
 
 
 -- STEPS
-function build_combo_steps(_combo_definition)
-  local _combo_steps = {
+function build_trial_steps(_char_moves, _hits)
+  local _trial_steps = {
     steps = {},
     hit_to_step = {},
+    char_moves = _char_moves
   }
 
   local _hit_id = 1
-  while _hit_id <= #_combo_definition.hits do
-    local _animation = _combo_definition.hits[_hit_id]
-    table.insert(_combo_steps.steps, _animation)
+  while _hit_id <= #_hits do
+    local _animation = _hits[_hit_id]
+    table.insert(_trial_steps.steps, _animation)
 
-    local _move = find_move_from_animation(_animation)
+    local _move = find_move_from_animation(_char_moves, _animation)
     if _move ~= nil then
       for _i = 1, #_move.hits do
-        table.insert(_combo_steps.hit_to_step, #_combo_steps.steps)
+        table.insert(_trial_steps.hit_to_step, #_trial_steps.steps)
         _hit_id = _hit_id + 1
       end
     else
-      table.insert(_combo_steps.hit_to_step, #_combo_steps.steps)
+      table.insert(_trial_steps.hit_to_step, #_trial_steps.steps)
       _hit_id = _hit_id + 1
     end
   end
 
-  --print(_combo_definition)
-  --print(_combo_steps)
+  --print(_hits)
+  --print(_trial_steps)
 
-  return _combo_steps
+  return _trial_steps
 end
 
-function draw_combo_steps(_x, _y, _combo_steps, _progress)
+function draw_trial_steps(_x, _y, _trial_steps, _progress)
   _progress = _progress or 0
   local _previous_step = 0
-  for _i = 1, #_combo_steps.hit_to_step do
-    local _step_id = _combo_steps.hit_to_step[_i]
+  for _i = 1, #_trial_steps.hit_to_step do
+    local _step_id = _trial_steps.hit_to_step[_i]
     if _step_id ~= _previous_step then
       _previous_step = _step_id
-      local _step = _combo_steps.steps[_step_id]
+      local _step = _trial_steps.steps[_step_id]
       local _s = _step
-      local _move = find_move_from_animation(_step)
+      local _move = find_move_from_animation(_trial_steps.char_moves, _step)
       if _move ~= nil then
         _s = string.format("%s - %s", _move.name, _move.command)
       end
@@ -218,42 +163,107 @@ function draw_combo_steps(_x, _y, _combo_steps, _progress)
 end
 
 -- RECORDING
-function reset_combo_recording(_recording)
-  _recording.on = false
-  _recording.savestate = nil
-  _recording.watch = {}
-  reset_combo_watch(_recording.watch)
+function init_trial_recording(_trial_recording)
+  local _object = _trial_recording or {}
+  
+  _object.on = false
+  _object.char_str = ""
+  _object.savestate = nil
+  _object.sequence = {
+    sequence = {},
+    current_frame = 1
+  }
+  _object.steps = nil
+  _object.watch = init_trial_watch()
+
+  return _object
 end
 
-function start_combo_recording(_recording)
-  reset_combo_recording(_recording)
+function start_trial_recording(_recording)
+  init_trial_recording(_recording)
 
   _recording.on = true
-  _recording.savestate = savestate.create("saved/temp.fs")
+  _recording.char_str = player_objects[1].char_str
+  _recording.savestate = savestate.create(9)
   savestate.save(_recording.savestate)
 end
 
-function stop_combo_recording(_recording)
+function stop_trial_recording(_recording)
   _recording.on = false
+  local _trial_definition = {
+    data = {
+      char = _recording.char_str,
+      p1_sequence = _recording.sequence.sequence,
+      hits = _recording.watch.hits,
+    },
+    savestate = _recording.savestate,
+  }
+  return _trial_definition
+end
+
+function save_trial_definition(_trial_definition, _path)
+  if _trial_definition.savestate == nil then
+    print(string.format("Can't save trial, no savestate found in the definition"))
+    return
+  end
+
+  local _date = os.date("%Y-%m-%d_%Hh%Mm%Ss")
+  local _trial_path = string.format("saved/trials/%s_%s", _trial_definition.data.char, _date);
+  local _savestate_path = string.format("%s/savestate.fs", _trial_path)
+
+  if not create_directory(_trial_path) then
+    print(string.format("Failed to create directory \"%s\"", _trial_path))
+    return
+  end
+
+  savestate.load(_trial_definition.savestate)
+  local _savestate = savestate.create(_savestate_path)
+  savestate.save(_savestate)
+  if _savestate == nil or not do_file_exists(_savestate_path) then
+    print(string.format("Failed to create savestate at \"%s\"", _savestate_path))
+    return
+  end
+
+  local _trial_data = _trial_definition.data
+  _trial_data.version = 1
+  local _data_path = string.format("%s/data.json", _trial_path)
+  if not write_object_to_json_file(_trial_data, _data_path) then
+    print(string.format("Failed to write \"%s\"", _data_path))
+    return
+  end
+
+  print(string.format("Saved trial to \"%s\"", _trial_path))
 end
 
 -- EMU
+moves = load_move_data()
 
-combo_recording = {}
-reset_combo_recording(combo_recording)
+trials_list = load_trials_list()
+current_trial = 1
 
-combo_watch = {}
-reset_combo_watch(combo_watch)
+trial_recording = init_trial_recording()
+is_playing_demo = false
 
-target_combo_id = 1
-combo_steps = build_combo_steps(combo_definitions[target_combo_id])
-
+staged_trial = nil
+function stage_trial(_trial_definition)
+  staged_trial = {}
+  staged_trial.definition = _trial_definition
+  local _char_moves = moves[staged_trial.definition.data.char]
+  staged_trial.steps = build_trial_steps(_char_moves, staged_trial.definition.data.hits)
+  staged_trial.watch = init_trial_watch()
+  savestate.load(staged_trial.definition.savestate)
+  is_playing_demo = false
+end
 
 function on_start()
-  savestate.load(savestate.create("data/"..rom_name.."/savestates/trials.fs"))
+  local _trial_definition = load_trial_definition(trials_list[1])
+  stage_trial(_trial_definition)
 end
 
 function before_frame()
+
+  -- INPUT
+  local _input = joypad.get()
 
   -- READ GAME STATE
   gamestate_read()
@@ -304,50 +314,77 @@ function before_frame()
     end
   end
 
-  -- COMBO CHECK
-  if hotkey1_pressed then
-    target_combo_id = target_combo_id - 1
-    target_combo_id = (((target_combo_id - 1) + #combo_definitions) % #combo_definitions) + 1
-    combo_steps = build_combo_steps(combo_definitions[target_combo_id])
-    reset_combo_watch(combo_watch)
-  elseif hotkey2_pressed then
-    target_combo_id = target_combo_id + 1
-    target_combo_id = (((target_combo_id - 1) + #combo_definitions) % #combo_definitions) + 1
-    combo_steps = build_combo_steps(combo_definitions[target_combo_id])
-    reset_combo_watch(combo_watch)
+  -- trial CHECK
+  local function switch_trial(_index)
+    local _list_size = #trials_list 
+    while (_index < 1) do
+      _index = _index + _list_size
+    end      
+    _index = ((_index - 1) % _list_size) + 1
+    current_trial = _index
+    local _trial_definition = load_trial_definition(trials_list[current_trial])
+    stage_trial(_trial_definition)
   end
-
-  -- WATCH
-  if combo_recording.on then
-    update_combo_watch(combo_recording.watch, player_objects[1], player_objects[2])
-  else
-    update_combo_watch(combo_watch, player_objects[1], player_objects[2])
+  if hotkey1_pressed then
+    switch_trial(current_trial - 1)
+  elseif hotkey2_pressed then
+    switch_trial(current_trial + 1)
   end
 
   -- RECORDING
   if P1.input.pressed["coin"] then
-    if not combo_recording.on then
-      start_combo_recording(combo_recording)
+    if not trial_recording.on then
+      start_trial_recording(trial_recording)
     else
-      stop_combo_recording(combo_recording)
-      reset_combo_watch(combo_watch)
+      --stop_trial_recording(trial_recording)
+      --init_trial_watch(trial_watch)
+      local _trial_definition = stop_trial_recording(trial_recording)
+      stage_trial(_trial_definition)
     end
   end
 
-  if hotkey3_pressed and combo_recording.savestate ~= nil then
-    savestate.load(combo_recording.savestate)
+  if hotkey3_pressed and staged_trial ~= nil then
+    savestate.load(staged_trial.definition.savestate)
+    staged_trial.sequence = {
+      current_frame = 1,
+      sequence = staged_trial.definition.data.p1_sequence
+    }
+    is_playing_demo = true
+    init_trial_watch(staged_trial.watch)
+  end
+
+  -- WATCH
+  if trial_recording.on then
+    update_trial_watch(trial_recording.watch, player_objects[1], player_objects[2])
+    record_frame_input(player_objects[1], _input, trial_recording.sequence.sequence)
+    trial_recording.steps = build_trial_steps(moves[player_objects[1].char_str], trial_recording.watch.hits)
+  else
+    update_trial_watch(staged_trial.watch, player_objects[1], player_objects[2])
+  end
+
+  -- DEMO
+  if is_playing_demo then
+    process_input_sequence(player_objects[1], staged_trial.sequence, _input)
+    joypad.set(_input)
+
+    if staged_trial.sequence.current_frame > #staged_trial.sequence.sequence then
+      savestate.load(staged_trial.definition.savestate)
+      is_playing_demo = false
+      init_trial_watch(staged_trial.watch)
+    end
+  end
+
+  if hotkey4_pressed then
+    save_trial_definition(staged_trial.definition)
   end
 end
 
 function on_gui()
 
-  --local _combo = combo_definitions[target_combo_id]
-  local _combo = combo_recording.watch
-
   local _max_hit = 0
-  if not combo_recording.on then
-    for _i = 1, #combo_watch.hits do
-      if combo_watch.hits[_i] == _combo.hits[_i] then
+  if not trial_recording.on then
+    for _i = 1, #staged_trial.watch.hits do
+      if staged_trial.watch.hits[_i] == staged_trial.definition.data.hits[_i] then
         _max_hit = _max_hit + 1
       else
         break
@@ -357,17 +394,29 @@ function on_gui()
 
   local _x = 50
   local _y = 35
-  --draw_combo_steps(_x, _y, combo_steps, _max_hit)
-  local _steps = build_combo_steps(_combo)
-  draw_combo_steps(_x, _y, _steps, _max_hit)
+  local _steps = nil
+  if trial_recording.on then
+    _steps = trial_recording.steps
+  elseif staged_trial ~= nil then 
+    _steps = staged_trial.steps
+  end
+
+  if _steps ~= nil then
+      draw_trial_steps(_x, _y, _steps, _max_hit)
+  end
 
   -- RECORDING
-  if combo_recording.on then
-      gui.text(5, 5, "Recording Combo")
+  if trial_recording.on then
+      gui.text(5, 5, "Recording trial...")
+  end
+
+  if is_playing_demo then
+      gui.text(5, 5, "Demo...")
   end
 
   gui.box(0,0,0,0,0,0) -- if we don't draw something, what we drawed from last frame won't be cleared
 
+  -- clear input state
   hotkey1_pressed = false
   hotkey2_pressed = false
   hotkey3_pressed = false

@@ -2,35 +2,6 @@ data_path = "data/"..rom_name.."/"
 framedata_path = data_path.."framedata/"
 frame_data_file_ext = "_framedata.json"
 
-characters =
-{
-  "gill",
-  "alex",
-  "ryu",
-  "yun",
-  "dudley",
-  "necro",
-  "hugo",
-  "ibuki",
-  "elena",
-  "oro",
-  "yang",
-  "ken",
-  "sean",
-  "urien",
-  "gouki",
-  "gill",
-  "chunli",
-  "makoto",
-  "q",
-  "twelve",
-  "remy",
-}
-if is_4rd_strike then
-  characters[1] = "gill"
-  characters[16] = "usean"
-end
-
 -- # Character specific stuff
 character_specific = {}
 for i = 1, #characters do

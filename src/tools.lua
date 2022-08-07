@@ -1,7 +1,7 @@
-assert_enabled = developer_mode
+assert_enabled = assert_enabled or false
 function t_assert(_condition, _msg)
-  _msg = _msg or "Assertion failed"
   if assert_enabled and not _condition then
+    _msg = _msg or "Assertion failed"
     error(_msg, 2)
   end
 end
@@ -102,6 +102,71 @@ function check_input_down_autofire(_player_object, _input, _autofire_rate, _auto
     return true
   end
   return false
+end
+
+
+-- filesystem
+function is_windows()
+  local _os = os.getenv("OS")
+  if _os ~= nil and (string.match(_os, "Win") or string.match(_os, "win")) then
+    return true
+  end
+  return false
+end
+
+function do_file_exists(_path)
+  local _f = io.open(_path, "r")
+  if _f ~= nil then
+    _f:close()
+    return true
+  end
+  return false
+end
+
+function copy_file(_old_path, _new_path)
+  local _old_file = io.open(_old_path, "rb")
+  local _new_file = io.open(_new_path, "wb")
+  local _old_file_size, new_file_size = 0, 0
+  if _old_file == nil or _new_file == nil then
+    return false
+  end
+  while true do
+    local _block = _old_file:read(2^13)
+    if _block == nil then 
+      _old_file_size = _old_file:seek("end")
+      break
+    end
+    _new_file:write(_block)
+  end
+  _old_file:close()
+  _new_file_size = _new_file:seek("end")
+  _new_file:close()
+  return _new_file_size == _old_file_size
+end
+
+function create_directory(_path)
+  if is_windows() then
+    _path = string.gsub(_path, '/', '\\')
+  end
+  
+  local _ret = os.execute(string.format("mkdir %s", _path))
+  return _ret == 0
+end
+
+function list_directory_content(_path)
+  local _file_list = {}
+  local _path = string.gsub(_path, "/", "\\")
+  local _cmd = string.format("dir /b \"%s\"", _path) -- Will only work on windows
+  local _f = io.popen(_cmd)
+  if _f == nil then
+    print(string.format("Error: Failed to execute command \"%s\"", _cmd))
+    return _file_list
+  end
+  local _str = _f:read("*all")
+  for _line in string.gmatch(_str, '([^\r\n]+)') do -- Split all lines that have ".json" in them
+    table.insert(_file_list, _line)
+  end
+  return _file_list
 end
 
 -- json tools

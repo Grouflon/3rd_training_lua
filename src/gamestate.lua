@@ -728,6 +728,7 @@ function read_player_vars(_player_obj)
   if is_in_match then
 
     -- WAKE UP
+    local _debug_wakeup = false
     _player_obj.previous_can_fast_wakeup = _player_obj.can_fast_wakeup or 0
     _player_obj.can_fast_wakeup = memory.readbyte(_player_obj.base + 0x402)
 
@@ -749,7 +750,7 @@ function read_player_vars(_player_obj)
       _player_obj.is_past_wakeup_frame = false
       _player_obj.wakeup_time = 0
       _player_obj.wakeup_animation = _player_obj.animation
-      if debug_wakeup then
+      if _debug_wakeup then
         print(string.format("%d - %s wakeup started", frame_number, _player_obj.prefix))
       end
     end
@@ -761,7 +762,7 @@ function read_player_vars(_player_obj)
       _player_obj.is_past_wakeup_frame = true
       _player_obj.wakeup_time = 0
       _player_obj.wakeup_animation = _player_obj.animation
-      if debug_wakeup then
+      if _debug_wakeup then
         print(string.format("%d - %s fast wakeup started", frame_number, _player_obj.prefix))
       end
     end
@@ -775,7 +776,7 @@ function read_player_vars(_player_obj)
     end
 
     if _player_obj.is_wakingup and _previous_posture == 0x26 and _player_obj.posture ~= 0x26 then
-      if debug_wakeup then
+      if _debug_wakeup then
         print(string.format("%d - %s wake up: %d, %s, %d", frame_number, _player_obj.prefix, to_bit(_player_obj.is_fast_wakingup), _player_obj.wakeup_animation, _player_obj.wakeup_time))
       end
       _player_obj.is_wakingup = false
