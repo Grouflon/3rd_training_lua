@@ -557,7 +557,7 @@ function update_pose(_input, _player_obj, _pose)
     -- pose
   if is_in_match and not is_menu_open and not is_playing_input_sequence(_player_obj) then
     local _on_ground = is_state_on_ground(_player_obj.standing_state, _player_obj)
-    local _is_waking_up = _player_obj.is_wakingup and _player_obj.is_past_wakeup_frame
+    local _is_waking_up = (_player_obj.is_wakingup and _player_obj.is_past_wakeup_frame) or _player_obj.previous_is_wakingup -- there is one frame where I don't really know which state we are in. Let's hold for one frame more after what we consider waking up state
 
     if _pose == 2 and (_on_ground or _is_waking_up) then -- crouch
       _input[_player_obj.prefix..' Down'] = true
