@@ -96,6 +96,10 @@ Thank you for your support in this matter and please enjoy!
 [Trello board](https://trello.com/b/UQ8ey2rQ/3rdtraining)
 
 ## Changelog
+### v0.11 (???)
+- [Feature] New Trials script
+- [Bugfix] Fixed crouching dummy not crouching for one frame after wake up
+
 ### v0.10 (29/05/2022)
 - [Feature] Charge special training (contribution of @ProfessorAnon)
 - [Feature] Hyakuretsu Kyaku special training (contribution of @ProfessorAnon)
