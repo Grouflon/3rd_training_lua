@@ -20,6 +20,12 @@ The right version of Fightcade can be downloaded [here](https://www.fightcade.co
 * Go to Game->Lua Scripting->New Lua Script Window and run the script **3rd_training.lua** from here
 * Follow instructions from the Output Console
 
+## Shortcut - Windows
+* Create a shortcut for `emulator\fbneo\fcadefbneo.exe`
+* Right-click the shortcut and select `Properties`
+* In the `Target` section, after the path to `fcadefbneo.exe`, add ` sfiii3nr1 --lua 3rd_training.lua` - ideally using the full path for the 3rd training lua e.g `C:\Users\me\Fightcade\3rd_training_lua-master\3rd_training.lua`
+* Click `OK` and double-click the new shortcut to launch 3rd strike with the training mode enabled
+
 ## Bug reporting / Contribute
 If you want to be informed when a new version come out and/or discuss the current bugs and features, you can join the [Discord server](https://discord.gg/CDXQyFmcSe) of the project.
 
