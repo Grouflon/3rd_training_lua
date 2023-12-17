@@ -427,7 +427,8 @@ special_training_mode = {
   "none",
   "parry",
   "charge",
-  "Hyakuretsu Kyaku (Chun Li)"
+  "Hyakuretsu Kyaku (Chun Li)",
+  "juggle"
 }
 
 function make_recording_slot()
@@ -1577,6 +1578,9 @@ parry_antiair_on_item.is_disabled = parry_forward_on_item.is_disabled
 charge_overcharge_on_item = checkbox_menu_item("Display Overcharge", training_settings, "special_training_charge_overcharge_on")
 charge_overcharge_on_item.is_disabled = function() return training_settings.special_training_current_mode ~= 3 end
 
+juggle_ctr = checkbox_menu_item("Display juggle", training_settings, "special_training_juggle")
+juggle_ctr.is_disabled = function() return training_settings.special_training_current_mode ~= 7 end
+
 hits_before_red_parry_item = integer_menu_item("Hits before Red Parry", training_settings, "red_parry_hit_count", 1, 20, true)
 hits_before_red_parry_item.is_disabled = function()
   return training_settings.blocking_style ~= 3
@@ -2413,6 +2417,10 @@ function on_gui()
     end
   end
 
+  if is_in_match and special_training_mode[training_settings.special_training_current_mode] == "juggle" then
+    airTimerView()
+  end  
+
   if is_in_match and special_training_mode[training_settings.special_training_current_mode] == "parry" then
 
     local _player = P1
@@ -2763,3 +2771,44 @@ emu.registerstart(on_start)
 emu.registerbefore(before_frame)
 gui.register(on_gui)
 savestate.registerload(on_load_state)
+
+function airTimerView()
+	local _player = P1
+	airTimerOffsetX = 220
+	airOffsetY = 50
+	local _gauge_x_scale = 4
+	if training_settings.special_training_follow_character then
+      local _px = _player.pos_x - screen_x + emu.screenwidth()/2
+      local _py = emu.screenheight() - (_player.pos_y - screen_y) - ground_offset
+      local _half_width = 23 * _gauge_x_scale * 0.5
+      airTimerOffsetX = _px - _half_width
+      airTimerOffsetX = math.max(airTimerOffsetX, 4)
+      airTimerOffsetX = math.min(airTimerOffsetX, emu.screenwidth() - (_half_width * 2.0 + 14))
+      airOffsetY = _py - 120
+    end
+	gui.text(airTimerOffsetX,airOffsetY-2,tostring(memory.readbyte(0x020694C9)))
+	airTimerOffsetX = airTimerOffsetX + 8
+		gui.box(airTimerOffsetX,airOffsetY,airTimerOffsetX+121,airOffsetY+3,0x00000000,0x000000FF)
+		gui.line(airTimerOffsetX+101,airOffsetY,airTimerOffsetX+101,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+81,airOffsetY,airTimerOffsetX+81,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+61,airOffsetY,airTimerOffsetX+61,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+41,airOffsetY,airTimerOffsetX+41,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+21,airOffsetY,airTimerOffsetX+21,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+11,airOffsetY,airTimerOffsetX+11,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+5,airOffsetY,airTimerOffsetX+5,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+2,airOffsetY,airTimerOffsetX+2,airOffsetY+3,0x000000FF)
+		gui.line(airTimerOffsetX+1,airOffsetY,airTimerOffsetX+1,airOffsetY+3,0x000000FF)
+	if memory.readbyte(0x020694C7) ~= 0xFF then
+		gui.box(airTimerOffsetX,airOffsetY,airTimerOffsetX+((memory.readbyte(0x020694C7)+1)/2),airOffsetY+3,0x00C080FF,0x000000FF)
+		if memory.readbyte(0x020694C7) > 0 then
+			if ((memory.readbyte(0x020694C7)+1)/2) < 10 then
+				airTimerOffsetX = airTimerOffsetX - 1
+			elseif ((memory.readbyte(0x020694C7)+1)/2) < 100 then
+				airTimerOffsetX = airTimerOffsetX - 3
+			else
+				airTimerOffsetX = airTimerOffsetX - 5
+			end
+			gui.text(airTimerOffsetX+((memory.readbyte(0x020694C7)+1)/2),airOffsetY+6,((memory.readbyte(0x020694C7)+1)/2))
+		end
+	end
+end
